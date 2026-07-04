@@ -14,7 +14,7 @@ class CreatePermitRouteSegmentsTable extends Migration
             $table->foreignId('road_segment_id')->constrained('road_segments')->restrictOnDelete();
             $table->unsignedInteger('sequence')->default(1);
             $table->timestamps();
-            $table->unique(['vehicle_permit_id', 'road_segment_id', 'sequence'], 'permit_route_segment_unique');
+            $table->unique(['vehicle_permit_id', 'sequence'], 'permit_route_segment_permit_sequence_unique');
         });
     }
 

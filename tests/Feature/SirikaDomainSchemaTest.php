@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
@@ -48,5 +50,70 @@ class SirikaDomainSchemaTest extends TestCase
         $this->assertTrue(Schema::hasColumns('scan_logs', [
             'id', 'permit_id', 'scanned_by', 'scanned_at', 'result', 'device_info', 'ip_address', 'notes',
         ]));
+    }
+
+    /** @test */
+    public function permit_route_segment_sequence_must_be_unique_per_permit_even_for_different_road_segments()
+    {
+        $employeeId = DB::table('employees')->insertGetId([
+            'nik' => 'EMP-001',
+            'name' => 'Test Employee',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $vehicleId = DB::table('vehicles')->insertGetId([
+            'employee_id' => $employeeId,
+            'plate_number' => 'DD 1234 XX',
+            'vehicle_type' => 'motorcycle',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $permitId = DB::table('vehicle_permits')->insertGetId([
+            'employee_id' => $employeeId,
+            'vehicle_id' => $vehicleId,
+            'approval_status' => 'approved',
+            'status' => 'draft',
+            'source' => 'manual',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $firstRoadSegmentId = DB::table('road_segments')->insertGetId([
+            'code' => 'RS-001',
+            'name' => 'Main Gate',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $secondRoadSegmentId = DB::table('road_segments')->insertGetId([
+            'code' => 'RS-002',
+            'name' => 'West Gate',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        DB::table('permit_route_segments')->insert([
+            'vehicle_permit_id' => $permitId,
+            'road_segment_id' => $firstRoadSegmentId,
+            'sequence' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->expectException(QueryException::class);
+
+        DB::table('permit_route_segments')->insert([
+            'vehicle_permit_id' => $permitId,
+            'road_segment_id' => $secondRoadSegmentId,
+            'sequence' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     }
 }
