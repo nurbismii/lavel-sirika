@@ -9,9 +9,9 @@ class AddSirikaFieldsToUsersTable extends Migration
     public function up()
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('role', 32)->default('auditor')->after('password')->index();
-            $table->string('status', 32)->default('active')->after('role')->index();
-            $table->timestamp('last_login_at')->nullable()->after('remember_token');
+            $table->string('role', 32)->default('auditor')->index();
+            $table->string('status', 32)->default('active')->index();
+            $table->timestamp('last_login_at')->nullable();
         });
     }
 
