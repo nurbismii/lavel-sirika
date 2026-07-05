@@ -398,6 +398,44 @@ th {
     margin-top: 18px;
 }
 
+.form-stack {
+    display: grid;
+    gap: 14px;
+}
+
+.form-field {
+    display: grid;
+    gap: 6px;
+}
+
+.form-field label {
+    font-weight: 700;
+}
+
+.form-field input[type="file"] {
+    max-width: 520px;
+    padding: 10px;
+    border: 1px solid var(--sirika-border);
+    border-radius: 8px;
+    background: var(--sirika-surface);
+}
+
+.field-error {
+    color: #b91c1c;
+    font-size: 13px;
+}
+
+.toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.pagination-wrap {
+    margin-top: 14px;
+}
+
 @media (max-width: 1024px) {
     .stats-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
