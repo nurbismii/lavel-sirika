@@ -6,6 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class ImportBatch extends Model
 {
+    public const STATUS_DRAFT = 'draft';
+    public const STATUS_PREVIEWED = 'previewed';
+    public const STATUS_COMMITTED = 'committed';
+    public const STATUS_FAILED = 'failed';
+
     protected $fillable = [
         'filename',
         'uploaded_by',
@@ -27,6 +32,11 @@ class ImportBatch extends Model
     public function uploader()
     {
         return $this->belongsTo(User::class, 'uploaded_by');
+    }
+
+    public function rows()
+    {
+        return $this->hasMany(ImportRow::class, 'import_batch_id');
     }
 
     public function permits()
