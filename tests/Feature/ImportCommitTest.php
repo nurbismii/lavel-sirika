@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\VehiclePermit;
 use App\Services\Imports\PermitImportCommitService;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use RuntimeException;
 use Tests\TestCase;
@@ -185,6 +186,32 @@ class ImportCommitTest extends TestCase
             'Kendaraan sudah memiliki izin aktif, perlu review sebelum aktivasi.',
             $row->warnings
         );
+    }
+
+    /** @test */
+    public function vehicle_identity_is_unique_per_employee_and_plate_number()
+    {
+        $employee = Employee::create([
+            'nik' => '200115677',
+            'name' => 'FITRIAWATI',
+            'status' => 'active',
+        ]);
+
+        Vehicle::create([
+            'employee_id' => $employee->id,
+            'plate_number' => 'DT 4423 CI',
+            'vehicle_type' => 'motorcycle',
+            'status' => 'active',
+        ]);
+
+        $this->expectException(QueryException::class);
+
+        Vehicle::create([
+            'employee_id' => $employee->id,
+            'plate_number' => 'DT 4423 CI',
+            'vehicle_type' => 'motorcycle',
+            'status' => 'active',
+        ]);
     }
 
     /** @test */

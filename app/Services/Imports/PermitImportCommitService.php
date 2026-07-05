@@ -9,6 +9,7 @@ use App\Models\ParkingLocation;
 use App\Models\RoadSegment;
 use App\Models\Vehicle;
 use App\Models\VehiclePermit;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
@@ -73,21 +74,7 @@ class PermitImportCommitService
             ]
         );
 
-        $vehicle = Vehicle::query()->firstOrCreate(
-            [
-                'employee_id' => $employee->id,
-                'plate_number' => $data['plate_number'],
-            ],
-            [
-                'vehicle_type' => 'motorcycle',
-                'status' => 'active',
-            ]
-        );
-        // Locking the resolved vehicle row serializes commits that target the same vehicle.
-        $vehicle = Vehicle::query()
-            ->whereKey($vehicle->id)
-            ->lockForUpdate()
-            ->firstOrFail();
+        $vehicle = $this->resolveVehicle($employee, $data['plate_number']);
 
         $parkingLocation = null;
         if (! empty($data['parking_location_code'])) {
@@ -141,6 +128,46 @@ class PermitImportCommitService
         return ! empty($data['nik'])
             && ! empty($data['employee_name'])
             && ! empty($data['plate_number']);
+    }
+
+    private function resolveVehicle(Employee $employee, string $plateNumber): Vehicle
+    {
+        $vehicle = $this->findVehicleForUpdate($employee->id, $plateNumber);
+
+        if ($vehicle) {
+            return $vehicle;
+        }
+
+        try {
+            $vehicle = Vehicle::query()->create([
+                'employee_id' => $employee->id,
+                'plate_number' => $plateNumber,
+                'vehicle_type' => 'motorcycle',
+                'status' => 'active',
+            ]);
+        } catch (QueryException $exception) {
+            $vehicle = $this->findVehicleForUpdate($employee->id, $plateNumber);
+
+            if ($vehicle) {
+                return $vehicle;
+            }
+
+            throw $exception;
+        }
+
+        return Vehicle::query()
+            ->whereKey($vehicle->id)
+            ->lockForUpdate()
+            ->firstOrFail();
+    }
+
+    private function findVehicleForUpdate(int $employeeId, string $plateNumber): ?Vehicle
+    {
+        return Vehicle::query()
+            ->where('employee_id', $employeeId)
+            ->where('plate_number', $plateNumber)
+            ->lockForUpdate()
+            ->first();
     }
 
     private function findExistingActivePermit(int $vehicleId): ?VehiclePermit
