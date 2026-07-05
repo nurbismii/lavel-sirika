@@ -1,0 +1,48 @@
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\RoadSegment;
+use Illuminate\Database\Seeder;
+
+class RoadSegmentSeeder extends Seeder
+{
+    public function run()
+    {
+        $segments = [
+            ['code' => 'Y1', 'name' => 'Jalan Yingbin Y1', 'start_location' => 'Pos Gerbang Timur', 'end_location' => 'Pos Gerbang Barat 1'],
+            ['code' => 'Y2', 'name' => 'Jalan Yingbin Y2', 'start_location' => 'Pos Gerbang Barat 1', 'end_location' => 'Pos Gerbang Barat 2'],
+            ['code' => 'WL1', 'name' => 'Jalan Logistik WL1', 'start_location' => 'Bea Cukai Gerbang Timur', 'end_location' => 'Tempat Penimbunan Stockpile'],
+            ['code' => 'WL2', 'name' => 'Jalan Logistik WL2', 'start_location' => 'Ujung Selatan Stockpile', 'end_location' => 'Ujung Utara Stockpile'],
+            ['code' => 'WL3', 'name' => 'Jalan Logistik WL3', 'start_location' => 'Pos Gerbang Barat 2', 'end_location' => 'OSS'],
+            ['code' => 'T1', 'name' => 'Jalan T1', 'start_location' => 'Depan Gudang Nikel Lempengan', 'end_location' => 'Workshop Lama'],
+            ['code' => 'T2', 'name' => 'Jalan T2', 'start_location' => 'Pintu Barat Smelter 1', 'end_location' => 'Area Penumpukan Smelter 1'],
+            ['code' => 'T3', 'name' => 'Jalan T3', 'start_location' => 'Pintu Barat Smelter 2', 'end_location' => 'Area Penumpukan Smelter 2'],
+            ['code' => 'T4', 'name' => 'Jalan T4', 'start_location' => 'Pintu Barat Smelter 3', 'end_location' => 'Jalur Crusher'],
+            ['code' => 'D1', 'name' => 'Jalan D1', 'start_location' => 'Sisi Timur Gardu Induk 220kV', 'end_location' => 'Penimbunan Limbah Ban Lama'],
+            ['code' => 'D2', 'name' => 'Jalan D2', 'start_location' => 'Sisi Barat Masjid', 'end_location' => 'Pintu Barat Gudang Batu Bara 2 PLTU'],
+            ['code' => 'D3', 'name' => 'Jalan D3', 'start_location' => 'Sisi Barat Asrama 1', 'end_location' => 'Pintu Barat Lapangan Olahraga PLTU'],
+            ['code' => 'D4', 'name' => 'Jalan D4', 'start_location' => 'Ujung Timur PLTU', 'end_location' => 'Sisi Selatan Restoran Huimin'],
+            ['code' => 'D5', 'name' => 'Jalan D5', 'start_location' => 'Utara Gudang Batu Bara No.1 PLTU', 'end_location' => 'Gedung Bulu Tangkis'],
+            ['code' => 'D6', 'name' => 'Jalan D6', 'start_location' => 'Selatan Gudang Batu Bara No.2 PLTU', 'end_location' => 'Selatan Kolam Pengendapan'],
+            ['code' => 'C1', 'name' => 'Jalan C1', 'start_location' => 'Persimpangan Gudang', 'end_location' => 'Gudang Material Tahan Panas'],
+            ['code' => 'C2', 'name' => 'Jalan C2', 'start_location' => 'Pintu Masuk Alat Berat', 'end_location' => 'Kantor Alat Berat'],
+            ['code' => 'C3', 'name' => 'Jalan C3', 'start_location' => 'Pintu Masuk BBM', 'end_location' => 'Tempat Pengisian BBM'],
+            ['code' => 'XL1', 'name' => 'Jalan XL1', 'start_location' => 'Pintu Masuk Sisi Timur Workshop Baru', 'end_location' => 'Workshop Baru'],
+            ['code' => 'Z1', 'name' => 'Jalan Z1', 'start_location' => 'Depan Politeknik', 'end_location' => 'Depan Pintu Utara Asrama 1'],
+            ['code' => 'Z2', 'name' => 'Jalan Z2', 'start_location' => 'Sisi Barat Asrama 2', 'end_location' => 'Sisi Barat Politeknik'],
+            ['code' => 'Z3', 'name' => 'Jalan Z3', 'start_location' => 'Taman Rusa', 'end_location' => 'Gedung Bulu Tangkis'],
+            ['code' => 'Z4', 'name' => 'Jalan Z4', 'start_location' => 'Persimpangan Klinik', 'end_location' => 'Sisi Selatan Asrama 4'],
+            ['code' => 'S1', 'name' => 'Jalan S1', 'start_location' => 'Persimpangan Sisi Timur Gudang Material Tahan Panas', 'end_location' => 'Pintu Selatan Workshop Manufaktur'],
+            ['code' => 'H1', 'name' => 'Jalan H1', 'start_location' => 'Persimpangan Laboratorium Analis Smelter', 'end_location' => 'Pintu Barat Departemen Pemeliharaan PLTU'],
+            ['code' => 'H2', 'name' => 'Jalan H2', 'start_location' => 'Persimpangan Laboratorium Ore', 'end_location' => 'Sisi Utara Pompa Air OSS'],
+        ];
+
+        foreach ($segments as $segment) {
+            RoadSegment::updateOrCreate(
+                ['code' => $segment['code']],
+                array_merge($segment, ['status' => 'active'])
+            );
+        }
+    }
+}
