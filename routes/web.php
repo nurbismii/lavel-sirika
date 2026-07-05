@@ -73,4 +73,11 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:' . implode(',', User::rolesForRoute('scan.index')))->group(function () {
         Route::get('/scan', [ScanController::class, 'index'])->name('scan.index');
     });
+
+    Route::post('/scan/verify', [ScanController::class, 'verify'])
+        ->middleware([
+            'role:' . implode(',', User::rolesForRoute('scan.verify')),
+            'throttle:60,1',
+        ])
+        ->name('scan.verify');
 });
