@@ -21,6 +21,13 @@
                 <x-stat-card label="Invalid" :value="$batch->failed_rows" />
                 <x-stat-card label="Needs Review" :value="$batch->review_rows" />
             </div>
+
+            @if ($batch->status === \App\Models\ImportBatch::STATUS_PREVIEWED && ($batch->success_rows + $batch->review_rows) > 0)
+                <form method="POST" action="{{ route('imports.commit', $batch) }}" style="margin-top: 16px;">
+                    @csrf
+                    <button class="button button-primary" type="submit">Commit Data Aman</button>
+                </form>
+            @endif
         </div>
     </section>
 

@@ -41,6 +41,10 @@ Route::middleware('auth')->group(function () {
         ->middleware('role:' . implode(',', User::rolesForRoute('imports.store')))
         ->name('imports.store');
 
+    Route::post('/imports/{importBatch}/commit', [ImportController::class, 'commit'])
+        ->middleware('role:' . implode(',', User::rolesForRoute('imports.commit')))
+        ->name('imports.commit');
+
     Route::middleware('role:' . implode(',', User::rolesForRoute('permits.index')))->group(function () {
         Route::get('/permits', [PermitController::class, 'index'])->name('permits.index');
     });

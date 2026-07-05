@@ -1,0 +1,334 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Employee;
+use App\Models\ImportBatch;
+use App\Models\ImportRow;
+use App\Models\RoadSegment;
+use App\Models\User;
+use App\Models\Vehicle;
+use App\Models\VehiclePermit;
+use App\Services\Imports\PermitImportCommitService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use RuntimeException;
+use Tests\TestCase;
+
+class ImportCommitTest extends TestCase
+{
+    use RefreshDatabase;
+
+    /** @test */
+    public function it_commits_valid_and_needs_review_rows_without_touching_invalid_rows()
+    {
+        $admin = $this->admin();
+        $this->seedRoadSegments(['Y1', 'D2']);
+
+        $batch = $this->batch($admin, [
+            'success_rows' => 1,
+            'failed_rows' => 1,
+            'review_rows' => 1,
+            'total_rows' => 3,
+        ]);
+
+        $validRow = $this->row($batch, 5, ImportRow::STATUS_VALID, [
+            'nik' => '200115677',
+            'employee_name' => 'FITRIAWATI',
+            'department' => 'GENERAL AFFAIR',
+            'section' => 'GA KANTOR',
+            'position' => 'ADMIN',
+            'division' => 'GENERAL AFFAIR',
+            'contact_number' => '0812',
+            'plate_number' => 'DT 4423 CI',
+            'parking_location_code' => 'GA-MES1-P01',
+            'route_raw' => 'Y1→D2→GA-MES1-P01',
+            'route_segment_codes' => ['Y1', 'D2'],
+            'reason' => 'OFFICE',
+            'permit_color' => 'biru',
+            'approval_status' => 'approved',
+            'notes' => '',
+        ]);
+
+        $reviewRow = $this->row($batch, 6, ImportRow::STATUS_NEEDS_REVIEW, [
+            'nik' => '211129282',
+            'employee_name' => 'HARLINA',
+            'department' => 'GENERAL AFFAIR',
+            'section' => 'GA KANTOR',
+            'position' => 'ADMIN',
+            'division' => 'GENERAL AFFAIR',
+            'contact_number' => '0813',
+            'plate_number' => 'DT 4714 BO',
+            'parking_location_code' => '',
+            'route_raw' => '',
+            'route_segment_codes' => [],
+            'reason' => 'OFFICE',
+            'permit_color' => 'kuning',
+            'approval_status' => 'approved',
+            'notes' => '',
+        ], [], ['Rute kendaraan kosong']);
+
+        $invalidRow = $this->row($batch, 7, ImportRow::STATUS_INVALID, [
+            'nik' => '99887766',
+            'employee_name' => 'INVALID ROW',
+            'plate_number' => '',
+        ], ['Plat motor wajib diisi']);
+
+        $committedBatch = app(PermitImportCommitService::class)->commit($batch);
+
+        $this->assertSame(ImportBatch::STATUS_COMMITTED, $committedBatch->status);
+
+        $this->assertDatabaseHas('employees', ['nik' => '200115677', 'name' => 'FITRIAWATI']);
+        $this->assertDatabaseHas('employees', ['nik' => '211129282', 'name' => 'HARLINA']);
+        $this->assertDatabaseMissing('employees', ['nik' => '99887766']);
+
+        $this->assertDatabaseHas('vehicles', ['plate_number' => 'DT 4423 CI']);
+        $this->assertDatabaseHas('vehicles', ['plate_number' => 'DT 4714 BO']);
+        $this->assertDatabaseMissing('vehicles', ['plate_number' => '']);
+
+        $this->assertDatabaseHas('parking_locations', ['code' => 'GA-MES1-P01']);
+
+        $activePermit = VehiclePermit::where('source_import_id', $batch->id)
+            ->where('permit_color', 'biru')
+            ->first();
+        $this->assertNotNull($activePermit);
+        $this->assertSame(VehiclePermit::STATUS_ACTIVE, $activePermit->status);
+        $this->assertSame('import', $activePermit->source);
+        $this->assertSame(2, $activePermit->permitRouteSegments()->count());
+        $this->assertSame(
+            [1, 2],
+            array_map('intval', $activePermit->permitRouteSegments()->orderBy('sequence')->pluck('sequence')->all())
+        );
+
+        $reviewPermit = VehiclePermit::where('source_import_id', $batch->id)
+            ->where('permit_color', 'kuning')
+            ->first();
+        $this->assertNotNull($reviewPermit);
+        $this->assertSame(VehiclePermit::STATUS_NEEDS_REVIEW, $reviewPermit->status);
+
+        $validRow->refresh();
+        $reviewRow->refresh();
+        $invalidRow->refresh();
+
+        $this->assertSame(ImportRow::STATUS_COMMITTED, $validRow->status);
+        $this->assertNotNull($validRow->created_employee_id);
+        $this->assertNotNull($validRow->created_vehicle_id);
+        $this->assertNotNull($validRow->created_permit_id);
+
+        $this->assertSame(ImportRow::STATUS_COMMITTED, $reviewRow->status);
+        $this->assertNotNull($reviewRow->created_employee_id);
+        $this->assertNotNull($reviewRow->created_vehicle_id);
+        $this->assertNotNull($reviewRow->created_permit_id);
+
+        $this->assertSame(ImportRow::STATUS_INVALID, $invalidRow->status);
+        $this->assertNull($invalidRow->created_employee_id);
+        $this->assertNull($invalidRow->created_vehicle_id);
+        $this->assertNull($invalidRow->created_permit_id);
+    }
+
+    /** @test */
+    public function it_downgrades_imported_valid_row_to_needs_review_when_vehicle_already_has_active_permit()
+    {
+        $admin = $this->admin();
+        $batch = $this->batch($admin, [
+            'success_rows' => 1,
+            'total_rows' => 1,
+        ]);
+
+        $employee = Employee::create([
+            'nik' => '200115677',
+            'name' => 'FITRIAWATI',
+            'status' => 'active',
+        ]);
+
+        $vehicle = Vehicle::create([
+            'employee_id' => $employee->id,
+            'plate_number' => 'DT 4423 CI',
+            'vehicle_type' => 'motorcycle',
+            'status' => 'active',
+        ]);
+
+        VehiclePermit::create([
+            'employee_id' => $employee->id,
+            'vehicle_id' => $vehicle->id,
+            'permit_color' => 'merah',
+            'status' => VehiclePermit::STATUS_ACTIVE,
+            'source' => 'manual',
+        ]);
+
+        $row = $this->row($batch, 5, ImportRow::STATUS_VALID, [
+            'nik' => '200115677',
+            'employee_name' => 'FITRIAWATI',
+            'department' => 'GENERAL AFFAIR',
+            'section' => 'GA KANTOR',
+            'position' => 'ADMIN',
+            'division' => 'GENERAL AFFAIR',
+            'contact_number' => '0812',
+            'plate_number' => 'DT 4423 CI',
+            'parking_location_code' => '',
+            'route_raw' => '',
+            'route_segment_codes' => [],
+            'reason' => 'OFFICE',
+            'permit_color' => 'biru',
+            'approval_status' => 'approved',
+            'notes' => '',
+        ]);
+
+        app(PermitImportCommitService::class)->commit($batch);
+
+        $importedPermit = VehiclePermit::where('source_import_id', $batch->id)->first();
+        $this->assertNotNull($importedPermit);
+        $this->assertSame(VehiclePermit::STATUS_NEEDS_REVIEW, $importedPermit->status);
+
+        $row->refresh();
+        $this->assertSame(ImportRow::STATUS_COMMITTED, $row->status);
+        $this->assertContains(
+            'Kendaraan sudah memiliki izin aktif, perlu review sebelum aktivasi.',
+            $row->warnings
+        );
+    }
+
+    /** @test */
+    public function it_rejects_commit_for_already_committed_or_not_ready_batches()
+    {
+        $admin = $this->admin();
+
+        $committedBatch = $this->batch($admin, [
+            'status' => ImportBatch::STATUS_COMMITTED,
+        ]);
+
+        try {
+            app(PermitImportCommitService::class)->commit($committedBatch);
+            $this->fail('Expected committed batch to be rejected.');
+        } catch (RuntimeException $exception) {
+            $this->assertSame('Batch sudah pernah dikomit.', $exception->getMessage());
+        }
+
+        $draftBatch = $this->batch($admin, [
+            'status' => ImportBatch::STATUS_DRAFT,
+        ]);
+
+        try {
+            app(PermitImportCommitService::class)->commit($draftBatch);
+            $this->fail('Expected non-previewed batch to be rejected.');
+        } catch (RuntimeException $exception) {
+            $this->assertSame('Batch belum siap dikomit.', $exception->getMessage());
+        }
+    }
+
+    /** @test */
+    public function commit_route_is_explicitly_limited_to_admin_hr_and_super_admin_override()
+    {
+        $this->assertSame([User::ROLE_ADMIN_HR], User::rolesForRoute('imports.commit'));
+
+        $admin = $this->admin();
+        $security = User::factory()->create([
+            'role' => User::ROLE_SECURITY,
+            'status' => User::STATUS_ACTIVE,
+        ]);
+        $superAdmin = User::factory()->create([
+            'role' => User::ROLE_SUPER_ADMIN,
+            'status' => User::STATUS_ACTIVE,
+        ]);
+
+        $this->assertTrue($admin->canAccessRoute('imports.commit'));
+        $this->assertFalse($security->canAccessRoute('imports.commit'));
+        $this->assertTrue($superAdmin->canAccessRoute('imports.commit'));
+    }
+
+    /** @test */
+    public function admin_can_commit_batch_via_http_but_security_cannot()
+    {
+        $admin = $this->admin();
+        $security = User::factory()->create([
+            'role' => User::ROLE_SECURITY,
+            'status' => User::STATUS_ACTIVE,
+        ]);
+
+        $this->seedRoadSegments(['Y1']);
+
+        $batch = $this->batch($admin, [
+            'success_rows' => 1,
+            'total_rows' => 1,
+        ]);
+
+        $this->row($batch, 5, ImportRow::STATUS_VALID, [
+            'nik' => '200115677',
+            'employee_name' => 'FITRIAWATI',
+            'department' => 'GENERAL AFFAIR',
+            'section' => 'GA KANTOR',
+            'position' => 'ADMIN',
+            'division' => 'GENERAL AFFAIR',
+            'contact_number' => '0812',
+            'plate_number' => 'DT 4423 CI',
+            'parking_location_code' => '',
+            'route_raw' => 'Y1',
+            'route_segment_codes' => ['Y1'],
+            'reason' => 'OFFICE',
+            'permit_color' => 'biru',
+            'approval_status' => 'approved',
+            'notes' => '',
+        ]);
+
+        $this->actingAs($security)
+            ->post(route('imports.commit', $batch))
+            ->assertForbidden();
+
+        $this->actingAs($admin)
+            ->post(route('imports.commit', $batch))
+            ->assertRedirect(route('imports.show', $batch))
+            ->assertSessionHas('status', 'Batch import berhasil dikomit.');
+
+        $this->assertSame(ImportBatch::STATUS_COMMITTED, $batch->fresh()->status);
+    }
+
+    private function admin(): User
+    {
+        return User::factory()->create([
+            'role' => User::ROLE_ADMIN_HR,
+            'status' => User::STATUS_ACTIVE,
+        ]);
+    }
+
+    private function batch(User $admin, array $overrides = []): ImportBatch
+    {
+        return ImportBatch::create(array_merge([
+            'filename' => 'sample.xlsx',
+            'uploaded_by' => $admin->id,
+            'total_rows' => 1,
+            'success_rows' => 0,
+            'failed_rows' => 0,
+            'review_rows' => 0,
+            'status' => ImportBatch::STATUS_PREVIEWED,
+        ], $overrides));
+    }
+
+    private function row(
+        ImportBatch $batch,
+        int $rowNumber,
+        string $status,
+        array $normalized,
+        array $errors = [],
+        array $warnings = []
+    ): ImportRow {
+        return ImportRow::create([
+            'import_batch_id' => $batch->id,
+            'row_number' => $rowNumber,
+            'status' => $status,
+            'raw_data' => $normalized,
+            'normalized_data' => $normalized,
+            'errors' => $errors,
+            'warnings' => $warnings,
+        ]);
+    }
+
+    private function seedRoadSegments(array $codes): void
+    {
+        foreach ($codes as $code) {
+            RoadSegment::create([
+                'code' => $code,
+                'name' => 'Jalan ' . $code,
+                'status' => 'active',
+            ]);
+        }
+    }
+}

@@ -76,6 +76,9 @@ class User extends Authenticatable
             'imports.store' => [
                 self::ROLE_ADMIN_HR,
             ],
+            'imports.commit' => [
+                self::ROLE_ADMIN_HR,
+            ],
             'permits.index' => [
                 self::ROLE_ADMIN_HR,
             ],

@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreImportRequest;
 use App\Models\ImportBatch;
 use App\Services\Imports\PermitExcelImportService;
+use App\Services\Imports\PermitImportCommitService;
 use Illuminate\Http\Request;
+use RuntimeException;
 
 class ImportController extends Controller
 {
@@ -45,5 +47,20 @@ class ImportController extends Controller
             'rows' => $rowsQuery->paginate(50)->appends($request->query()),
             'selectedStatus' => $status,
         ]);
+    }
+
+    public function commit(ImportBatch $importBatch, PermitImportCommitService $service)
+    {
+        try {
+            $service->commit($importBatch);
+        } catch (RuntimeException $exception) {
+            return redirect()
+                ->route('imports.show', $importBatch)
+                ->with('status', $exception->getMessage());
+        }
+
+        return redirect()
+            ->route('imports.show', $importBatch)
+            ->with('status', 'Batch import berhasil dikomit.');
     }
 }
