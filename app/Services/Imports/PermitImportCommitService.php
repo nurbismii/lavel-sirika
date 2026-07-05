@@ -109,7 +109,9 @@ class PermitImportCommitService
             'route_raw' => $data['route_raw'] ?? null,
         ]);
 
-        $this->attachRouteSegments($permit, $data['route_segment_codes'] ?? []);
+        if ($permitStatus === VehiclePermit::STATUS_ACTIVE) {
+            $this->attachRouteSegments($permit, $data['route_segment_codes'] ?? []);
+        }
 
         $row->update([
             'status' => ImportRow::STATUS_COMMITTED,

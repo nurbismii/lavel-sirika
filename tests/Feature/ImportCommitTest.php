@@ -106,6 +106,7 @@ class ImportCommitTest extends TestCase
             ->first();
         $this->assertNotNull($reviewPermit);
         $this->assertSame(VehiclePermit::STATUS_NEEDS_REVIEW, $reviewPermit->status);
+        $this->assertSame(0, $reviewPermit->permitRouteSegments()->count());
 
         $validRow->refresh();
         $reviewRow->refresh();
@@ -187,6 +188,44 @@ class ImportCommitTest extends TestCase
             'Kendaraan sudah memiliki izin aktif, perlu review sebelum aktivasi.',
             $row->warnings
         );
+    }
+
+    /** @test */
+    public function needs_review_rows_do_not_persist_partial_route_segments()
+    {
+        $admin = $this->admin();
+        $this->seedRoadSegments(['Y1', 'D2']);
+
+        $batch = $this->batch($admin, [
+            'review_rows' => 1,
+            'total_rows' => 1,
+        ]);
+
+        $this->row($batch, 5, ImportRow::STATUS_NEEDS_REVIEW, [
+            'nik' => '200115677',
+            'employee_name' => 'FITRIAWATI',
+            'department' => 'GENERAL AFFAIR',
+            'section' => 'GA KANTOR',
+            'position' => 'ADMIN',
+            'division' => 'GENERAL AFFAIR',
+            'contact_number' => '0812',
+            'plate_number' => 'DT 4423 CI',
+            'parking_location_code' => '',
+            'route_raw' => 'Y1 -> jalan tidak dikenal -> D2',
+            'route_segment_codes' => ['Y1', 'D2'],
+            'reason' => 'OFFICE',
+            'permit_color' => 'biru',
+            'approval_status' => 'approved',
+            'notes' => '',
+        ], [], ['Rute mengandung teks bebas yang perlu review']);
+
+        app(PermitImportCommitService::class)->commit($batch);
+
+        $permit = VehiclePermit::where('source_import_id', $batch->id)->first();
+
+        $this->assertNotNull($permit);
+        $this->assertSame(VehiclePermit::STATUS_NEEDS_REVIEW, $permit->status);
+        $this->assertSame(0, $permit->permitRouteSegments()->count());
     }
 
     /** @test */
