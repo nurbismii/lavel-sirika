@@ -127,9 +127,18 @@ class PermitQrServiceTest extends TestCase
         $service = app(PermitTokenService::class);
 
         $first = $service->generateForPermit($permit);
-        $second = $service->generateForPermit($permit->fresh());
 
-        $this->assertSame($first['permit_token']->id, $second['permit_token']->id);
+        try {
+            $service->generateForPermit($permit->fresh());
+            $this->fail('Expected duplicate token generation to throw an InvalidArgumentException.');
+        } catch (\InvalidArgumentException $exception) {
+            $this->assertSame(
+                'QR aktif sudah tersedia. Gunakan renew untuk membuat QR baru.',
+                $exception->getMessage()
+            );
+        }
+
+        $this->assertSame(PermitToken::STATUS_ACTIVE, $first['permit_token']->fresh()->status);
         $this->assertSame(1, PermitToken::where('vehicle_permit_id', $permit->id)->count());
     }
 

@@ -14,36 +14,38 @@ use InvalidArgumentException;
 
 class PermitTokenService
 {
+    private const DUPLICATE_ACTIVE_TOKEN_MESSAGE = 'QR aktif sudah tersedia. Gunakan renew untuk membuat QR baru.';
+
     public function generateForPermit(VehiclePermit $permit): array
     {
-        $this->ensurePermitCanHaveQr($permit);
+        return DB::transaction(function () use ($permit) {
+            $lockedPermit = $this->lockPermit($permit);
 
-        $existing = $permit->fresh()->activeToken;
+            $this->ensurePermitCanHaveQr($lockedPermit);
 
-        if ($existing) {
-            return [
-                'plain_token' => null,
-                'permit_token' => $existing,
-                'qr_svg' => null,
-            ];
-        }
+            if ($lockedPermit->activeToken) {
+                throw new InvalidArgumentException(self::DUPLICATE_ACTIVE_TOKEN_MESSAGE);
+            }
 
-        return $this->createTokenForPermit($permit);
+            return $this->createTokenForPermit($lockedPermit);
+        });
     }
 
     public function renewForPermit(VehiclePermit $permit): array
     {
-        $this->ensurePermitCanHaveQr($permit);
-
         return DB::transaction(function () use ($permit) {
-            PermitToken::where('vehicle_permit_id', $permit->id)
+            $lockedPermit = $this->lockPermit($permit);
+
+            $this->ensurePermitCanHaveQr($lockedPermit);
+
+            PermitToken::where('vehicle_permit_id', $lockedPermit->id)
                 ->where('status', PermitToken::STATUS_ACTIVE)
                 ->update([
                     'status' => PermitToken::STATUS_REVOKED,
                     'revoked_at' => now(),
                 ]);
 
-            return $this->createTokenForPermit($permit);
+            return $this->createTokenForPermit($lockedPermit);
         });
     }
 
@@ -57,13 +59,16 @@ class PermitTokenService
             ->orderBy('id')
             ->chunkById(100, function ($permits) use (&$created, &$skipped) {
                 foreach ($permits as $permit) {
-                    if ($permit->activeToken) {
-                        $skipped++;
-                        continue;
-                    }
+                    try {
+                        $this->generateForPermit($permit);
+                        $created++;
+                    } catch (InvalidArgumentException $exception) {
+                        if ($exception->getMessage() !== self::DUPLICATE_ACTIVE_TOKEN_MESSAGE) {
+                            throw $exception;
+                        }
 
-                    $this->createTokenForPermit($permit);
-                    $created++;
+                        $skipped++;
+                    }
                 }
             });
 
@@ -108,5 +113,13 @@ class PermitTokenService
         if ($permit->status !== VehiclePermit::STATUS_ACTIVE) {
             throw new InvalidArgumentException('QR hanya dapat dibuat untuk izin aktif.');
         }
+    }
+
+    private function lockPermit(VehiclePermit $permit): VehiclePermit
+    {
+        return VehiclePermit::whereKey($permit->id)
+            ->lockForUpdate()
+            ->firstOrFail()
+            ->load('activeToken');
     }
 }
