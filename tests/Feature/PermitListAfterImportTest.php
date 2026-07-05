@@ -102,9 +102,13 @@ class PermitListAfterImportTest extends TestCase
 
         $this->actingAs($admin)->get(route('dashboard'))
             ->assertOk()
-            ->assertSee('Izin Aktif')
-            ->assertSee('1')
-            ->assertSee('Perlu Review')
-            ->assertSee('1');
+            ->assertSeeInOrder([
+                'Izin Aktif',
+                '1',
+                'Data izin aktif pada tabel final',
+                'Perlu Review',
+                '1',
+                'Izin yang perlu verifikasi lanjutan',
+            ]);
     }
 }

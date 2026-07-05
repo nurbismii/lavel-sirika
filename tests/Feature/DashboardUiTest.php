@@ -32,7 +32,9 @@ class DashboardUiTest extends TestCase
             ->assertSee('26')
             ->assertSee('Segmen Rute Aktif')
             ->assertSee('Data izin aktif pada tabel final')
+            ->assertSee('Izin yang perlu verifikasi lanjutan')
             ->assertSee('Scanner belum aktif')
+            ->assertSee('Import Excel dan daftar izin sudah aktif. QR code, scanner kamera, dan peta highlight rute tetap menunggu fase berikutnya.')
             ->assertSee('href="' . route('dashboard') . '"', false);
 
         $this->assertDashboardLinks($response, [
