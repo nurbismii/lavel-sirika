@@ -41,7 +41,7 @@ Gunakan auth sederhana berbasis session Laravel.
 Role awal:
 
 - `super_admin`
-- `admin_ga`
+- `admin_hr`
 - `security`
 - `auditor`
 
@@ -49,7 +49,7 @@ Aturan akses awal:
 
 - User belum login hanya dapat mengakses halaman login.
 - `super_admin` dapat mengakses semua halaman awal.
-- `admin_ga` dapat mengakses dashboard, izin, import, dan master rute.
+- `admin_hr` dapat mengakses dashboard, izin, import, dan master rute.
 - `security` dapat mengakses dashboard terbatas dan halaman scan.
 - `auditor` dapat mengakses dashboard dan data read-only.
 
@@ -414,7 +414,7 @@ Phase 1 dianggap selesai jika:
 
 - Admin dapat login.
 - Admin melihat dashboard SIRIKA, bukan halaman default Laravel.
-- User seed tersedia untuk minimal `super_admin`, `admin_ga`, `security`, dan `auditor`.
+- User seed tersedia untuk minimal `super_admin`, `admin_hr`, `security`, dan `auditor`.
 - Role middleware membatasi halaman sesuai role.
 - Tabel inti berhasil dibuat lewat migration.
 - Seeder membuat 26 road segment resmi.
