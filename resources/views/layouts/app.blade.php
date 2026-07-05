@@ -11,7 +11,7 @@
 </head>
 <body>
     <div class="app-shell" x-data="{ mobileNavOpen: false }">
-        <aside class="sidebar" :class="{ 'open': mobileNavOpen }">
+        <aside id="sirika-sidebar" class="sidebar" :class="{ 'open': mobileNavOpen }">
             <p class="brand">SIRIKA</p>
             <p class="brand-subtitle">Sistem Rute Izin Kendaraan</p>
 
@@ -22,33 +22,43 @@
                             Dashboard
                         </a>
                     </li>
-                    <li>
-                        <a class="nav-link" href="{{ url('/road-segments') }}">
-                            Master Rute
-                        </a>
-                    </li>
-                    <li>
-                        <a class="nav-link" href="{{ url('/imports') }}">
-                            Import Excel
-                        </a>
-                    </li>
-                    <li>
-                        <a class="nav-link" href="{{ url('/permits') }}">
-                            Izin Kendaraan
-                        </a>
-                    </li>
-                    <li>
-                        <a class="nav-link" href="{{ url('/scan') }}">
-                            Scan QR
-                        </a>
-                    </li>
+                    @php
+                        $pendingModules = [
+                            ['label' => 'Master Rute', 'route' => 'road-segments.index'],
+                            ['label' => 'Import Excel', 'route' => 'imports.index'],
+                            ['label' => 'Izin Kendaraan', 'route' => 'permits.index'],
+                            ['label' => 'Scan QR', 'route' => 'scan.index'],
+                        ];
+                    @endphp
+
+                    @foreach ($pendingModules as $module)
+                        <li>
+                            @if (Route::has($module['route']))
+                                <a class="nav-link {{ request()->routeIs($module['route']) ? 'active' : '' }}" href="{{ route($module['route']) }}">
+                                    {{ $module['label'] }}
+                                </a>
+                            @else
+                                <span class="nav-link nav-link--disabled" aria-disabled="true">
+                                    <span class="nav-link__label">{{ $module['label'] }}</span>
+                                    <span class="nav-link__status">Tersedia di Task 7</span>
+                                </span>
+                            @endif
+                        </li>
+                    @endforeach
                 </ul>
             </nav>
         </aside>
 
         <div class="main-area">
             <header class="topbar">
-                <button class="button mobile-nav-toggle" type="button" x-on:click="mobileNavOpen = ! mobileNavOpen">
+                <button
+                    class="button mobile-nav-toggle"
+                    type="button"
+                    aria-controls="sirika-sidebar"
+                    aria-expanded="false"
+                    x-bind:aria-expanded="String(mobileNavOpen)"
+                    x-on:click="mobileNavOpen = ! mobileNavOpen"
+                >
                     Menu
                 </button>
 

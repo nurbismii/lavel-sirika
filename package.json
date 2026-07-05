@@ -2,18 +2,19 @@
     "private": true,
     "scripts": {
         "dev": "npm run development",
-        "development": "node scripts/build-assets.js",
-        "watch": "npm run development",
-        "watch-poll": "npm run development",
-        "hot": "npm run development",
+        "development": "mix",
+        "watch": "mix watch",
+        "watch-poll": "mix watch -- --watch-options-poll=1000",
+        "hot": "mix watch --hot",
         "prod": "npm run production",
-        "production": "npm run development"
+        "production": "mix --production"
     },
     "devDependencies": {
-        "alpinejs": "3.14",
+        "alpinejs": "^3.14",
         "axios": "^0.21",
         "laravel-mix": "^6.0.6",
         "lodash": "^4.17.19",
-        "postcss": "^8.1.14"
+        "postcss": "^8.1.14",
+        "webpack": "^5.91.0"
     }
 }
