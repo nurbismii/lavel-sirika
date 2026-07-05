@@ -60,7 +60,12 @@ class VehiclePermit extends Model
 
     public function routeSegments()
     {
-        return $this->belongsToMany(RoadSegment::class, 'permit_route_segments')
+        return $this->belongsToMany(
+            RoadSegment::class,
+            'permit_route_segments',
+            'vehicle_permit_id',
+            'road_segment_id'
+        )
             ->withPivot('sequence')
             ->withTimestamps()
             ->orderBy('permit_route_segments.sequence');
