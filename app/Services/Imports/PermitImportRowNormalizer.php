@@ -155,15 +155,11 @@ class PermitImportRowNormalizer
     {
         $value = $this->normalizeText($value);
 
-        if (in_array($value, ['√', 'âˆš'], true)) {
+        if (in_array($value, ['√', 'âˆš', 'Ã¢Ë†Å¡'], true)) {
             return true;
         }
 
-        $value = strtolower($value);
-
-        return strpos($value, 'approved') !== false
-            || strpos($value, 'disetujui') !== false
-            || strpos($value, 'setuju') !== false;
+        return in_array(strtolower($value), ['approved', 'disetujui', 'setuju'], true);
     }
 
     private function containsMultiplePlates($value)

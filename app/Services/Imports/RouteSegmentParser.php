@@ -39,6 +39,11 @@ class RouteSegmentParser
             $warnings[] = 'Rute tidak mengandung kode segmen resmi';
         }
 
+        $remainingText = $this->extractRemainingFreeText($routeWithoutParkingCodes, $knownCodes);
+        if ($remainingText !== '') {
+            $warnings[] = 'Rute mengandung teks bebas yang perlu review: ' . $remainingText;
+        }
+
         if ($this->containsInstructionText($rawRoute)) {
             $warnings[] = 'Rute mengandung catatan teks yang perlu review';
         }
@@ -54,11 +59,27 @@ class RouteSegmentParser
         return preg_match('/^P\d+$/i', $token) === 1;
     }
 
+    private function extractRemainingFreeText($rawRoute, array $knownCodes)
+    {
+        $remaining = $rawRoute;
+
+        foreach ($knownCodes as $code) {
+            $remaining = preg_replace('/' . preg_quote($code, '/') . '/i', ' ', $remaining);
+        }
+
+        $remaining = str_replace(['->', 'â†’', 'Ã¢â€ â€™'], ' ', $remaining);
+        $remaining = preg_replace('/[A-Z]{1,3}\d{1,2}/i', ' ', $remaining);
+        $remaining = preg_replace('/[\-\x{2192}\x{27A1}\x{2794}>\/,.;:_()\[\]{}]+/u', ' ', $remaining);
+        $remaining = preg_replace('/\s+/u', ' ', $remaining);
+
+        return trim($remaining);
+    }
+
     private function containsInstructionText($rawRoute)
     {
-        return strpos($rawRoute, 'ï¼ˆ') !== false
+        return strpos($rawRoute, 'Ã¯Â¼Ë†') !== false
             || strpos($rawRoute, '(') !== false
             || stripos($rawRoute, 'sesuai') !== false
-            || stripos($rawRoute, 'é¢†å¯¼') !== false;
+            || stripos($rawRoute, 'Ã©Â¢â€ Ã¥Â¯Â¼') !== false;
     }
 }
