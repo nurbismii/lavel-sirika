@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\PermitController;
+use App\Http\Controllers\PermitQrController;
 use App\Http\Controllers\RoadSegmentController;
 use App\Http\Controllers\ScanController;
 use App\Models\User;
@@ -48,6 +49,26 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:' . implode(',', User::rolesForRoute('permits.index')))->group(function () {
         Route::get('/permits', [PermitController::class, 'index'])->name('permits.index');
     });
+
+    Route::post('/permits/qr/bulk-generate', [PermitQrController::class, 'bulkGenerate'])
+        ->middleware('role:' . implode(',', User::rolesForRoute('permits.qr.bulk-generate')))
+        ->name('permits.qr.bulk-generate');
+
+    Route::post('/permits/{permit}/qr/generate', [PermitQrController::class, 'generate'])
+        ->middleware('role:' . implode(',', User::rolesForRoute('permits.qr.generate')))
+        ->name('permits.qr.generate');
+
+    Route::get('/permits/{permit}/qr', [PermitQrController::class, 'show'])
+        ->middleware('role:' . implode(',', User::rolesForRoute('permits.qr.show')))
+        ->name('permits.qr.show');
+
+    Route::post('/permits/{permit}/qr/print', [PermitQrController::class, 'print'])
+        ->middleware('role:' . implode(',', User::rolesForRoute('permits.qr.print')))
+        ->name('permits.qr.print');
+
+    Route::post('/permits/{permit}/qr/renew', [PermitQrController::class, 'renew'])
+        ->middleware('role:' . implode(',', User::rolesForRoute('permits.qr.renew')))
+        ->name('permits.qr.renew');
 
     Route::middleware('role:' . implode(',', User::rolesForRoute('scan.index')))->group(function () {
         Route::get('/scan', [ScanController::class, 'index'])->name('scan.index');

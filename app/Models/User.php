@@ -82,7 +82,26 @@ class User extends Authenticatable
             'permits.index' => [
                 self::ROLE_ADMIN_HR,
             ],
+            'permits.qr.generate' => [
+                self::ROLE_ADMIN_HR,
+            ],
+            'permits.qr.bulk-generate' => [
+                self::ROLE_ADMIN_HR,
+            ],
+            'permits.qr.show' => [
+                self::ROLE_ADMIN_HR,
+            ],
+            'permits.qr.print' => [
+                self::ROLE_ADMIN_HR,
+            ],
+            'permits.qr.renew' => [
+                self::ROLE_ADMIN_HR,
+            ],
             'scan.index' => [
+                self::ROLE_ADMIN_HR,
+                self::ROLE_SECURITY,
+            ],
+            'scan.verify' => [
                 self::ROLE_ADMIN_HR,
                 self::ROLE_SECURITY,
             ],

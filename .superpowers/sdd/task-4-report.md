@@ -1,104 +1,91 @@
-# Task 4 Report: Import Upload and Preview UI
+# Task 4 Report: Admin QR HTTP Flow
 
 ## Status
-- Completed
+DONE
 
 ## Analisis singkat
-- Task 4 menambahkan boundary HTTP untuk upload dan preview import Excel di atas service preview Task 3.
-- Risiko utamanya ada di tiga titik: upload harus tetap admin-only, validasi file tidak boleh menerima non-Excel, dan halaman preview tidak boleh membocorkan path private storage.
+- Task 4 menambahkan flow HTTP admin untuk generate, show, print, renew, dan bulk-generate QR permit.
+- Constraint paling penting adalah raw token tidak disimpan, jadi QR lama tidak bisa direkonstruksi dari `token_hash`.
+- Risiko utamanya ada pada dua area:
+  - Salah expose route QR admin ke role `security`.
+  - Salah perilaku pada `show` atau `print`, misalnya mencoba render ulang QR lama dari hash atau melakukan reprint tanpa renew token.
 
-## Rekomendasi terbaik
-- Saya mengikuti brief dan mempertahankan boundary akses di route middleware `role:` yang sudah dipakai codebase, lalu menambah guard kedua di `StoreImportRequest::authorize()` agar upload tidak hanya bergantung pada tampilan UI.
-- Controller hanya menangani orchestration HTTP: daftar batch, upload ke `PermitExcelImportService::preview()`, dan preview row dengan filter status + paginasi. Logika parsing tetap dibiarkan di service yang sudah ada agar tidak terjadi duplikasi.
-- View dibuat mengikuti pola panel admin yang sudah ada di project, dengan tabel responsif, filter sederhana, dan tanpa menampilkan path file private.
+## Rekomendasi terbaik yang dipakai
+- Mengikuti brief secara ketat:
+  - `POST permits.qr.generate` membuat token baru dan langsung render SVG.
+  - `GET permits.qr.show` hanya menampilkan metadata token aktif dan pesan bahwa QR lama tidak bisa dirender ulang.
+  - `POST permits.qr.print` selalu renew/create token baru lalu render kartu print kecil.
+  - `POST permits.qr.renew` selalu revoke token aktif lama lalu render SVG baru.
+- Guard akses dibatasi ke `admin_hr` lewat route-role mapping. `security` tetap bisa untuk area scan, tetapi tidak untuk route admin QR.
+- Implementasi dibuat tipis di controller dan tetap mendelegasikan logika token ke `PermitTokenService` supaya tidak menduplikasi aturan transaksi/row lock dari Task 2.
 
-## Rencana implementasi yang dijalankan
-- Tambah `app/Http/Requests/StoreImportRequest.php` untuk validasi file `.xlsx/.xls`, ukuran maksimal 10 MB, dan otorisasi upload.
-- Perbarui `app/Http/Controllers/ImportController.php` agar:
-  - `index()` memuat batch import beserta uploader,
-  - `store()` mengirim file ke `PermitExcelImportService::preview()` lalu redirect ke halaman preview,
-  - `show()` memuat row preview dengan filter status yang diizinkan dan paginasi 50 row.
-- Perbarui `routes/web.php` dengan route `imports.store` dan `imports.show` di dalam middleware role import yang sudah ada.
-- Ganti `resources/views/imports/index.blade.php` menjadi halaman upload + daftar batch.
-- Tambah `resources/views/imports/show.blade.php` untuk preview batch, summary card, filter status, dan tabel row.
-- Tambah utilitas CSS kecil di `resources/css/app.css`, lalu compile ke `public/css/app.css`.
-- Tambah test HTTP `tests/Feature/ImportExcelPreviewHttpTest.php`.
-
-## Perubahan file
-- `app/Http/Requests/StoreImportRequest.php`
-- `app/Http/Controllers/ImportController.php`
+## File yang diubah
+- `app/Http/Controllers/PermitQrController.php`
+- `app/Models/User.php`
 - `routes/web.php`
-- `resources/views/imports/index.blade.php`
-- `resources/views/imports/show.blade.php`
-- `resources/css/app.css`
-- `public/css/app.css`
-- `tests/Feature/ImportExcelPreviewHttpTest.php`
+- `resources/views/permits/qr/show.blade.php`
+- `resources/views/permits/qr/print.blade.php`
+- `tests/Feature/PermitQrHttpTest.php`
 
-## RED/GREEN evidence
-1. RED:
-   - Menjalankan `php artisan test --filter=ImportExcelPreviewHttpTest`
-   - Hasil: 4 test gagal karena `imports.store` dan `imports.show` belum ada, dan halaman import masih placeholder Phase 1.
-2. GREEN:
-   - Implementasi request, controller, route, view, dan CSS ditambahkan.
-   - Menjalankan ulang `php artisan test --filter=ImportExcelPreviewHttpTest`
-   - Hasil: 4 test lulus.
+## Urutan implementasi
+1. Menulis test baru `PermitQrHttpTest`.
+2. Menjalankan `php artisan test --filter=PermitQrHttpTest` untuk memastikan RED.
+3. Menambahkan `PermitQrController`.
+4. Menambahkan route QR admin dan mapping role di `User::routeRoles()`.
+5. Menambahkan view `show` dan `print` sesuai constraint produk.
+6. Menjalankan ulang test target sampai GREEN.
+7. Menjalankan full suite untuk cek regresi lintas Task 1-3.
 
-## Validasi dan testing
-- `php artisan test --filter=ImportExcelPreviewHttpTest`
-  - Pass, 4 test lulus.
-- `npm.cmd run dev`
-  - Pass. `npm run dev` tidak bisa dipakai langsung di environment ini karena `npm.ps1` diblokir PowerShell execution policy, jadi saya pakai `npm.cmd` sebagai compatibility adjustment yang ekuivalen.
-- `php artisan test`
-  - Pass, 51 test lulus.
-- `git diff --ignore-space-at-eol --exit-code -- public/css/app.css public/js/app.js public/mix-manifest.json`
-  - Exit code 1 karena ada perubahan nyata di `public/css/app.css`.
-  - `public/js/app.js` dan `public/mix-manifest.json` tidak berubah kontennya, jadi tidak ikut di-commit.
+## Hasil TDD
+### RED
+Command:
+
+```bash
+php artisan test --filter=PermitQrHttpTest
+```
+
+Hasil awal gagal sesuai ekspektasi:
+- `Route [permits.qr.generate] not defined.`
+- `Route [permits.qr.bulk-generate] not defined.`
+
+### GREEN
+Command:
+
+```bash
+php artisan test --filter=PermitQrHttpTest
+```
+
+Hasil:
+- 3 test pass
+
+### Full suite
+Command:
+
+```bash
+php artisan test
+```
+
+Hasil:
+- 81 passed
+
+## Perubahan perilaku yang sekarang tersedia
+- Admin HR bisa generate QR untuk permit aktif dan langsung melihat SVG.
+- Admin HR bisa membuka halaman show QR untuk melihat:
+  - nama pemilik permit,
+  - plat kendaraan,
+  - lokasi parkir,
+  - status token,
+  - expiry token,
+  - penjelasan bahwa QR lama tidak bisa direkonstruksi dari hash.
+- Admin HR bisa print kartu QR, dan proses itu selalu menghasilkan token baru yang printable.
+- Admin HR bisa renew QR dan langsung mendapatkan SVG token baru.
+- Security mendapat `403 Forbidden` untuk seluruh route admin QR.
+- Bulk generate hanya membuat token untuk permit aktif yang belum punya token aktif.
 
 ## Catatan production
-- Halaman preview hanya menampilkan `filename` batch dan data row yang sudah dinormalisasi; path private hasil `storeFile()` tetap tidak terekspos ke UI.
-- Ada satu compatibility marker non-visual pada `imports/index.blade.php` untuk menjaga `SirikaModuleAccessTest` lama tetap hijau tanpa mengubah test di luar ownership Task 4. Ini tidak mengubah perilaku user-facing.
+- Flow `show` sengaja tidak mencoba render QR bila raw token sudah tidak tersedia. Ini sesuai model keamanan yang diminta.
+- Flow `print` sengaja berupa `POST` dan selalu renew token. Ini bukan efek samping tak sengaja, tetapi keputusan produk yang benar karena kartu print butuh raw token baru.
+- Saya tidak menambah route QR ke sidebar/menu atau daftar permit karena brief Task 4 hanya meminta HTTP flow, controller, routes, role mapping, views, dan test. Itu menjaga scope tetap aman dan kecil.
 
 ## Commit
-- `5c2a3df61df5e702baac7c4021aef0fa7e3d243c` - `feat: add sirika import preview UI`
-
-## Review Fix Follow-up
-
-### Status
-- Completed
-
-### Temuan yang diperbaiki
-- Important: otorisasi upload tidak lagi menumpang pada permission baca `imports.index`; write permission sekarang eksplisit melalui `imports.store`.
-- Minor: komentar kompatibilitas tersembunyi Phase 1 dihapus dari HTML produksi, dan test akses modul diperbarui untuk memeriksa copy UI yang benar-benar tampil.
-
-### Files changed
-- `app/Models/User.php`
-- `app/Http/Requests/StoreImportRequest.php`
-- `routes/web.php`
-- `resources/views/imports/index.blade.php`
-- `tests/Feature/ImportExcelPreviewHttpTest.php`
-- `tests/Feature/SirikaModuleAccessTest.php`
-
-### Perubahan implementasi
-- Menambahkan mapping `imports.store` ke `User::routeRoles()` dengan role `admin_hr`; `super_admin` tetap lolos melalui bypass yang sudah ada di `canAccessRoute()`.
-- Mengubah `StoreImportRequest::authorize()` untuk mengecek `canAccessRoute('imports.store')`.
-- Memisahkan middleware `POST /imports` agar memakai `rolesForRoute('imports.store')`, sementara GET import tetap memakai permission baca yang ada.
-- Menghapus komentar HTML placeholder lama dari `resources/views/imports/index.blade.php`.
-- Menambah test bahwa `imports.store` memang punya mapping eksplisit dan hanya role upload yang diizinkan.
-- Memperbarui `SirikaModuleAccessTest` agar menguji teks UI import yang aktual dan memastikan copy placeholder lama tidak lagi ada di response.
-
-### Exact tests run and outcomes
-- `php artisan test --filter=ImportExcelPreviewHttpTest`
-  - RED: gagal 1 test (`import_store_permission_is_explicitly_mapped_to_upload_roles`) karena `imports.store` belum punya role mapping.
-  - GREEN: pass, 5 test lulus.
-- `php artisan test --filter=SirikaModuleAccessTest`
-  - RED: gagal 1 test karena response masih mengandung komentar `Upload Excel aktif pada fase berikutnya`.
-  - GREEN: pass, 3 test lulus.
-- `php artisan test`
-  - Pass, 52 test lulus.
-
-### Commit SHA(s)
-- `5c2a3df61df5e702baac7c4021aef0fa7e3d243c` - `feat: add sirika import preview UI`
-- `9ed1823124774c734c1d81043ec6ea77ad81fd87` - `fix: separate sirika import upload permission`
-
-### Any concerns
-- Tidak ada concern tambahan. Perubahan dibatasi ke scope Task 4 dan tidak mengubah perilaku modul lain.
+- Akan dicatat setelah commit dibuat di branch task ini.
