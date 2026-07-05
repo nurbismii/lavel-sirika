@@ -1,0 +1,105 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\ImportBatch;
+use App\Models\ImportRow;
+use App\Models\RoadSegment;
+use App\Models\User;
+use App\Services\Imports\PermitExcelImportService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Tests\TestCase;
+
+class ImportExcelPreviewTest extends TestCase
+{
+    use RefreshDatabase;
+
+    /** @test */
+    public function it_creates_preview_batch_from_excel_file()
+    {
+        $this->seedRoadSegments(['Y1', 'D2', 'Z1', 'D3']);
+
+        $admin = User::factory()->create([
+            'role' => User::ROLE_ADMIN_HR,
+            'status' => User::STATUS_ACTIVE,
+        ]);
+
+        $file = $this->excelFile([
+            ['', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+            ['VDNI Formulir', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+            ['序号 No', '摩托车牌号 Plat Motor', '姓名 Nama', '工号 Nik', '部门 Dep', '科室 Bagian', '岗位 Jabatan', '停放地点 Lokasi Parkir', '行驶路线 Rute Kendaraan', '进厂原因 Alasan Masuk', '通行证颜色 Warna kartu izin masuk', '联系方式 Nomor kontak', '审批结果 Hasil Persetujuan', 'KET', 'DIVISI'],
+            ['1', 'DT 4423 CI', 'FITRIAWATI', '200115677', 'GENERAL AFFAIR', 'GA KANTOR', 'ADMIN', 'GA-MES1-P01', 'Y1→D2→Z1→D3→GA-MES1-P01', 'OFFICE', 'BIRU 蓝色', '0812', '√', '', 'GENERAL AFFAIR'],
+            ['2', '', 'HARLINA', '211129282', 'GENERAL AFFAIR', 'GA KANTOR', 'ADMIN', 'GA-MES1-P01', 'Y1→D2', 'OFFICE', 'KUNING 黄色', '0813', '√', '', 'GENERAL AFFAIR'],
+            ['3', 'DT 9999 AA', 'JUMRAN', '16101080', 'GENERAL AFFAIR', 'GA KEBERSIHAN', 'ADMIN', 'GA-MES3-P01', '', 'OFFICE', 'MERAH 红色', '0814', '√', '', 'GENERAL AFFAIR'],
+        ]);
+
+        $batch = app(PermitExcelImportService::class)->preview($file, $admin);
+
+        $this->assertSame(ImportBatch::STATUS_PREVIEWED, $batch->fresh()->status);
+        $this->assertSame(3, $batch->fresh()->total_rows);
+        $this->assertSame(1, $batch->fresh()->success_rows);
+        $this->assertSame(1, $batch->fresh()->failed_rows);
+        $this->assertSame(1, $batch->fresh()->review_rows);
+        $this->assertSame(3, $batch->rows()->count());
+        $this->assertDatabaseHas('import_rows', ['row_number' => 4, 'status' => ImportRow::STATUS_VALID]);
+        $this->assertDatabaseHas('import_rows', ['row_number' => 5, 'status' => ImportRow::STATUS_INVALID]);
+        $this->assertDatabaseHas('import_rows', ['row_number' => 6, 'status' => ImportRow::STATUS_NEEDS_REVIEW]);
+    }
+
+    /** @test */
+    public function it_marks_batch_failed_when_header_is_missing()
+    {
+        $admin = User::factory()->create([
+            'role' => User::ROLE_ADMIN_HR,
+            'status' => User::STATUS_ACTIVE,
+        ]);
+
+        $file = $this->excelFile([
+            ['Wrong', 'Header'],
+            ['1', '2'],
+        ]);
+
+        $batch = app(PermitExcelImportService::class)->preview($file, $admin);
+
+        $this->assertSame(ImportBatch::STATUS_FAILED, $batch->fresh()->status);
+        $this->assertSame(0, $batch->rows()->count());
+        $this->assertStringContainsString('Header Excel tidak valid', $batch->fresh()->error_summary);
+    }
+
+    private function seedRoadSegments(array $codes)
+    {
+        foreach ($codes as $code) {
+            RoadSegment::create([
+                'code' => $code,
+                'name' => 'Jalan ' . $code,
+                'status' => 'active',
+            ]);
+        }
+    }
+
+    private function excelFile(array $rows)
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        foreach ($rows as $rowIndex => $row) {
+            foreach ($row as $columnIndex => $value) {
+                $sheet->setCellValueByColumnAndRow($columnIndex + 1, $rowIndex + 1, $value);
+            }
+        }
+
+        $path = tempnam(sys_get_temp_dir(), 'sirika-import-') . '.xlsx';
+        (new Xlsx($spreadsheet))->save($path);
+
+        return new UploadedFile(
+            $path,
+            'sample.xlsx',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            null,
+            true
+        );
+    }
+}
