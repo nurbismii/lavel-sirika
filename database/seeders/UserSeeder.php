@@ -18,15 +18,26 @@ class UserSeeder extends Seeder
         ];
 
         foreach ($users as $user) {
-            User::updateOrCreate(
-                ['email' => $user['email']],
-                [
-                    'name' => $user['name'],
-                    'password' => Hash::make('password'),
-                    'role' => $user['role'],
-                    'status' => User::STATUS_ACTIVE,
-                ]
-            );
+            $record = User::firstOrNew(['email' => $user['email']]);
+
+            $record->name = $user['name'];
+            $record->role = $user['role'];
+            $record->status = User::STATUS_ACTIVE;
+
+            if (! $this->hasValidPasswordHash($record->password ?? null)) {
+                $record->password = Hash::make('password');
+            }
+
+            $record->save();
         }
+    }
+
+    private function hasValidPasswordHash($password): bool
+    {
+        if (! is_string($password) || $password === '') {
+            return false;
+        }
+
+        return password_get_info($password)['algo'] !== 0;
     }
 }

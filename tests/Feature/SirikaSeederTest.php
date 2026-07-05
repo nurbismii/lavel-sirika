@@ -4,9 +4,11 @@ namespace Tests\Feature;
 
 use App\Models\RoadSegment;
 use App\Models\User;
+use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\RoadSegmentSeeder;
 use Database\Seeders\UserSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class SirikaSeederTest extends TestCase
@@ -54,5 +56,36 @@ class SirikaSeederTest extends TestCase
             'role' => User::ROLE_AUDITOR,
             'status' => User::STATUS_ACTIVE,
         ]);
+
+        $users = User::query()->get(['email', 'password']);
+
+        foreach ($users as $user) {
+            $this->assertTrue(Hash::check('password', $user->password), "Password hash mismatch for {$user->email}");
+        }
+    }
+
+    /** @test */
+    public function database_seeder_registers_starter_users_and_road_segments()
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $this->assertSame(4, User::count());
+        $this->assertSame(26, RoadSegment::count());
+    }
+
+    /** @test */
+    public function user_seeder_preserves_existing_password_hash_on_rerun()
+    {
+        $this->seed(UserSeeder::class);
+
+        $originalHash = User::query()
+            ->where('email', 'superadmin@sirika.local')
+            ->value('password');
+
+        $this->seed(UserSeeder::class);
+
+        $this->assertSame($originalHash, User::query()
+            ->where('email', 'superadmin@sirika.local')
+            ->value('password'));
     }
 }
