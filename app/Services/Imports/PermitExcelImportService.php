@@ -3,6 +3,7 @@
 namespace App\Services\Imports;
 
 use App\Imports\PermitExcelArrayImport;
+use Illuminate\Auth\Access\AuthorizationException;
 use App\Models\ImportBatch;
 use App\Models\ImportRow;
 use App\Models\RoadSegment;
@@ -26,7 +27,7 @@ class PermitExcelImportService
 
     public function preview(UploadedFile $file, User $user): ImportBatch
     {
-        $storedPath = $this->storeFile($file);
+        $this->authorizePreview($user);
 
         $batch = ImportBatch::create([
             'filename' => $file->getClientOriginalName(),
@@ -35,6 +36,7 @@ class PermitExcelImportService
         ]);
 
         try {
+            $storedPath = $this->storeFile($file);
             $sheets = Excel::toArray(new PermitExcelArrayImport(), $storedPath, 'local');
             $rows = $sheets[0] ?? [];
 
@@ -106,13 +108,19 @@ class PermitExcelImportService
         return $batch->fresh();
     }
 
-    private function storeFile(UploadedFile $file): string
+    protected function storeFile(UploadedFile $file): string
     {
         $directory = 'imports/' . date('Y/m');
         $extension = $file->getClientOriginalExtension() ?: 'xlsx';
         $filename = (string) Str::uuid() . '.' . $extension;
 
-        return $file->storeAs($directory, $filename, 'local');
+        $storedPath = $file->storeAs($directory, $filename, 'local');
+
+        if (!is_string($storedPath) || $storedPath === '') {
+            throw new \RuntimeException('Gagal menyimpan file upload ke private storage.');
+        }
+
+        return $storedPath;
     }
 
     private function isEmptyRow(array $row): bool
@@ -124,5 +132,17 @@ class PermitExcelImportService
         }
 
         return true;
+    }
+
+    private function authorizePreview(User $user): void
+    {
+        if (
+            $user->isActive()
+            && $user->hasAnyRole([User::ROLE_ADMIN_HR, User::ROLE_SUPER_ADMIN])
+        ) {
+            return;
+        }
+
+        throw new AuthorizationException('User tidak diizinkan melakukan preview import Excel.');
     }
 }

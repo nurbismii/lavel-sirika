@@ -7,10 +7,12 @@ use App\Models\ImportRow;
 use App\Models\RoadSegment;
 use App\Models\User;
 use App\Services\Imports\PermitExcelImportService;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use RuntimeException;
 use Tests\TestCase;
 
 class ImportExcelPreviewTest extends TestCase
@@ -44,6 +46,7 @@ class ImportExcelPreviewTest extends TestCase
         $this->assertSame(1, $batch->fresh()->failed_rows);
         $this->assertSame(1, $batch->fresh()->review_rows);
         $this->assertSame(3, $batch->rows()->count());
+        $this->assertNull($batch->fresh()->error_summary);
         $this->assertDatabaseHas('import_rows', ['row_number' => 4, 'status' => ImportRow::STATUS_VALID]);
         $this->assertDatabaseHas('import_rows', ['row_number' => 5, 'status' => ImportRow::STATUS_INVALID]);
         $this->assertDatabaseHas('import_rows', ['row_number' => 6, 'status' => ImportRow::STATUS_NEEDS_REVIEW]);
@@ -67,6 +70,59 @@ class ImportExcelPreviewTest extends TestCase
         $this->assertSame(ImportBatch::STATUS_FAILED, $batch->fresh()->status);
         $this->assertSame(0, $batch->rows()->count());
         $this->assertStringContainsString('Header Excel tidak valid', $batch->fresh()->error_summary);
+    }
+
+    /** @test */
+    public function it_rejects_preview_for_user_without_preview_access()
+    {
+        $user = User::factory()->create([
+            'role' => User::ROLE_SECURITY,
+            'status' => User::STATUS_ACTIVE,
+        ]);
+
+        $file = $this->excelFile([
+            ['Wrong', 'Header'],
+            ['1', '2'],
+        ]);
+
+        try {
+            app(PermitExcelImportService::class)->preview($file, $user);
+            $this->fail('Expected preview() to reject unauthorized uploader.');
+        } catch (AuthorizationException $exception) {
+            $this->assertSame(0, ImportBatch::count());
+            $this->assertStringContainsString('tidak diizinkan', $exception->getMessage());
+        }
+    }
+
+    /** @test */
+    public function it_marks_batch_failed_when_file_storage_fails()
+    {
+        $admin = User::factory()->create([
+            'role' => User::ROLE_ADMIN_HR,
+            'status' => User::STATUS_ACTIVE,
+        ]);
+
+        $file = $this->excelFile([
+            ['Wrong', 'Header'],
+            ['1', '2'],
+        ]);
+
+        $service = new class(
+            app(\App\Services\Imports\PermitImportHeaderMapper::class),
+            app(\App\Services\Imports\PermitImportRowNormalizer::class)
+        ) extends PermitExcelImportService {
+            protected function storeFile(UploadedFile $file): string
+            {
+                throw new RuntimeException('Simulated storage failure.');
+            }
+        };
+
+        $batch = $service->preview($file, $admin);
+
+        $this->assertSame(ImportBatch::STATUS_FAILED, $batch->fresh()->status);
+        $this->assertSame(1, ImportBatch::count());
+        $this->assertSame(0, $batch->rows()->count());
+        $this->assertStringContainsString('Simulated storage failure.', $batch->fresh()->error_summary);
     }
 
     private function seedRoadSegments(array $codes)
