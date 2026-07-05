@@ -88,4 +88,66 @@ Hasil:
 - Saya tidak menambah route QR ke sidebar/menu atau daftar permit karena brief Task 4 hanya meminta HTTP flow, controller, routes, role mapping, views, dan test. Itu menjaga scope tetap aman dan kecil.
 
 ## Commit
-- Akan dicatat setelah commit dibuat di branch task ini.
+- `a263e30 feat: add permit qr admin routes`
+
+---
+
+## Fix after review findings (2026-07-05)
+
+### Temuan yang diperbaiki
+1. `PermitQrController` sekarang menangani `InvalidArgumentException` dari `PermitTokenService` secara aman pada action `generate`, `print`, dan `renew`.
+2. Test HTTP diperkuat untuk:
+   - memastikan `show` menampilkan pesan bahwa QR lama tidak bisa dirender ulang dari hash yang tersimpan,
+   - memastikan `print` benar-benar merotasi token aktif, bukan hanya menampilkan SVG.
+
+### Analisis singkat
+- Masalah utama reviewer valid: exception domain dari service sebelumnya lolos ke HTTP layer dan berubah menjadi `500`.
+- Risiko perbaikannya adalah terlalu agresif menangkap semua exception. Itu saya hindari dengan hanya menangkap `InvalidArgumentException`, sehingga error tak terduga tetap terlihat dan tidak tertelan.
+
+### Perubahan implementasi
+- `app/Http/Controllers/PermitQrController.php`
+  - menambahkan catch khusus `InvalidArgumentException` pada `generate`, `print`, dan `renew`,
+  - failure path diarahkan ke `redirect()->back()->with('error', $message)`.
+- `tests/Feature/PermitQrHttpTest.php`
+  - `show` sekarang meng-assert pesan user-facing bahwa QR lama tidak bisa ditampilkan ulang,
+  - `print` sekarang meng-assert token aktif lama direvoke dan token aktif baru dibuat,
+  - menambahkan coverage duplicate generate,
+  - menambahkan coverage renew/print pada permit non-aktif agar redirect + flash error, bukan 500.
+
+### Hasil TDD
+#### RED
+Command:
+
+```bash
+php artisan test --filter=PermitQrHttpTest
+```
+
+Hasil awal gagal:
+- duplicate generate masih `500`,
+- renew/print untuk permit non-aktif masih `500`.
+
+#### GREEN
+Command:
+
+```bash
+php artisan test --filter=PermitQrHttpTest
+```
+
+Hasil:
+- 5 test pass
+
+#### Full suite
+Command:
+
+```bash
+php artisan test
+```
+
+Hasil:
+- 83 passed
+
+### Catatan production
+- Raw token tetap tidak disimpan.
+- `POST permits.qr.print` tetap sengaja merotasi token dan merender kartu baru.
+- `POST permits.qr.renew` tetap sengaja merotasi token dan merender QR SVG baru.
+- Role `security` tetap `403 Forbidden` untuk seluruh route admin QR.

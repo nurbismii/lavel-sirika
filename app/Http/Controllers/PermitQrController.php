@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\VehiclePermit;
 use App\Services\Permits\PermitTokenService;
+use InvalidArgumentException;
 
 class PermitQrController extends Controller
 {
@@ -16,7 +17,12 @@ class PermitQrController extends Controller
 
     public function generate(VehiclePermit $permit)
     {
-        $result = $this->tokens->generateForPermit($permit);
+        try {
+            $result = $this->tokens->generateForPermit($permit);
+        } catch (InvalidArgumentException $exception) {
+            return $this->redirectWithError($exception->getMessage());
+        }
+
         $permit->load(['employee', 'vehicle', 'parkingLocation', 'activeToken']);
 
         return view('permits.qr.show', [
@@ -51,7 +57,12 @@ class PermitQrController extends Controller
 
     public function print(VehiclePermit $permit)
     {
-        $result = $this->tokens->renewForPermit($permit);
+        try {
+            $result = $this->tokens->renewForPermit($permit);
+        } catch (InvalidArgumentException $exception) {
+            return $this->redirectWithError($exception->getMessage());
+        }
+
         $permit->load(['employee', 'vehicle', 'parkingLocation']);
 
         return view('permits.qr.print', [
@@ -63,7 +74,12 @@ class PermitQrController extends Controller
 
     public function renew(VehiclePermit $permit)
     {
-        $result = $this->tokens->renewForPermit($permit);
+        try {
+            $result = $this->tokens->renewForPermit($permit);
+        } catch (InvalidArgumentException $exception) {
+            return $this->redirectWithError($exception->getMessage());
+        }
+
         $permit->load(['employee', 'vehicle', 'parkingLocation']);
 
         return view('permits.qr.show', [
@@ -71,5 +87,12 @@ class PermitQrController extends Controller
             'token' => $result['permit_token'],
             'qrSvg' => $result['qr_svg'],
         ]);
+    }
+
+    private function redirectWithError(string $message)
+    {
+        return redirect()
+            ->back()
+            ->with('error', $message);
     }
 }
