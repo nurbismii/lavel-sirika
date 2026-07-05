@@ -36,6 +36,28 @@ class SirikaModuleAccessTest extends TestCase
             ->assertOk()
             ->assertSee('Izin Kendaraan')
             ->assertSee('Manajemen izin aktif pada fase berikutnya');
+
+        $this->actingAs($admin)->get('/scan')
+            ->assertOk()
+            ->assertSee('Scan QR')
+            ->assertSee('Scanner kamera aktif pada fase berikutnya');
+    }
+
+    /** @test */
+    public function auditor_can_view_road_segments()
+    {
+        $this->seed(RoadSegmentSeeder::class);
+
+        $auditor = User::factory()->create([
+            'role' => User::ROLE_AUDITOR,
+            'status' => User::STATUS_ACTIVE,
+        ]);
+
+        $this->actingAs($auditor)->get('/road-segments')
+            ->assertOk()
+            ->assertSee('Master Segmen Rute')
+            ->assertSee('Y1')
+            ->assertSee('H2');
     }
 
     /** @test */

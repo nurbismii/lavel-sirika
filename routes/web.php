@@ -37,7 +37,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/permits', [PermitController::class, 'index'])->name('permits.index');
     });
 
-    Route::middleware('role:' . User::ROLE_SECURITY)->group(function () {
+    Route::middleware('role:' . User::ROLE_SECURITY . ',' . User::ROLE_ADMIN_HR)->group(function () {
         Route::get('/scan', [ScanController::class, 'index'])->name('scan.index');
     });
 });
