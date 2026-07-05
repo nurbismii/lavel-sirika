@@ -15,6 +15,8 @@ use RuntimeException;
 
 class PermitImportCommitService
 {
+    private const MAX_PARKING_LOCATION_CODE_LENGTH = 64;
+
     public function commit(ImportBatch $batch): ImportBatch
     {
         return DB::transaction(function () use ($batch) {
@@ -76,22 +78,17 @@ class PermitImportCommitService
 
         $vehicle = $this->resolveVehicle($employee, $data['plate_number']);
 
-        $parkingLocation = null;
-        if (! empty($data['parking_location_code'])) {
-            $parkingLocation = ParkingLocation::query()->firstOrCreate(
-                ['code' => $data['parking_location_code']],
-                [
-                    'name' => $data['parking_location_code'],
-                    'status' => 'active',
-                ]
-            );
-        }
+        $warnings = $row->warnings ?: [];
+        $parkingLocation = $this->resolveParkingLocation($data['parking_location_code'] ?? null, $warnings);
 
         $permitStatus = $row->status === ImportRow::STATUS_VALID
             ? VehiclePermit::STATUS_ACTIVE
             : VehiclePermit::STATUS_NEEDS_REVIEW;
 
-        $warnings = $row->warnings ?: [];
+        if ($parkingLocation === null && $this->hasUnsafeParkingLocation($data['parking_location_code'] ?? null)) {
+            $permitStatus = VehiclePermit::STATUS_NEEDS_REVIEW;
+        }
+
         if ($this->findExistingActivePermit($vehicle->id) !== null) {
             $permitStatus = VehiclePermit::STATUS_NEEDS_REVIEW;
             $warnings[] = 'Kendaraan sudah memiliki izin aktif, perlu review sebelum aktivasi.';
@@ -168,6 +165,36 @@ class PermitImportCommitService
             ->where('plate_number', $plateNumber)
             ->lockForUpdate()
             ->first();
+    }
+
+    private function resolveParkingLocation($parkingCode, array &$warnings): ?ParkingLocation
+    {
+        $parkingCode = trim((string) $parkingCode);
+
+        if ($parkingCode === '') {
+            return null;
+        }
+
+        if ($this->hasUnsafeParkingLocation($parkingCode)) {
+            $warnings[] = 'Lokasi parkir terlalu panjang untuk master data, perlu review manual.';
+
+            return null;
+        }
+
+        return ParkingLocation::query()->firstOrCreate(
+            ['code' => $parkingCode],
+            [
+                'name' => $parkingCode,
+                'status' => 'active',
+            ]
+        );
+    }
+
+    private function hasUnsafeParkingLocation($parkingCode): bool
+    {
+        $parkingCode = trim((string) $parkingCode);
+
+        return $parkingCode !== '' && strlen($parkingCode) > self::MAX_PARKING_LOCATION_CODE_LENGTH;
     }
 
     private function findExistingActivePermit(int $vehicleId): ?VehiclePermit

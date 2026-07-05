@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Employee;
 use App\Models\ImportBatch;
 use App\Models\ImportRow;
+use App\Models\ParkingLocation;
 use App\Models\RoadSegment;
 use App\Models\User;
 use App\Models\Vehicle;
@@ -184,6 +185,52 @@ class ImportCommitTest extends TestCase
         $this->assertSame(ImportRow::STATUS_COMMITTED, $row->status);
         $this->assertContains(
             'Kendaraan sudah memiliki izin aktif, perlu review sebelum aktivasi.',
+            $row->warnings
+        );
+    }
+
+    /** @test */
+    public function it_downgrades_rows_with_unsafe_parking_code_without_creating_parking_location()
+    {
+        $admin = $this->admin();
+        $batch = $this->batch($admin, [
+            'success_rows' => 1,
+            'total_rows' => 1,
+        ]);
+
+        $longParkingCode = str_repeat('PLTU-OF-P01 ', 7);
+
+        $row = $this->row($batch, 5, ImportRow::STATUS_VALID, [
+            'nik' => '200115677',
+            'employee_name' => 'FITRIAWATI',
+            'department' => 'GENERAL AFFAIR',
+            'section' => 'GA KANTOR',
+            'position' => 'ADMIN',
+            'division' => 'GENERAL AFFAIR',
+            'contact_number' => '0812',
+            'plate_number' => 'DT 4423 CI',
+            'parking_location_code' => $longParkingCode,
+            'route_raw' => 'Y1',
+            'route_segment_codes' => [],
+            'reason' => 'OFFICE',
+            'permit_color' => 'biru',
+            'approval_status' => 'approved',
+            'notes' => '',
+        ]);
+
+        app(PermitImportCommitService::class)->commit($batch);
+
+        $permit = VehiclePermit::where('source_import_id', $batch->id)->first();
+
+        $this->assertSame(0, ParkingLocation::count());
+        $this->assertNotNull($permit);
+        $this->assertNull($permit->parking_location_id);
+        $this->assertSame(VehiclePermit::STATUS_NEEDS_REVIEW, $permit->status);
+
+        $row->refresh();
+        $this->assertSame(ImportRow::STATUS_COMMITTED, $row->status);
+        $this->assertContains(
+            'Lokasi parkir terlalu panjang untuk master data, perlu review manual.',
             $row->warnings
         );
     }
