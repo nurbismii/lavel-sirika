@@ -216,6 +216,81 @@ class ImportCommitTest extends TestCase
     }
 
     /** @test */
+    public function it_rejects_commit_when_batch_has_no_committable_rows()
+    {
+        $admin = $this->admin();
+        $batch = $this->batch($admin, [
+            'failed_rows' => 2,
+            'total_rows' => 2,
+        ]);
+
+        $this->row($batch, 5, ImportRow::STATUS_INVALID, [
+            'nik' => '99887766',
+            'employee_name' => 'INVALID ROW 1',
+            'plate_number' => '',
+        ], ['Plat motor wajib diisi']);
+        $this->row($batch, 6, ImportRow::STATUS_INVALID, [
+            'nik' => '99887767',
+            'employee_name' => 'INVALID ROW 2',
+            'plate_number' => '',
+        ], ['Plat motor wajib diisi']);
+
+        try {
+            app(PermitImportCommitService::class)->commit($batch);
+            $this->fail('Expected invalid-only batch to be rejected.');
+        } catch (RuntimeException $exception) {
+            $this->assertSame('Batch tidak memiliki baris valid untuk dikomit.', $exception->getMessage());
+        }
+
+        $this->assertSame(ImportBatch::STATUS_PREVIEWED, $batch->fresh()->status);
+        $this->assertSame(0, Employee::count());
+        $this->assertSame(0, Vehicle::count());
+        $this->assertSame(0, VehiclePermit::count());
+    }
+
+    /** @test */
+    public function it_rejects_commit_when_committable_row_lacks_minimum_data()
+    {
+        $admin = $this->admin();
+        $batch = $this->batch($admin, [
+            'success_rows' => 1,
+            'total_rows' => 1,
+        ]);
+
+        $row = $this->row($batch, 5, ImportRow::STATUS_VALID, [
+            'nik' => '200115677',
+            'employee_name' => 'FITRIAWATI',
+            'department' => 'GENERAL AFFAIR',
+            'section' => 'GA KANTOR',
+            'position' => 'ADMIN',
+            'division' => 'GENERAL AFFAIR',
+            'contact_number' => '0812',
+            'plate_number' => '',
+            'parking_location_code' => '',
+            'route_raw' => '',
+            'route_segment_codes' => [],
+            'reason' => 'OFFICE',
+            'permit_color' => 'biru',
+            'approval_status' => 'approved',
+            'notes' => '',
+        ]);
+
+        try {
+            app(PermitImportCommitService::class)->commit($batch);
+            $this->fail('Expected malformed committable row to block commit.');
+        } catch (RuntimeException $exception) {
+            $this->assertSame('Batch tidak memiliki baris valid untuk dikomit.', $exception->getMessage());
+        }
+
+        $row->refresh();
+        $this->assertSame(ImportRow::STATUS_VALID, $row->status);
+        $this->assertSame(ImportBatch::STATUS_PREVIEWED, $batch->fresh()->status);
+        $this->assertSame(0, Employee::count());
+        $this->assertSame(0, Vehicle::count());
+        $this->assertSame(0, VehiclePermit::count());
+    }
+
+    /** @test */
     public function commit_route_is_explicitly_limited_to_admin_hr_and_super_admin_override()
     {
         $this->assertSame([User::ROLE_ADMIN_HR], User::rolesForRoute('imports.commit'));
@@ -279,6 +354,77 @@ class ImportCommitTest extends TestCase
             ->assertSessionHas('status', 'Batch import berhasil dikomit.');
 
         $this->assertSame(ImportBatch::STATUS_COMMITTED, $batch->fresh()->status);
+    }
+
+    /** @test */
+    public function admin_http_commit_rejects_batch_without_committable_rows()
+    {
+        $admin = $this->admin();
+        $batch = $this->batch($admin, [
+            'failed_rows' => 1,
+            'total_rows' => 1,
+        ]);
+
+        $this->row($batch, 5, ImportRow::STATUS_INVALID, [
+            'nik' => '99887766',
+            'employee_name' => 'INVALID ROW',
+            'plate_number' => '',
+        ], ['Plat motor wajib diisi']);
+
+        $this->actingAs($admin)
+            ->post(route('imports.commit', $batch))
+            ->assertRedirect(route('imports.show', $batch))
+            ->assertSessionHas('status', 'Batch tidak memiliki baris valid untuk dikomit.');
+
+        $this->assertSame(ImportBatch::STATUS_PREVIEWED, $batch->fresh()->status);
+        $this->assertSame(0, VehiclePermit::count());
+    }
+
+    /** @test */
+    public function preview_shows_commit_button_only_for_previewed_batches_with_valid_or_review_rows()
+    {
+        $admin = $this->admin();
+
+        $readyBatch = $this->batch($admin, [
+            'success_rows' => 1,
+            'total_rows' => 1,
+        ]);
+        $emptyBatch = $this->batch($admin, [
+            'filename' => 'empty.xlsx',
+            'total_rows' => 0,
+        ]);
+        $invalidOnlyBatch = $this->batch($admin, [
+            'filename' => 'invalid-only.xlsx',
+            'failed_rows' => 2,
+            'total_rows' => 2,
+        ]);
+        $committedBatch = $this->batch($admin, [
+            'filename' => 'committed.xlsx',
+            'success_rows' => 1,
+            'total_rows' => 1,
+            'status' => ImportBatch::STATUS_COMMITTED,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('imports.show', $readyBatch))
+            ->assertOk()
+            ->assertSee('Commit Data Aman')
+            ->assertSee(route('imports.commit', $readyBatch), false);
+
+        $this->actingAs($admin)
+            ->get(route('imports.show', $emptyBatch))
+            ->assertOk()
+            ->assertDontSee('Commit Data Aman');
+
+        $this->actingAs($admin)
+            ->get(route('imports.show', $invalidOnlyBatch))
+            ->assertOk()
+            ->assertDontSee('Commit Data Aman');
+
+        $this->actingAs($admin)
+            ->get(route('imports.show', $committedBatch))
+            ->assertOk()
+            ->assertDontSee('Commit Data Aman');
     }
 
     private function admin(): User

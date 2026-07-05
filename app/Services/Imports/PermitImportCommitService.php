@@ -36,6 +36,10 @@ class PermitImportCommitService
                 ->orderBy('row_number')
                 ->get();
 
+            if ($rows->isEmpty()) {
+                throw new RuntimeException('Batch tidak memiliki baris valid untuk dikomit.');
+            }
+
             foreach ($rows as $row) {
                 $this->commitRow($lockedBatch, $row);
             }
@@ -53,7 +57,7 @@ class PermitImportCommitService
         $data = $row->normalized_data ?: [];
 
         if (! $this->hasMinimumData($data)) {
-            return;
+            throw new RuntimeException('Batch tidak memiliki baris valid untuk dikomit.');
         }
 
         $employee = Employee::query()->firstOrCreate(
@@ -79,6 +83,11 @@ class PermitImportCommitService
                 'status' => 'active',
             ]
         );
+        // Locking the resolved vehicle row serializes commits that target the same vehicle.
+        $vehicle = Vehicle::query()
+            ->whereKey($vehicle->id)
+            ->lockForUpdate()
+            ->firstOrFail();
 
         $parkingLocation = null;
         if (! empty($data['parking_location_code'])) {
@@ -96,7 +105,7 @@ class PermitImportCommitService
             : VehiclePermit::STATUS_NEEDS_REVIEW;
 
         $warnings = $row->warnings ?: [];
-        if ($this->hasExistingActivePermit($vehicle->id)) {
+        if ($this->findExistingActivePermit($vehicle->id) !== null) {
             $permitStatus = VehiclePermit::STATUS_NEEDS_REVIEW;
             $warnings[] = 'Kendaraan sudah memiliki izin aktif, perlu review sebelum aktivasi.';
         }
@@ -134,12 +143,13 @@ class PermitImportCommitService
             && ! empty($data['plate_number']);
     }
 
-    private function hasExistingActivePermit(int $vehicleId): bool
+    private function findExistingActivePermit(int $vehicleId): ?VehiclePermit
     {
         return VehiclePermit::query()
             ->where('vehicle_id', $vehicleId)
             ->where('status', VehiclePermit::STATUS_ACTIVE)
-            ->exists();
+            ->lockForUpdate()
+            ->first();
     }
 
     private function attachRouteSegments(VehiclePermit $permit, array $codes): void
