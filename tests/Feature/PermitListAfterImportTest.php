@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Employee;
 use App\Models\ParkingLocation;
+use App\Models\PermitToken;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\VehiclePermit;
@@ -58,7 +59,56 @@ class PermitListAfterImportTest extends TestCase
             ->assertSee('FITRIAWATI')
             ->assertSee('DT 4423 CI')
             ->assertSee('GA-MES1-P01')
-            ->assertSee('active');
+            ->assertSee('active')
+            ->assertSee('Status QR')
+            ->assertSee('Belum dibuat')
+            ->assertSee('Generate QR')
+            ->assertSee('Bulk Generate QR Aktif');
+    }
+
+    /** @test */
+    public function admin_sees_qr_active_status_and_actions_when_permit_has_token()
+    {
+        $admin = User::factory()->create([
+            'role' => User::ROLE_ADMIN_HR,
+            'status' => User::STATUS_ACTIVE,
+        ]);
+
+        $employee = Employee::create([
+            'nik' => '200115678',
+            'name' => 'QR READY USER',
+            'status' => 'active',
+        ]);
+
+        $vehicle = Vehicle::create([
+            'employee_id' => $employee->id,
+            'plate_number' => 'DT 8899 QA',
+            'vehicle_type' => 'motorcycle',
+            'status' => 'active',
+        ]);
+
+        $permit = VehiclePermit::create([
+            'employee_id' => $employee->id,
+            'vehicle_id' => $vehicle->id,
+            'permit_color' => 'hijau',
+            'approval_status' => 'approved',
+            'status' => VehiclePermit::STATUS_ACTIVE,
+            'source' => 'import',
+        ]);
+
+        PermitToken::create([
+            'vehicle_permit_id' => $permit->id,
+            'token_hash' => hash('sha256', 'ready-token'),
+            'status' => PermitToken::STATUS_ACTIVE,
+            'expires_at' => now()->addYear(),
+        ]);
+
+        $this->actingAs($admin)->get(route('permits.index'))
+            ->assertOk()
+            ->assertSee('QR Aktif')
+            ->assertSee('Lihat QR')
+            ->assertSee('Print')
+            ->assertSee('Renew');
     }
 
     /** @test */

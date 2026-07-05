@@ -9,7 +9,7 @@ class PermitController extends Controller
     public function index()
     {
         return view('permits.index', [
-            'permits' => VehiclePermit::with(['employee', 'vehicle', 'parkingLocation'])
+            'permits' => VehiclePermit::with(['employee', 'vehicle', 'parkingLocation', 'activeToken', 'latestToken'])
                 ->latest()
                 ->paginate(25),
         ]);

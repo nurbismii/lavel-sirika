@@ -12,14 +12,14 @@
             <p class="panel-subtitle">Token mentah tidak disimpan. QR tampil saat generate atau renew; cetak ulang akan membuat token baru.</p>
 
             @if ($qrSvg)
-                <div class="layout-gap">{!! $qrSvg !!}</div>
+                <div class="layout-gap permit-card__qr">{!! $qrSvg !!}</div>
             @else
                 <x-alert type="info" class="layout-gap">
                     QR lama tidak bisa ditampilkan ulang karena token mentah tidak disimpan. Gunakan renew untuk membuat QR baru.
                 </x-alert>
             @endif
 
-            <dl class="layout-gap">
+            <dl class="layout-gap detail-grid">
                 <div>
                     <dt>Nama</dt>
                     <dd>{{ optional($permit->employee)->name ?? '-' }}</dd>
@@ -42,7 +42,7 @@
                 </div>
             </dl>
 
-            <div class="quick-actions layout-gap">
+            <div class="quick-actions layout-gap no-print">
                 <a class="button" href="{{ route('permits.index') }}">Kembali</a>
 
                 <form method="POST" action="{{ route('permits.qr.renew', $permit) }}">

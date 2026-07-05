@@ -7,22 +7,32 @@
 
 @section('content')
     <section class="page-section panel">
-        <div class="panel-body">
-            <p>SIRIKA VDNI</p>
-            <p>Plat</p>
-            <p>{{ optional($permit->vehicle)->plate_number ?? '-' }}</p>
-            <p>Nama</p>
-            <p>{{ optional($permit->employee)->name ?? '-' }}</p>
-            <p>Parkir</p>
-            <p>{{ optional($permit->parkingLocation)->code ?? '-' }}</p>
-            <p>Berlaku sampai</p>
-            <p>{{ optional($token->expires_at)->format('d M Y') ?? '-' }}</p>
+        <div class="panel-body permit-card-print">
+            <p class="panel-subtitle">Cetak ulang selalu membuat token QR baru. Simpan kartu terbaru dan abaikan kartu lama.</p>
 
-            <div class="layout-gap">
-                {!! $qrSvg !!}
+            <div class="layout-gap permit-card">
+                <div>
+                    <p class="permit-card__brand">SIRIKA VDNI</p>
+
+                    <p class="permit-card__label">Plat</p>
+                    <p class="permit-card__value">{{ optional($permit->vehicle)->plate_number ?? '-' }}</p>
+
+                    <p class="permit-card__label">Nama</p>
+                    <p class="permit-card__value">{{ optional($permit->employee)->name ?? '-' }}</p>
+
+                    <p class="permit-card__label">Parkir</p>
+                    <p class="permit-card__value">{{ optional($permit->parkingLocation)->code ?? '-' }}</p>
+
+                    <p class="permit-card__label">Berlaku sampai</p>
+                    <p class="permit-card__value">{{ optional($token->expires_at)->format('d M Y') ?? '-' }}</p>
+                </div>
+
+                <div class="permit-card__qr">
+                    {!! $qrSvg !!}
+                </div>
             </div>
 
-            <div class="quick-actions layout-gap">
+            <div class="quick-actions layout-gap no-print">
                 <button class="button button-primary" type="button" onclick="window.print()">Print</button>
                 <a class="button" href="{{ route('permits.qr.show', $permit) }}">Kembali</a>
             </div>
