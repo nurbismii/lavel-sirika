@@ -2,20 +2,51 @@
 
 @php
     $pageTitle = 'Izin Kendaraan';
-    $pageDescription = 'Persiapan manajemen izin masuk kendaraan.';
+    $pageDescription = 'Daftar izin kendaraan hasil import dan status review.';
 @endphp
 
 @section('content')
     <section class="page-section panel">
         <div class="panel-body">
-            <h2 class="panel-title">Status Modul</h2>
-            <p class="panel-subtitle">Manajemen izin aktif pada fase berikutnya. Phase 1 menyiapkan tabel vehicle_permits, permit_route_segments, dan permit_tokens.</p>
+            <h2 class="panel-title">Daftar Izin</h2>
+            <p class="panel-subtitle">Tampilan read-only untuk izin kendaraan yang sudah masuk ke tabel final.</p>
 
-            <ul>
-                <li>Status izin yang disiapkan: draft, needs_review, active, suspended, expired, revoked.</li>
-                <li>QR hanya akan dibuat untuk izin active pada fase QR.</li>
-                <li>Rute mentah dari Excel akan disimpan di route_raw pada fase import.</li>
-            </ul>
+            <div class="table-wrap layout-gap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>NIK</th>
+                            <th>Nama</th>
+                            <th>Plat</th>
+                            <th>Parkir</th>
+                            <th>Warna</th>
+                            <th>Status</th>
+                            <th>Sumber</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($permits as $permit)
+                            <tr>
+                                <td>{{ optional($permit->employee)->nik ?? '-' }}</td>
+                                <td>{{ optional($permit->employee)->name ?? '-' }}</td>
+                                <td>{{ optional($permit->vehicle)->plate_number ?? '-' }}</td>
+                                <td>{{ optional($permit->parkingLocation)->code ?? '-' }}</td>
+                                <td>{{ $permit->permit_color ?? '-' }}</td>
+                                <td><span class="status-pill">{{ $permit->status ?? '-' }}</span></td>
+                                <td>{{ $permit->source ?? '-' }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="7">Belum ada data izin kendaraan. Gunakan modul Import Excel untuk membuat data awal.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pagination-wrap">
+                {{ $permits->links() }}
+            </div>
         </div>
     </section>
 @endsection

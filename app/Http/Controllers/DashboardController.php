@@ -18,7 +18,7 @@ class DashboardController extends Controller
             'activeUsers' => User::where('status', User::STATUS_ACTIVE)->count(),
             'activePermits' => VehiclePermit::where('status', VehiclePermit::STATUS_ACTIVE)->count(),
             'reviewPermits' => VehiclePermit::where('status', VehiclePermit::STATUS_NEEDS_REVIEW)->count(),
-            'todayScans' => ScanLog::whereDate('scanned_at', today())->count(),
+            'todayScans' => ScanLog::whereDate('scanned_at', now()->toDateString())->count(),
         ]);
     }
 }

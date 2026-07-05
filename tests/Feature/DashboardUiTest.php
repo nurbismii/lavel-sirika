@@ -31,7 +31,7 @@ class DashboardUiTest extends TestCase
             ->assertSee('Dashboard SIRIKA')
             ->assertSee('26')
             ->assertSee('Segmen Rute Aktif')
-            ->assertSee('Belum ada data izin')
+            ->assertSee('Data izin aktif pada tabel final')
             ->assertSee('Scanner belum aktif')
             ->assertSee('href="' . route('dashboard') . '"', false);
 

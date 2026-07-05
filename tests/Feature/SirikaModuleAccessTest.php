@@ -37,7 +37,9 @@ class SirikaModuleAccessTest extends TestCase
         $this->actingAs($admin)->get('/permits')
             ->assertOk()
             ->assertSee('Izin Kendaraan')
-            ->assertSee('Manajemen izin aktif pada fase berikutnya');
+            ->assertSee('Daftar izin kendaraan hasil import dan status review.')
+            ->assertSee('Daftar Izin')
+            ->assertSee('Belum ada data izin kendaraan. Gunakan modul Import Excel untuk membuat data awal.');
 
         $this->actingAs($admin)->get('/scan')
             ->assertOk()
