@@ -34,9 +34,12 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('role:' . implode(',', User::rolesForRoute('imports.index')))->group(function () {
         Route::get('/imports', [ImportController::class, 'index'])->name('imports.index');
-        Route::post('/imports', [ImportController::class, 'store'])->name('imports.store');
         Route::get('/imports/{importBatch}', [ImportController::class, 'show'])->name('imports.show');
     });
+
+    Route::post('/imports', [ImportController::class, 'store'])
+        ->middleware('role:' . implode(',', User::rolesForRoute('imports.store')))
+        ->name('imports.store');
 
     Route::middleware('role:' . implode(',', User::rolesForRoute('permits.index')))->group(function () {
         Route::get('/permits', [PermitController::class, 'index'])->name('permits.index');

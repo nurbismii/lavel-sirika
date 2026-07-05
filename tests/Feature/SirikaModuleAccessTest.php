@@ -30,7 +30,9 @@ class SirikaModuleAccessTest extends TestCase
         $this->actingAs($admin)->get('/imports')
             ->assertOk()
             ->assertSee('Import Excel')
-            ->assertSee('Upload Excel aktif pada fase berikutnya');
+            ->assertSee('Upload Excel')
+            ->assertSee('Daftar Batch Import')
+            ->assertDontSee('Upload Excel aktif pada fase berikutnya');
 
         $this->actingAs($admin)->get('/permits')
             ->assertOk()

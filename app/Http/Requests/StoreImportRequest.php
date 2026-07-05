@@ -8,7 +8,7 @@ class StoreImportRequest extends FormRequest
 {
     public function authorize()
     {
-        return $this->user() !== null && $this->user()->canAccessRoute('imports.index');
+        return $this->user() !== null && $this->user()->canAccessRoute('imports.store');
     }
 
     public function rules()

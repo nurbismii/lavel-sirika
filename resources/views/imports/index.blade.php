@@ -10,7 +10,6 @@
         <div class="panel-body">
             <h2 class="panel-title">Upload Excel</h2>
             <p class="panel-subtitle">Format yang diterima: .xlsx atau .xls, maksimal 10 MB. Data akan masuk preview terlebih dahulu.</p>
-            <!-- Upload Excel aktif pada fase berikutnya -->
 
             <form method="POST" action="{{ route('imports.store') }}" enctype="multipart/form-data" class="form-stack">
                 @csrf
