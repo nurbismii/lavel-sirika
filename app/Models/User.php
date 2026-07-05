@@ -25,7 +25,6 @@ class User extends Authenticatable
         'password',
         'role',
         'status',
-        'last_login_at',
     ];
 
     protected $hidden = [
@@ -51,5 +50,56 @@ class User extends Authenticatable
     public function isActive()
     {
         return $this->status === self::STATUS_ACTIVE;
+    }
+
+    public static function dashboardRoles()
+    {
+        return [
+            self::ROLE_SUPER_ADMIN,
+            self::ROLE_ADMIN_HR,
+            self::ROLE_SECURITY,
+            self::ROLE_AUDITOR,
+        ];
+    }
+
+    public static function routeRoles()
+    {
+        return [
+            'dashboard' => self::dashboardRoles(),
+            'road-segments.index' => [
+                self::ROLE_ADMIN_HR,
+                self::ROLE_AUDITOR,
+            ],
+            'imports.index' => [
+                self::ROLE_ADMIN_HR,
+            ],
+            'permits.index' => [
+                self::ROLE_ADMIN_HR,
+            ],
+            'scan.index' => [
+                self::ROLE_ADMIN_HR,
+                self::ROLE_SECURITY,
+            ],
+        ];
+    }
+
+    public static function rolesForRoute($routeName)
+    {
+        $routeRoles = static::routeRoles();
+
+        return $routeRoles[$routeName] ?? [];
+    }
+
+    public function canAccessRoute($routeName)
+    {
+        if (! $this->isActive()) {
+            return false;
+        }
+
+        if ($this->hasRole(self::ROLE_SUPER_ADMIN)) {
+            return true;
+        }
+
+        return $this->hasAnyRole(static::rolesForRoute($routeName));
     }
 }

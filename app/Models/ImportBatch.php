@@ -17,6 +17,13 @@ class ImportBatch extends Model
         'error_summary',
     ];
 
+    protected $casts = [
+        'total_rows' => 'integer',
+        'success_rows' => 'integer',
+        'failed_rows' => 'integer',
+        'review_rows' => 'integer',
+    ];
+
     public function uploader()
     {
         return $this->belongsTo(User::class, 'uploaded_by');

@@ -128,4 +128,24 @@ class SirikaModelRelationshipTest extends TestCase
         $this->assertSame($permit->id, $scanLog->permit->id);
         $this->assertSame($scanner->id, $scanLog->scanner->id);
     }
+
+    /** @test */
+    public function import_batch_row_counters_are_cast_to_integers()
+    {
+        $batch = ImportBatch::create([
+            'filename' => 'permit-import.csv',
+            'total_rows' => '10',
+            'success_rows' => '8',
+            'failed_rows' => '1',
+            'review_rows' => '1',
+            'status' => 'processed',
+        ]);
+
+        $batch->refresh();
+
+        $this->assertIsInt($batch->total_rows);
+        $this->assertIsInt($batch->success_rows);
+        $this->assertIsInt($batch->failed_rows);
+        $this->assertIsInt($batch->review_rows);
+    }
 }

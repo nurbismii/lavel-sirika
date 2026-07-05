@@ -23,7 +23,7 @@
                         </a>
                     </li>
                     @php
-                        $pendingModules = [
+                        $visibleModules = [
                             ['label' => 'Master Rute', 'route' => 'road-segments.index'],
                             ['label' => 'Import Excel', 'route' => 'imports.index'],
                             ['label' => 'Izin Kendaraan', 'route' => 'permits.index'],
@@ -31,17 +31,12 @@
                         ];
                     @endphp
 
-                    @foreach ($pendingModules as $module)
+                    @foreach ($visibleModules as $module)
                         <li>
-                            @if (Route::has($module['route']))
+                            @if (auth()->user()->canAccessRoute($module['route']))
                                 <a class="nav-link {{ request()->routeIs($module['route']) ? 'active' : '' }}" href="{{ route($module['route']) }}">
                                     {{ $module['label'] }}
                                 </a>
-                            @else
-                                <span class="nav-link nav-link--disabled" aria-disabled="true">
-                                    <span class="nav-link__label">{{ $module['label'] }}</span>
-                                    <span class="nav-link__status">Tersedia di Task 7</span>
-                                </span>
                             @endif
                         </li>
                     @endforeach

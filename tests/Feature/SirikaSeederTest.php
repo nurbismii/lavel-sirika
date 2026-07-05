@@ -15,6 +15,13 @@ class SirikaSeederTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function tearDown(): void
+    {
+        config()->offsetUnset('sirika.seed_user_password');
+
+        parent::tearDown();
+    }
+
     /** @test */
     public function road_segment_seeder_creates_26_active_segments()
     {
@@ -32,8 +39,10 @@ class SirikaSeederTest extends TestCase
     }
 
     /** @test */
-    public function user_seeder_creates_required_roles()
+    public function user_seeder_uses_configured_password_for_starter_accounts()
     {
+        config(['sirika.seed_user_password' => 'starter-secret']);
+
         $this->seed(UserSeeder::class);
 
         $this->assertDatabaseHas('users', [
@@ -60,6 +69,18 @@ class SirikaSeederTest extends TestCase
         $users = User::query()->get(['email', 'password']);
 
         foreach ($users as $user) {
+            $this->assertTrue(Hash::check('starter-secret', $user->password), "Password hash mismatch for {$user->email}");
+        }
+    }
+
+    /** @test */
+    public function user_seeder_falls_back_to_default_password_for_local_and_testing()
+    {
+        $this->seed(UserSeeder::class);
+
+        $users = User::query()->get(['email', 'password']);
+
+        foreach ($users as $user) {
             $this->assertTrue(Hash::check('password', $user->password), "Password hash mismatch for {$user->email}");
         }
     }
@@ -76,6 +97,8 @@ class SirikaSeederTest extends TestCase
     /** @test */
     public function user_seeder_preserves_existing_password_hash_on_rerun()
     {
+        config(['sirika.seed_user_password' => 'starter-secret']);
+
         $this->seed(UserSeeder::class);
 
         $originalHash = User::query()
@@ -87,5 +110,18 @@ class SirikaSeederTest extends TestCase
         $this->assertSame($originalHash, User::query()
             ->where('email', 'superadmin@sirika.local')
             ->value('password'));
+    }
+
+    /** @test */
+    public function user_seeder_aborts_in_production_when_seed_password_is_missing()
+    {
+        $this->app->detectEnvironment(function () {
+            return 'production';
+        });
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('SIRIKA_SEED_USER_PASSWORD');
+
+        (new UserSeeder())->run();
     }
 }

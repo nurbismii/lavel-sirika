@@ -15,29 +15,32 @@ Route::get('/', function () {
         : redirect()->route('login');
 });
 
-Route::get('/home', function () {
-    return redirect()->route('dashboard');
-});
-
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
-    Route::post('/login', [LoginController::class, 'login'])->name('login.attempt');
+    Route::post('/login', [LoginController::class, 'login'])
+        ->middleware('throttle:5,1')
+        ->name('login.attempt');
 });
 
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])
+        ->middleware('role:' . implode(',', User::dashboardRoles()))
+        ->name('dashboard');
 
-    Route::middleware('role:' . User::ROLE_ADMIN_HR . ',' . User::ROLE_AUDITOR)->group(function () {
+    Route::middleware('role:' . implode(',', User::rolesForRoute('road-segments.index')))->group(function () {
         Route::get('/road-segments', [RoadSegmentController::class, 'index'])->name('road-segments.index');
     });
 
-    Route::middleware('role:' . User::ROLE_ADMIN_HR)->group(function () {
+    Route::middleware('role:' . implode(',', User::rolesForRoute('imports.index')))->group(function () {
         Route::get('/imports', [ImportController::class, 'index'])->name('imports.index');
+    });
+
+    Route::middleware('role:' . implode(',', User::rolesForRoute('permits.index')))->group(function () {
         Route::get('/permits', [PermitController::class, 'index'])->name('permits.index');
     });
 
-    Route::middleware('role:' . User::ROLE_SECURITY . ',' . User::ROLE_ADMIN_HR)->group(function () {
+    Route::middleware('role:' . implode(',', User::rolesForRoute('scan.index')))->group(function () {
         Route::get('/scan', [ScanController::class, 'index'])->name('scan.index');
     });
 });

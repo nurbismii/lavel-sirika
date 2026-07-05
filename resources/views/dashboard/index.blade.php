@@ -27,15 +27,10 @@
 
             <div class="quick-actions layout-gap">
                 @foreach ($quickActions as $index => $action)
-                    @if (Route::has($action['route']))
+                    @if (auth()->user()->canAccessRoute($action['route']))
                         <a class="button {{ $index === 0 ? 'button-primary' : '' }}" href="{{ route($action['route']) }}">
                             {{ $action['label'] }}
                         </a>
-                    @else
-                        <span class="button button--disabled" aria-disabled="true">
-                            <span class="button__label">{{ $action['label'] }}</span>
-                            <span class="button__status">Tersedia di Task 7</span>
-                        </span>
                     @endif
                 @endforeach
             </div>

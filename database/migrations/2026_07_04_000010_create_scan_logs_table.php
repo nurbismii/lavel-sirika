@@ -14,7 +14,7 @@ class CreateScanLogsTable extends Migration
             $table->foreignId('scanned_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('scanned_at')->nullable()->index();
             $table->string('result', 32)->index();
-            $table->string('device_info')->nullable();
+            $table->text('device_info')->nullable();
             $table->string('ip_address', 64)->nullable();
             $table->text('notes')->nullable();
             $table->timestamps();
