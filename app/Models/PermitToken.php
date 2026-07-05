@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class PermitToken extends Model
 {
+    public const STATUS_ACTIVE = 'active';
+    public const STATUS_REVOKED = 'revoked';
+
     protected $fillable = [
         'vehicle_permit_id',
         'token_hash',

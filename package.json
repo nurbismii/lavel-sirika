@@ -16,5 +16,8 @@
         "lodash": "^4.17.19",
         "postcss": "^8.1.14",
         "webpack": "^5.91.0"
+    },
+    "dependencies": {
+        "html5-qrcode": "^2.3.8"
     }
 }

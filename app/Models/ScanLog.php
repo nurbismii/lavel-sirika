@@ -6,6 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class ScanLog extends Model
 {
+    public const RESULT_VALID = 'valid';
+    public const RESULT_EXPIRED = 'expired';
+    public const RESULT_REVOKED = 'revoked';
+    public const RESULT_INACTIVE = 'inactive';
+    public const RESULT_INVALID = 'invalid';
+
     protected $fillable = [
         'permit_id',
         'scanned_by',

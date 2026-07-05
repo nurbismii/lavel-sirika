@@ -75,4 +75,16 @@ class VehiclePermit extends Model
     {
         return $this->hasMany(PermitToken::class);
     }
+
+    public function activeToken()
+    {
+        return $this->hasOne(PermitToken::class)
+            ->where('status', PermitToken::STATUS_ACTIVE)
+            ->latestOfMany();
+    }
+
+    public function latestToken()
+    {
+        return $this->hasOne(PermitToken::class)->latestOfMany();
+    }
 }
