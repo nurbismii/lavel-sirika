@@ -268,6 +268,122 @@ class RoadSegmentMapHttpTest extends TestCase
         $response->assertSee('Edit Peta');
     }
 
+    /** @test */
+    public function auditor_sees_view_map_action_and_no_reset_action_on_index()
+    {
+        $auditor = User::factory()->create([
+            'role' => User::ROLE_AUDITOR,
+            'status' => User::STATUS_ACTIVE,
+        ]);
+        $segment = $this->segment([
+            'code' => 'AUD-1',
+            'polyline_json' => [
+                'status' => 'complete',
+                'points' => [
+                    ['x' => 10, 'y' => 20],
+                    ['x' => 30, 'y' => 40],
+                ],
+            ],
+        ]);
+
+        $response = $this->actingAs($auditor)->get(route('road-segments.index'));
+
+        $response->assertOk();
+        $response->assertSee('Lihat Peta');
+        $response->assertDontSee('Edit Peta');
+        $response->assertDontSee(
+            '<form method="POST" action="' . route('road-segments.map.reset', $segment) . '">',
+            false
+        );
+    }
+
+    /** @test */
+    public function admin_index_shows_reset_action_only_for_segments_with_points()
+    {
+        $admin = User::factory()->create([
+            'role' => User::ROLE_ADMIN_HR,
+            'status' => User::STATUS_ACTIVE,
+        ]);
+        $segmentWithPoints = $this->segment([
+            'code' => 'ADM-1',
+            'polyline_json' => [
+                'status' => 'draft',
+                'points' => [
+                    ['x' => 10, 'y' => 20],
+                ],
+            ],
+        ]);
+        $segmentWithoutPoints = $this->segment([
+            'code' => 'ADM-2',
+            'polyline_json' => null,
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('road-segments.index'));
+
+        $response->assertOk();
+        $response->assertSee('Edit Peta');
+        $response->assertSee(
+            '<form method="POST" action="' . route('road-segments.map.reset', $segmentWithPoints) . '">',
+            false
+        );
+        $response->assertDontSee(
+            '<form method="POST" action="' . route('road-segments.map.reset', $segmentWithoutPoints) . '">',
+            false
+        );
+    }
+
+    /** @test */
+    public function road_segment_index_renders_coordinate_columns_and_status_values()
+    {
+        $admin = User::factory()->create([
+            'role' => User::ROLE_ADMIN_HR,
+            'status' => User::STATUS_ACTIVE,
+        ]);
+        $this->segment([
+            'code' => 'CMP-1',
+            'polyline_json' => [
+                'status' => 'complete',
+                'points' => [
+                    ['x' => 10, 'y' => 20],
+                    ['x' => 30, 'y' => 40],
+                ],
+            ],
+        ]);
+        $this->segment([
+            'code' => 'DRF-1',
+            'polyline_json' => [
+                'status' => 'draft',
+                'points' => [
+                    ['x' => 11, 'y' => 21],
+                ],
+            ],
+        ]);
+        $this->segment([
+            'code' => 'EMP-1',
+            'polyline_json' => null,
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('road-segments.index'));
+
+        $response->assertOk();
+        $response->assertSee('Status Koordinat');
+        $response->assertSee('Titik');
+        $response->assertSee('complete');
+        $response->assertSee('draft');
+        $response->assertSee('empty');
+        $response->assertSeeInOrder([
+            'CMP-1',
+            'complete',
+            '2',
+            'DRF-1',
+            'draft',
+            '1',
+            'EMP-1',
+            'empty',
+            '0',
+        ]);
+    }
+
     private function segment(array $overrides = []): RoadSegment
     {
         return RoadSegment::create(array_merge([
