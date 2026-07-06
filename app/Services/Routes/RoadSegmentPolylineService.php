@@ -136,8 +136,8 @@ class RoadSegmentPolylineService
                     ]);
                 }
 
-                $x = round((float) $point['x'], 2);
-                $y = round((float) $point['y'], 2);
+                $x = (float) $point['x'];
+                $y = (float) $point['y'];
 
                 if ($x < 0 || $x > $width || $y < 0 || $y > $height) {
                     throw ValidationException::withMessages([
@@ -146,8 +146,8 @@ class RoadSegmentPolylineService
                 }
 
                 return [
-                    'x' => $x,
-                    'y' => $y,
+                    'x' => round($x, 2),
+                    'y' => round($y, 2),
                 ];
             })
             ->values()

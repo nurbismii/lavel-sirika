@@ -90,6 +90,17 @@ class RoadSegmentPolylineServiceTest extends TestCase
     }
 
     /** @test */
+    public function it_rejects_fractional_points_outside_map_bounds_before_rounding()
+    {
+        $this->expectException(ValidationException::class);
+
+        app(RoadSegmentPolylineService::class)->buildPayload([
+            ['x' => 1600.004, 'y' => 20],
+            ['x' => 100, 'y' => 1000.004],
+        ], 'complete', null);
+    }
+
+    /** @test */
     public function it_converts_stored_points_to_leaflet_lat_lng_pairs()
     {
         $service = app(RoadSegmentPolylineService::class);
