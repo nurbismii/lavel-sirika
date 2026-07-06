@@ -243,6 +243,31 @@ class RoadSegmentMapHttpTest extends TestCase
         $this->assertNull($segment->fresh()->polyline_json);
     }
 
+    /** @test */
+    public function road_segment_index_shows_coordinate_summary_and_edit_action()
+    {
+        $admin = User::factory()->create([
+            'role' => User::ROLE_ADMIN_HR,
+            'status' => User::STATUS_ACTIVE,
+        ]);
+        $this->segment([
+            'polyline_json' => [
+                'status' => 'complete',
+                'points' => [
+                    ['x' => 10, 'y' => 20],
+                    ['x' => 30, 'y' => 40],
+                ],
+            ],
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('road-segments.index'));
+
+        $response->assertOk();
+        $response->assertSee('Ringkasan Koordinat');
+        $response->assertSee('Lengkap');
+        $response->assertSee('Edit Peta');
+    }
+
     private function segment(array $overrides = []): RoadSegment
     {
         return RoadSegment::create(array_merge([
