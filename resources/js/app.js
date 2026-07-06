@@ -2,6 +2,7 @@ require('./bootstrap');
 
 import Alpine from 'alpinejs';
 import { Html5Qrcode } from 'html5-qrcode';
+import './route-map';
 
 window.sirikaScan = function ({ verifyUrl, csrfToken }) {
     return {

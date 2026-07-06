@@ -6,7 +6,7 @@ return [
     'route_map' => [
         'key' => env('SIRIKA_ROUTE_MAP_KEY', 'vdni-road-map-v1'),
         'image_url' => env('SIRIKA_ROUTE_MAP_IMAGE_URL', '/images/maps/vdni-road-map-v1.png'),
-        'width' => (int) env('SIRIKA_ROUTE_MAP_WIDTH', 1600),
-        'height' => (int) env('SIRIKA_ROUTE_MAP_HEIGHT', 1000),
+        'width' => (int) env('SIRIKA_ROUTE_MAP_WIDTH', 8425),
+        'height' => (int) env('SIRIKA_ROUTE_MAP_HEIGHT', 5960),
     ],
 ];
