@@ -44,7 +44,8 @@ class SirikaModuleAccessTest extends TestCase
         $this->actingAs($admin)->get('/scan')
             ->assertOk()
             ->assertSee('Scan QR')
-            ->assertSee('Scanner kamera aktif pada fase berikutnya');
+            ->assertSee('Mulai Kamera')
+            ->assertSee('Input Token Manual');
     }
 
     /** @test */
@@ -75,7 +76,8 @@ class SirikaModuleAccessTest extends TestCase
         $this->actingAs($security)->get('/scan')
             ->assertOk()
             ->assertSee('Scan QR')
-            ->assertSee('Scanner kamera aktif pada fase berikutnya');
+            ->assertSee('Mulai Kamera')
+            ->assertSee('Input Token Manual');
 
         $this->actingAs($security)->get('/imports')
             ->assertForbidden();
