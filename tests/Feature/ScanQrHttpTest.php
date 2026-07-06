@@ -28,6 +28,7 @@ class ScanQrHttpTest extends TestCase
         $employee = Employee::create([
             'nik' => 'EMP-SCAN',
             'name' => 'SCAN HTTP USER',
+            'contact_number' => '08123456789',
             'status' => 'active',
         ]);
 
@@ -54,15 +55,16 @@ class ScanQrHttpTest extends TestCase
         $permit = $this->permit();
         $token = app(PermitTokenService::class)->generateForPermit($permit);
 
-        $this->actingAs($this->security())
+        $response = $this->actingAs($this->security())
             ->postJson(route('scan.verify'), [
                 'token' => $token['plain_token'],
                 'device_info' => 'Browser test',
             ])
             ->assertOk()
             ->assertJsonPath('result', ScanLog::RESULT_VALID)
-            ->assertJsonPath('permit.employee_name', 'SCAN HTTP USER')
-            ->assertJsonMissing(['contact_number' => '08123456789']);
+            ->assertJsonPath('permit.employee_name', 'SCAN HTTP USER');
+
+        $this->assertArrayNotHasKey('contact_number', $response->json('permit'));
 
         $this->assertDatabaseHas('scan_logs', [
             'permit_id' => $permit->id,
