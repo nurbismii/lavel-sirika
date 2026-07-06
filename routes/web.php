@@ -33,6 +33,18 @@ Route::middleware('auth')->group(function () {
         Route::get('/road-segments', [RoadSegmentController::class, 'index'])->name('road-segments.index');
     });
 
+    Route::get('/road-segments/{roadSegment}/map', [RoadSegmentController::class, 'map'])
+        ->middleware('role:' . implode(',', User::rolesForRoute('road-segments.map')))
+        ->name('road-segments.map');
+
+    Route::post('/road-segments/{roadSegment}/map', [RoadSegmentController::class, 'updateMap'])
+        ->middleware('role:' . implode(',', User::rolesForRoute('road-segments.map.update')))
+        ->name('road-segments.map.update');
+
+    Route::delete('/road-segments/{roadSegment}/map', [RoadSegmentController::class, 'resetMap'])
+        ->middleware('role:' . implode(',', User::rolesForRoute('road-segments.map.reset')))
+        ->name('road-segments.map.reset');
+
     Route::middleware('role:' . implode(',', User::rolesForRoute('imports.index')))->group(function () {
         Route::get('/imports', [ImportController::class, 'index'])->name('imports.index');
         Route::get('/imports/{importBatch}', [ImportController::class, 'show'])->name('imports.show');

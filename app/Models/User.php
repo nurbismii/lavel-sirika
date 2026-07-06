@@ -70,6 +70,16 @@ class User extends Authenticatable
                 self::ROLE_ADMIN_HR,
                 self::ROLE_AUDITOR,
             ],
+            'road-segments.map' => [
+                self::ROLE_ADMIN_HR,
+                self::ROLE_AUDITOR,
+            ],
+            'road-segments.map.update' => [
+                self::ROLE_ADMIN_HR,
+            ],
+            'road-segments.map.reset' => [
+                self::ROLE_ADMIN_HR,
+            ],
             'imports.index' => [
                 self::ROLE_ADMIN_HR,
             ],
