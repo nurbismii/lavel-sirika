@@ -151,6 +151,22 @@ class PermitQrHttpTest extends TestCase
     }
 
     /** @test */
+    public function qr_admin_flash_errors_are_visible_after_redirect()
+    {
+        $admin = $this->userWithRole(User::ROLE_ADMIN_HR);
+        $permit = $this->permit();
+
+        $this->actingAs($admin)->post(route('permits.qr.generate', $permit))->assertOk();
+
+        $this->followingRedirects()
+            ->from(route('permits.index'))
+            ->actingAs($admin)
+            ->post(route('permits.qr.generate', $permit))
+            ->assertOk()
+            ->assertSee('QR aktif sudah tersedia. Gunakan renew untuk membuat QR baru.');
+    }
+
+    /** @test */
     public function renew_and_print_redirect_with_flash_error_for_non_active_permit()
     {
         $admin = $this->userWithRole(User::ROLE_ADMIN_HR);

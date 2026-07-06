@@ -82,6 +82,12 @@
                         </x-alert>
                     @endif
 
+                    @if (session('error'))
+                        <x-alert type="danger" class="layout-gap">
+                            {{ session('error') }}
+                        </x-alert>
+                    @endif
+
                     <div class="layout-gap">
                         @yield('content')
                     </div>
