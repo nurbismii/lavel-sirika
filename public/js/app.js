@@ -5841,11 +5841,6 @@ window.sirikaRoadSegmentEditor = function (_ref2) {
       this.dirty = true;
       this.redraw();
     },
-    clearPoints: function clearPoints() {
-      this.points = [];
-      this.dirty = true;
-      this.redraw();
-    },
     submit: function submit(mode) {
       var _this2 = this;
       this.saveMode = mode;

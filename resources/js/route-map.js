@@ -119,12 +119,6 @@ window.sirikaRoadSegmentEditor = function ({ map, initialPoints, segmentCode }) 
             this.redraw();
         },
 
-        clearPoints() {
-            this.points = [];
-            this.dirty = true;
-            this.redraw();
-        },
-
         submit(mode) {
             this.saveMode = mode;
             this.dirty = false;
