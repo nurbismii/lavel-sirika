@@ -7,6 +7,7 @@ use App\Models\ScanLog;
 use App\Models\User;
 use App\Models\VehiclePermit;
 use App\Services\Routes\PermitRouteMapService;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class PermitScanService
@@ -163,6 +164,9 @@ class PermitScanService
         try {
             $data['route_map'] = $this->routeMaps->forPermit($permit);
         } catch (Throwable $exception) {
+            Log::warning('Permit route map generation failed.', [
+                'permit_id' => $permit->id,
+            ]);
             $data['route_map_warning'] = 'Peta rute tidak tersedia.';
         }
 

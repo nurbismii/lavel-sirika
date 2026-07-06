@@ -108,7 +108,8 @@ class ScanQrHttpTest extends TestCase
             ->assertOk()
             ->assertJsonPath('result', ScanLog::RESULT_EXPIRED);
 
-        $this->assertNull(data_get($response->json(), 'permit.route_map'));
+        $this->assertIsArray($response->json('permit'));
+        $this->assertArrayNotHasKey('route_map', $response->json('permit'));
     }
 
     /** @test */

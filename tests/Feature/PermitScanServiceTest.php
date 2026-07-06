@@ -12,7 +12,9 @@ use App\Models\Vehicle;
 use App\Models\VehiclePermit;
 use App\Services\Permits\PermitScanService;
 use App\Services\Permits\PermitTokenService;
+use App\Services\Routes\PermitRouteMapService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Log;
 use Tests\TestCase;
 
 class PermitScanServiceTest extends TestCase
@@ -86,6 +88,36 @@ class PermitScanServiceTest extends TestCase
             'permit_id' => $permit->id,
             'result' => ScanLog::RESULT_VALID,
         ]);
+    }
+
+    /** @test */
+    public function scan_service_keeps_valid_result_when_route_map_build_fails()
+    {
+        $permit = $this->createPermit();
+        $permit->routeSegments()->attach($this->completeSegment('Y1')->id, ['sequence' => 1]);
+        $tokenResult = app(PermitTokenService::class)->generateForPermit($permit);
+        Log::spy();
+
+        $this->mock(PermitRouteMapService::class, function ($mock) {
+            $mock->shouldReceive('forPermit')
+                ->once()
+                ->andThrow(new \RuntimeException('route map failed'));
+        });
+
+        $result = app(PermitScanService::class)->scan($tokenResult['plain_token'], $this->securityUser());
+
+        $this->assertSame(ScanLog::RESULT_VALID, $result['result']);
+        $this->assertArrayNotHasKey('route_map', $result['permit']);
+        $this->assertSame('Peta rute tidak tersedia.', $result['permit']['route_map_warning']);
+        $this->assertDatabaseHas('scan_logs', [
+            'permit_id' => $permit->id,
+            'result' => ScanLog::RESULT_VALID,
+        ]);
+        Log::shouldHaveReceived('warning')
+            ->once()
+            ->with('Permit route map generation failed.', [
+                'permit_id' => $permit->id,
+            ]);
     }
 
     /** @test */
