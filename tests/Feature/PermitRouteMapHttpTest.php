@@ -49,6 +49,19 @@ class PermitRouteMapHttpTest extends TestCase
     }
 
     /** @test */
+    public function auditor_can_open_admin_permit_route_map_preview()
+    {
+        $auditor = $this->userWithRole(User::ROLE_AUDITOR);
+        $permit = $this->permitWithRoute();
+
+        $this->actingAs($auditor)
+            ->get(route('permits.route-map.show', $permit))
+            ->assertOk()
+            ->assertSee('Peta Rute Izin')
+            ->assertSee('ROUTE USER');
+    }
+
+    /** @test */
     public function security_cannot_open_admin_permit_route_map_preview()
     {
         $security = $this->userWithRole(User::ROLE_SECURITY);
