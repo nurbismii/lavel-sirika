@@ -92,6 +92,9 @@ class User extends Authenticatable
             'permits.index' => [
                 self::ROLE_ADMIN_HR,
             ],
+            'permits.route-map.show' => [
+                self::ROLE_ADMIN_HR,
+            ],
             'permits.qr.generate' => [
                 self::ROLE_ADMIN_HR,
             ],

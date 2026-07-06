@@ -5,6 +5,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\PermitController;
 use App\Http\Controllers\PermitQrController;
+use App\Http\Controllers\PermitRouteMapController;
 use App\Http\Controllers\RoadSegmentController;
 use App\Http\Controllers\ScanController;
 use App\Models\User;
@@ -61,6 +62,10 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:' . implode(',', User::rolesForRoute('permits.index')))->group(function () {
         Route::get('/permits', [PermitController::class, 'index'])->name('permits.index');
     });
+
+    Route::get('/permits/{permit}/route-map', [PermitRouteMapController::class, 'show'])
+        ->middleware('role:' . implode(',', User::rolesForRoute('permits.route-map.show')))
+        ->name('permits.route-map.show');
 
     Route::post('/permits/qr/bulk-generate', [PermitQrController::class, 'bulkGenerate'])
         ->middleware('role:' . implode(',', User::rolesForRoute('permits.qr.bulk-generate')))

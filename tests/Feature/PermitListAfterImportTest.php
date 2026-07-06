@@ -63,6 +63,9 @@ class PermitListAfterImportTest extends TestCase
             ->assertSee('Status QR')
             ->assertSee('Belum dibuat')
             ->assertSee('Generate QR')
+            ->assertSee('Rute')
+            ->assertSee('Y1-D2')
+            ->assertSee('Lihat Rute')
             ->assertSee('Bulk Generate QR Aktif');
     }
 

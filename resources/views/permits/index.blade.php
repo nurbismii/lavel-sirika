@@ -30,6 +30,7 @@
                             <th>Status</th>
                             <th>Status QR</th>
                             <th>Sumber</th>
+                            <th>Rute</th>
                             <th>Aksi QR</th>
                         </tr>
                     </thead>
@@ -63,7 +64,13 @@
                                 </td>
                                 <td>{{ $permit->source ?? '-' }}</td>
                                 <td>
+                                    <div>{{ $permit->route_raw ?? '-' }}</div>
+                                    <div class="muted-text">{{ $permit->routeSegments->count() }} segmen</div>
+                                </td>
+                                <td>
                                     <div class="table-actions">
+                                        <a class="button" href="{{ route('permits.route-map.show', $permit) }}">Lihat Rute</a>
+
                                         @if (! $activeToken && $permit->status === \App\Models\VehiclePermit::STATUS_ACTIVE)
                                             <form method="POST" action="{{ route('permits.qr.generate', $permit) }}">
                                                 @csrf
@@ -87,7 +94,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9">Belum ada data izin kendaraan. Gunakan modul Import Excel untuk membuat data awal.</td>
+                                <td colspan="10">Belum ada data izin kendaraan. Gunakan modul Import Excel untuk membuat data awal.</td>
                             </tr>
                         @endforelse
                     </tbody>
