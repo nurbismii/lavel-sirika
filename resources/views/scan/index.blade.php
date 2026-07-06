@@ -80,6 +80,30 @@
                                             <dd x-text="result.permit.route_raw"></dd>
                                         </div>
                                     </dl>
+
+                                    <template x-if="result.permit.route_map">
+                                        <div class="scan-route-map">
+                                            <template x-if="result.permit.route_map.missing_segments && result.permit.route_map.missing_segments.length">
+                                                <div class="route-warning">
+                                                    <span>Segmen belum dikurasi: </span>
+                                                    <span x-text="result.permit.route_map.missing_segments.join(', ')"></span>
+                                                </div>
+                                            </template>
+
+                                            <div
+                                                x-data="sirikaRoutePreview({
+                                                    map: result.permit.route_map.map,
+                                                    segments: result.permit.route_map.segments
+                                                })"
+                                            >
+                                                <div x-ref="map" class="route-map-canvas route-map-canvas--compact"></div>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </template>
+
+                                <template x-if="result.permit && result.permit.route_map_warning">
+                                    <div class="route-warning" x-text="result.permit.route_map_warning"></div>
                                 </template>
                             </div>
                         </template>

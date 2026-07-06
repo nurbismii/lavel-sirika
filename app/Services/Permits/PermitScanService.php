@@ -6,9 +6,18 @@ use App\Models\PermitToken;
 use App\Models\ScanLog;
 use App\Models\User;
 use App\Models\VehiclePermit;
+use App\Services\Routes\PermitRouteMapService;
+use Throwable;
 
 class PermitScanService
 {
+    private PermitRouteMapService $routeMaps;
+
+    public function __construct(PermitRouteMapService $routeMaps)
+    {
+        $this->routeMaps = $routeMaps;
+    }
+
     public function scan(string $plainToken, ?User $scanner, array $context = []): array
     {
         $plainToken = trim($plainToken);
@@ -24,7 +33,12 @@ class PermitScanService
             );
         }
 
-        $token = PermitToken::with(['permit.employee', 'permit.vehicle', 'permit.parkingLocation'])
+        $token = PermitToken::with([
+            'permit.employee',
+            'permit.vehicle',
+            'permit.parkingLocation',
+            'permit.routeSegments',
+        ])
             ->where('token_hash', hash('sha256', $plainToken))
             ->first();
 
@@ -137,7 +151,7 @@ class PermitScanService
 
     private function fullPermitData(VehiclePermit $permit): array
     {
-        return [
+        $data = [
             'employee_name' => optional($permit->employee)->name,
             'plate_number' => optional($permit->vehicle)->plate_number,
             'parking_code' => optional($permit->parkingLocation)->code,
@@ -145,5 +159,13 @@ class PermitScanService
             'status' => $permit->status,
             'route_raw' => $permit->route_raw,
         ];
+
+        try {
+            $data['route_map'] = $this->routeMaps->forPermit($permit);
+        } catch (Throwable $exception) {
+            $data['route_map_warning'] = 'Peta rute tidak tersedia.';
+        }
+
+        return $data;
     }
 }
