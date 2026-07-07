@@ -77,6 +77,22 @@ class ScanQrHttpTest extends TestCase
     }
 
     /** @test */
+    public function scan_page_wraps_permit_result_in_a_single_alpine_root()
+    {
+        $html = $this->actingAs($this->security())
+            ->get(route('scan.index'))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertMatchesRegularExpression(
+            '/<template x-if="result\.permit">\s*<div[^>]*data-scan-permit-result/s',
+            $html
+        );
+        $this->assertStringContainsString('x-if="result.permit.route_map"', $html);
+        $this->assertStringContainsString('x-if="result.permit.route_map_warning"', $html);
+    }
+
+    /** @test */
     public function security_can_verify_invalid_token_and_it_is_logged()
     {
         $this->actingAs($this->security())
