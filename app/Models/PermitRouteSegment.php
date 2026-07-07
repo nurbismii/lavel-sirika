@@ -12,6 +12,12 @@ class PermitRouteSegment extends Model
         'sequence',
     ];
 
+    protected $casts = [
+        'vehicle_permit_id' => 'integer',
+        'road_segment_id' => 'integer',
+        'sequence' => 'integer',
+    ];
+
     public function permit()
     {
         return $this->belongsTo(VehiclePermit::class, 'vehicle_permit_id');

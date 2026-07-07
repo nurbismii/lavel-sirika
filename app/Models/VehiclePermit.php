@@ -32,6 +32,11 @@ class VehiclePermit extends Model
     ];
 
     protected $casts = [
+        'employee_id' => 'integer',
+        'vehicle_id' => 'integer',
+        'parking_location_id' => 'integer',
+        'source_import_id' => 'integer',
+        'reviewed_by' => 'integer',
         'valid_from' => 'date',
         'valid_until' => 'date',
         'reviewed_at' => 'datetime',
