@@ -26,11 +26,15 @@ class VehiclePermit extends Model
         'source',
         'source_import_id',
         'route_raw',
+        'reviewed_by',
+        'reviewed_at',
+        'review_note',
     ];
 
     protected $casts = [
         'valid_from' => 'date',
         'valid_until' => 'date',
+        'reviewed_at' => 'datetime',
     ];
 
     public function employee()
@@ -46,6 +50,11 @@ class VehiclePermit extends Model
     public function parkingLocation()
     {
         return $this->belongsTo(ParkingLocation::class);
+    }
+
+    public function reviewer()
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
     }
 
     public function sourceImport()
