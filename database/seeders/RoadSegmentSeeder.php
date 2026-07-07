@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\RoadSegment;
+use App\Services\Routes\RoadSegmentPolylineService;
 use Illuminate\Database\Seeder;
 
 class RoadSegmentSeeder extends Seeder
@@ -38,11 +39,57 @@ class RoadSegmentSeeder extends Seeder
             ['code' => 'H2', 'name' => 'Jalan H2', 'start_location' => 'Persimpangan Laboratorium Ore', 'end_location' => 'Sisi Utara Pompa Air OSS'],
         ];
 
+        $polylines = app(RoadSegmentPolylineService::class);
+        $starterCoordinates = $this->starterCoordinates();
+
         foreach ($segments as $segment) {
-            RoadSegment::updateOrCreate(
+            $roadSegment = RoadSegment::updateOrCreate(
                 ['code' => $segment['code']],
                 array_merge($segment, ['status' => 'active'])
             );
+
+            if ($roadSegment->polyline_json === null && isset($starterCoordinates[$segment['code']])) {
+                $roadSegment->update([
+                    'polyline_json' => $polylines->buildPayload(
+                        $starterCoordinates[$segment['code']],
+                        RoadSegmentPolylineService::STATUS_COMPLETE,
+                        null
+                    ),
+                ]);
+            }
         }
+    }
+
+    private function starterCoordinates(): array
+    {
+        return [
+            // Initial coordinates are based on attachment 4 VDNI road map.
+            // They are starter data only; admin edits in Master Rute remain preserved.
+            'Y1' => [
+                ['x' => 1380, 'y' => 1600],
+                ['x' => 1740, 'y' => 1560],
+                ['x' => 2100, 'y' => 1530],
+                ['x' => 2460, 'y' => 1505],
+                ['x' => 2860, 'y' => 1490],
+            ],
+            'D2' => [
+                ['x' => 1840, 'y' => 1665],
+                ['x' => 1845, 'y' => 1815],
+                ['x' => 1860, 'y' => 1990],
+                ['x' => 1875, 'y' => 2190],
+            ],
+            'Z1' => [
+                ['x' => 1710, 'y' => 1765],
+                ['x' => 1850, 'y' => 1765],
+                ['x' => 1990, 'y' => 1760],
+                ['x' => 2150, 'y' => 1755],
+            ],
+            'D3' => [
+                ['x' => 1700, 'y' => 1660],
+                ['x' => 1700, 'y' => 1820],
+                ['x' => 1710, 'y' => 2010],
+                ['x' => 1715, 'y' => 2185],
+            ],
+        ];
     }
 }

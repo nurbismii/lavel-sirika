@@ -39,6 +39,47 @@ class SirikaSeederTest extends TestCase
     }
 
     /** @test */
+    public function road_segment_seeder_adds_starter_map_coordinates_for_curated_segments()
+    {
+        $this->seed(RoadSegmentSeeder::class);
+
+        foreach (['Y1', 'D2', 'Z1', 'D3'] as $code) {
+            $polyline = RoadSegment::where('code', $code)->value('polyline_json');
+
+            $this->assertIsArray($polyline, $code . ' should have starter coordinates.');
+            $this->assertSame('complete', $polyline['status']);
+            $this->assertGreaterThanOrEqual(2, count($polyline['points']));
+        }
+    }
+
+    /** @test */
+    public function road_segment_seeder_preserves_existing_map_coordinates()
+    {
+        $this->seed(RoadSegmentSeeder::class);
+
+        RoadSegment::where('code', 'Y1')->update([
+            'polyline_json' => [
+                'version' => 1,
+                'map_key' => 'custom-map',
+                'status' => 'complete',
+                'points' => [
+                    ['x' => 1, 'y' => 2],
+                    ['x' => 3, 'y' => 4],
+                ],
+                'updated_by' => 99,
+                'updated_at' => now()->toIso8601String(),
+            ],
+        ]);
+
+        $this->seed(RoadSegmentSeeder::class);
+
+        $polyline = RoadSegment::where('code', 'Y1')->value('polyline_json');
+
+        $this->assertSame('custom-map', $polyline['map_key']);
+        $this->assertSame([['x' => 1, 'y' => 2], ['x' => 3, 'y' => 4]], $polyline['points']);
+    }
+
+    /** @test */
     public function user_seeder_uses_configured_password_for_starter_accounts()
     {
         config(['sirika.seed_user_password' => 'starter-secret']);
