@@ -314,6 +314,18 @@ img {
     color: #ffffff;
 }
 
+.button-danger {
+    background: var(--sirika-danger);
+    border-color: var(--sirika-danger);
+    color: #ffffff;
+}
+
+.button-danger:hover {
+    background: #7f1d1d;
+    border-color: #7f1d1d;
+    color: #ffffff;
+}
+
 .alert {
     min-height: 44px;
     display: flex;
@@ -403,6 +415,12 @@ th {
     gap: 14px;
 }
 
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
 .form-field {
     display: grid;
     gap: 6px;
@@ -410,6 +428,53 @@ th {
 
 .form-field label {
     font-weight: 700;
+}
+
+.form-control {
+    width: 100%;
+    min-height: 44px;
+    border: 1px solid var(--sirika-border);
+    border-radius: 8px;
+    background: var(--sirika-surface);
+    color: var(--sirika-text);
+    padding: 10px 12px;
+}
+
+.form-control:focus {
+    border-color: var(--sirika-primary);
+    outline: 3px solid rgba(30, 79, 214, 0.16);
+    outline-offset: 0;
+}
+
+.form-control:disabled {
+    background: #edf2f7;
+    color: var(--sirika-muted);
+    cursor: not-allowed;
+}
+
+.checkbox-field {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+}
+
+.checkbox-field input {
+    width: 18px;
+    height: 18px;
+}
+
+.password-field {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+}
+
+.form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
 }
 
 .form-field input[type="file"] {
@@ -432,6 +497,10 @@ th {
     margin-bottom: 14px;
 }
 
+.toolbar-search {
+    max-width: 360px;
+}
+
 .pagination-wrap {
     margin-top: 14px;
 }
@@ -440,6 +509,22 @@ th {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
+}
+
+.section-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.sr-only {
+    width: 1px;
+    height: 1px;
+    position: absolute;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
 }
 
 .muted-text {
@@ -586,6 +671,83 @@ th {
     margin-top: 14px;
 }
 
+.login-body {
+    min-height: 100vh;
+    background:
+        linear-gradient(135deg, rgba(15, 31, 50, 0.92), rgba(30, 79, 214, 0.72)),
+        url('/images/maps/vdni-road-map-v1.png') center / cover no-repeat;
+}
+
+.login-shell {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(340px, 460px);
+    gap: 32px;
+    align-items: center;
+    width: min(1120px, calc(100% - 32px));
+    margin: 0 auto;
+    padding: 32px 0;
+}
+
+.login-hero {
+    color: #ffffff;
+}
+
+.login-brand {
+    margin: 0 0 14px;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0;
+}
+
+.login-hero h1 {
+    margin: 0;
+    font-size: 42px;
+    line-height: 1.1;
+    letter-spacing: 0;
+}
+
+.login-copy {
+    max-width: 56ch;
+    margin: 14px 0 0;
+    color: #e5eefb;
+    font-size: 18px;
+}
+
+.login-card {
+    box-shadow: 0 24px 60px rgba(5, 12, 23, 0.22);
+}
+
+.login-signal-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    max-width: 560px;
+    margin-top: 28px;
+}
+
+.login-signal {
+    min-height: 92px;
+    display: grid;
+    align-content: center;
+    gap: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 8px;
+    background: rgba(15, 31, 50, 0.46);
+    padding: 14px;
+}
+
+.login-signal__value {
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.login-signal__label {
+    color: #c7d7ec;
+    font-size: 13px;
+}
+
 @media (max-width: 1024px) {
     .stats-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -624,6 +786,16 @@ th {
     .content {
         padding: 16px;
     }
+
+    .login-shell {
+        grid-template-columns: 1fr;
+        gap: 20px;
+        align-items: start;
+    }
+
+    .login-hero h1 {
+        font-size: 34px;
+    }
 }
 
 @media (max-width: 640px) {
@@ -655,6 +827,25 @@ th {
 
     .button {
         width: 100%;
+    }
+
+    .form-grid,
+    .password-field,
+    .login-signal-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .section-header {
+        display: grid;
+    }
+
+    .login-shell {
+        width: min(100% - 24px, 460px);
+        padding: 20px 0;
+    }
+
+    .login-copy {
+        font-size: 16px;
     }
 }
 

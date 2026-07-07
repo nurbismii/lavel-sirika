@@ -24,6 +24,7 @@
                     </li>
                     @php
                         $visibleModules = [
+                            ['label' => 'Manajemen User', 'route' => 'users.index'],
                             ['label' => 'Master Rute', 'route' => 'road-segments.index'],
                             ['label' => 'Import Excel', 'route' => 'imports.index'],
                             ['label' => 'Izin Kendaraan', 'route' => 'permits.index'],
@@ -34,7 +35,7 @@
                     @foreach ($visibleModules as $module)
                         <li>
                             @if (auth()->user()->canAccessRoute($module['route']))
-                                <a class="nav-link {{ request()->routeIs($module['route']) ? 'active' : '' }}" href="{{ route($module['route']) }}">
+                                <a class="nav-link {{ request()->routeIs($module['route']) || request()->routeIs(str_replace('.index', '.*', $module['route'])) ? 'active' : '' }}" href="{{ route($module['route']) }}">
                                     {{ $module['label'] }}
                                 </a>
                             @endif

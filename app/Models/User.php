@@ -62,10 +62,59 @@ class User extends Authenticatable
         ];
     }
 
+    public static function roleOptions()
+    {
+        return [
+            self::ROLE_SUPER_ADMIN => 'Super Admin',
+            self::ROLE_ADMIN_HR => 'Admin HR',
+            self::ROLE_SECURITY => 'Security',
+            self::ROLE_AUDITOR => 'Auditor',
+        ];
+    }
+
+    public static function statusOptions()
+    {
+        return [
+            self::STATUS_ACTIVE => 'Aktif',
+            self::STATUS_INACTIVE => 'Nonaktif',
+        ];
+    }
+
+    public function roleLabel()
+    {
+        return static::roleOptions()[$this->role] ?? $this->role;
+    }
+
+    public function statusLabel()
+    {
+        return static::statusOptions()[$this->status] ?? $this->status;
+    }
+
     public static function routeRoles()
     {
         return [
             'dashboard' => self::dashboardRoles(),
+            'users.index' => [
+                self::ROLE_SUPER_ADMIN,
+            ],
+            'users.create' => [
+                self::ROLE_SUPER_ADMIN,
+            ],
+            'users.store' => [
+                self::ROLE_SUPER_ADMIN,
+            ],
+            'users.show' => [
+                self::ROLE_SUPER_ADMIN,
+            ],
+            'users.edit' => [
+                self::ROLE_SUPER_ADMIN,
+            ],
+            'users.update' => [
+                self::ROLE_SUPER_ADMIN,
+            ],
+            'users.destroy' => [
+                self::ROLE_SUPER_ADMIN,
+            ],
             'road-segments.index' => [
                 self::ROLE_ADMIN_HR,
                 self::ROLE_AUDITOR,

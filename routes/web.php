@@ -8,6 +8,7 @@ use App\Http\Controllers\PermitQrController;
 use App\Http\Controllers\PermitRouteMapController;
 use App\Http\Controllers\RoadSegmentController;
 use App\Http\Controllers\ScanController;
+use App\Http\Controllers\UserController;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
@@ -29,6 +30,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->middleware('role:' . implode(',', User::dashboardRoles()))
         ->name('dashboard');
+
+    Route::resource('users', UserController::class)
+        ->middleware('role:' . implode(',', User::rolesForRoute('users.index')));
 
     Route::middleware('role:' . implode(',', User::rolesForRoute('road-segments.index')))->group(function () {
         Route::get('/road-segments', [RoadSegmentController::class, 'index'])->name('road-segments.index');
