@@ -143,4 +143,25 @@ class UserManagementHttpTest extends TestCase
             'id' => $admin->id,
         ]);
     }
+
+    /** @test */
+    public function paginated_admin_tables_use_compact_sirika_pagination()
+    {
+        $admin = User::factory()->create([
+            'role' => User::ROLE_SUPER_ADMIN,
+            'status' => User::STATUS_ACTIVE,
+        ]);
+
+        User::factory()->count(20)->create([
+            'role' => User::ROLE_AUDITOR,
+            'status' => User::STATUS_ACTIVE,
+        ]);
+
+        $this->actingAs($admin)
+            ->get('/users')
+            ->assertOk()
+            ->assertSee('class="sirika-pagination"', false)
+            ->assertDontSee('w-5 h-5', false)
+            ->assertDontSee('<svg', false);
+    }
 }
