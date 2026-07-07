@@ -9,7 +9,9 @@ use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\VehiclePermit;
 use App\Services\Permits\PermitReviewService;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Tests\TestCase;
 
@@ -147,6 +149,24 @@ class PermitReviewServiceTest extends TestCase
     }
 
     /** @test */
+    public function it_reports_unknown_token_when_route_has_no_known_segments()
+    {
+        $reviewer = $this->user(User::ROLE_ADMIN_HR);
+        $permit = $this->permit(VehiclePermit::STATUS_NEEDS_REVIEW);
+        $parking = $this->parking('P1');
+        $this->segment('Y1');
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Rute mengandung token tidak dikenal: X99');
+
+        app(PermitReviewService::class)->activate($permit, [
+            'parking_location_id' => $parking->id,
+            'route_raw' => 'X99',
+            'review_note' => 'Valid.',
+        ], $reviewer);
+    }
+
+    /** @test */
     public function it_blocks_activation_when_vehicle_has_another_active_permit()
     {
         $reviewer = $this->user(User::ROLE_ADMIN_HR);
@@ -176,6 +196,33 @@ class PermitReviewServiceTest extends TestCase
     }
 
     /** @test */
+    public function it_locks_the_vehicle_row_before_checking_active_duplicate_permits()
+    {
+        $reviewer = $this->user(User::ROLE_ADMIN_HR);
+        $permit = $this->permit(VehiclePermit::STATUS_NEEDS_REVIEW);
+        $parking = $this->parking('P1');
+        $this->segment('Y1');
+        $queries = [];
+
+        DB::listen(function (QueryExecuted $query) use (&$queries) {
+            $queries[] = strtolower($query->sql);
+        });
+
+        app(PermitReviewService::class)->activate($permit, [
+            'parking_location_id' => $parking->id,
+            'route_raw' => 'Y1',
+            'review_note' => 'Vehicle lock verified.',
+        ], $reviewer);
+
+        $vehicleQueryIndex = $this->firstQueryIndexContaining($queries, 'from "vehicles"');
+        $activePermitQueryIndex = $this->firstQueryIndexContaining($queries, '"vehicle_id" = ? and "status" = ? and "id" != ?');
+
+        $this->assertNotNull($vehicleQueryIndex, 'Expected activation to query and lock the shared vehicle row.');
+        $this->assertNotNull($activePermitQueryIndex, 'Expected activation to check duplicate active permits.');
+        $this->assertLessThan($activePermitQueryIndex, $vehicleQueryIndex);
+    }
+
+    /** @test */
     public function it_blocks_activation_when_review_note_is_empty()
     {
         $reviewer = $this->user(User::ROLE_ADMIN_HR);
@@ -191,6 +238,17 @@ class PermitReviewServiceTest extends TestCase
             'route_raw' => 'Y1',
             'review_note' => '   ',
         ], $reviewer);
+    }
+
+    private function firstQueryIndexContaining(array $queries, string $needle): ?int
+    {
+        foreach ($queries as $index => $query) {
+            if (strpos($query, $needle) !== false) {
+                return $index;
+            }
+        }
+
+        return null;
     }
 
     private function user(string $role): User

@@ -5,6 +5,7 @@ namespace App\Services\Permits;
 use App\Models\ParkingLocation;
 use App\Models\RoadSegment;
 use App\Models\User;
+use App\Models\Vehicle;
 use App\Models\VehiclePermit;
 use App\Services\Imports\RouteSegmentParser;
 use Illuminate\Support\Facades\DB;
@@ -41,6 +42,7 @@ class PermitReviewService
             $lockedPermit = $this->lockPermit($permit);
             $this->ensureNeedsReview($lockedPermit);
             $this->ensurePermitHasCoreRelations($lockedPermit);
+            $this->lockVehicle($lockedPermit->vehicle_id);
 
             $parking = $this->resolveParkingLocation($data['parking_location_id'] ?? null);
             $routeRaw = $this->cleanText($data['route_raw'] ?? null);
@@ -84,6 +86,14 @@ class PermitReviewService
     {
         return VehiclePermit::query()
             ->whereKey($permit->id)
+            ->lockForUpdate()
+            ->firstOrFail();
+    }
+
+    private function lockVehicle(int $vehicleId): Vehicle
+    {
+        return Vehicle::query()
+            ->whereKey($vehicleId)
             ->lockForUpdate()
             ->firstOrFail();
     }
@@ -143,6 +153,10 @@ class PermitReviewService
 
             if (in_array('Rute kendaraan kosong', $warnings, true)) {
                 throw new InvalidArgumentException('Rute kendaraan kosong.');
+            }
+
+            if ($warnings !== []) {
+                throw new InvalidArgumentException($warnings[0]);
             }
 
             throw new InvalidArgumentException('Rute tidak mengandung kode segmen resmi.');
