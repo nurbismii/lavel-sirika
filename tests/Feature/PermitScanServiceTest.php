@@ -5,13 +5,16 @@ namespace Tests\Feature;
 use App\Models\Employee;
 use App\Models\ParkingLocation;
 use App\Models\PermitToken;
+use App\Models\RoadSegment;
 use App\Models\ScanLog;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\VehiclePermit;
 use App\Services\Permits\PermitScanService;
 use App\Services\Permits\PermitTokenService;
+use App\Services\Routes\PermitRouteMapService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Log;
 use Tests\TestCase;
 
 class PermitScanServiceTest extends TestCase
@@ -66,6 +69,7 @@ class PermitScanServiceTest extends TestCase
     public function scan_service_accepts_valid_token_and_logs_valid_result()
     {
         $permit = $this->createPermit();
+        $permit->routeSegments()->attach($this->completeSegment('Y1')->id, ['sequence' => 1]);
         $tokenResult = app(PermitTokenService::class)->generateForPermit($permit);
 
         $result = app(PermitScanService::class)->scan($tokenResult['plain_token'], $this->securityUser(), [
@@ -77,10 +81,43 @@ class PermitScanServiceTest extends TestCase
         $this->assertSame($permit->id, $result['scan_log']->permit_id);
         $this->assertSame('SECURITY TEST USER', $result['permit']['employee_name']);
         $this->assertArrayNotHasKey('contact_number', $result['permit']);
+        $this->assertArrayHasKey('route_map', $result['permit']);
+        $this->assertSame('vdni-road-map-v1', $result['permit']['route_map']['map']['key']);
+        $this->assertSame('Y1', $result['permit']['route_map']['segments'][0]['code']);
         $this->assertDatabaseHas('scan_logs', [
             'permit_id' => $permit->id,
             'result' => ScanLog::RESULT_VALID,
         ]);
+    }
+
+    /** @test */
+    public function scan_service_keeps_valid_result_when_route_map_build_fails()
+    {
+        $permit = $this->createPermit();
+        $permit->routeSegments()->attach($this->completeSegment('Y1')->id, ['sequence' => 1]);
+        $tokenResult = app(PermitTokenService::class)->generateForPermit($permit);
+        Log::spy();
+
+        $this->mock(PermitRouteMapService::class, function ($mock) {
+            $mock->shouldReceive('forPermit')
+                ->once()
+                ->andThrow(new \RuntimeException('route map failed'));
+        });
+
+        $result = app(PermitScanService::class)->scan($tokenResult['plain_token'], $this->securityUser());
+
+        $this->assertSame(ScanLog::RESULT_VALID, $result['result']);
+        $this->assertArrayNotHasKey('route_map', $result['permit']);
+        $this->assertSame('Peta rute tidak tersedia.', $result['permit']['route_map_warning']);
+        $this->assertDatabaseHas('scan_logs', [
+            'permit_id' => $permit->id,
+            'result' => ScanLog::RESULT_VALID,
+        ]);
+        Log::shouldHaveReceived('warning')
+            ->once()
+            ->with('Permit route map generation failed.', [
+                'permit_id' => $permit->id,
+            ]);
     }
 
     /** @test */
@@ -98,6 +135,7 @@ class PermitScanServiceTest extends TestCase
         $this->assertArrayHasKey('parking_code', $result['permit']);
         $this->assertArrayNotHasKey('nik', $result['permit']);
         $this->assertArrayNotHasKey('route_raw', $result['permit']);
+        $this->assertArrayNotHasKey('route_map', $result['permit']);
         $this->assertDatabaseHas('scan_logs', [
             'permit_id' => $permit->id,
             'result' => ScanLog::RESULT_EXPIRED,
@@ -149,6 +187,28 @@ class PermitScanServiceTest extends TestCase
         $this->assertDatabaseHas('scan_logs', [
             'permit_id' => null,
             'result' => ScanLog::RESULT_INVALID,
+        ]);
+    }
+
+    private function completeSegment(string $code): RoadSegment
+    {
+        return RoadSegment::create([
+            'code' => $code,
+            'name' => $code,
+            'start_location' => 'Start ' . $code,
+            'end_location' => 'End ' . $code,
+            'status' => 'active',
+            'polyline_json' => [
+                'version' => 1,
+                'map_key' => 'vdni-road-map-v1',
+                'status' => 'complete',
+                'points' => [
+                    ['x' => 10, 'y' => 20],
+                    ['x' => 30, 'y' => 40],
+                ],
+                'updated_by' => null,
+                'updated_at' => now()->toIso8601String(),
+            ],
         ]);
     }
 }

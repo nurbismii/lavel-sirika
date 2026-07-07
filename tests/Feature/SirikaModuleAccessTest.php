@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\RoadSegment;
 use App\Models\User;
 use Database\Seeders\RoadSegmentSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -15,6 +16,7 @@ class SirikaModuleAccessTest extends TestCase
     public function admin_can_view_road_segments_and_read_only_modules()
     {
         $this->seed(RoadSegmentSeeder::class);
+        $segment = RoadSegment::query()->firstOrFail();
 
         $admin = User::factory()->create([
             'role' => User::ROLE_ADMIN_HR,
@@ -26,6 +28,12 @@ class SirikaModuleAccessTest extends TestCase
             ->assertSee('Master Segmen Rute')
             ->assertSee('Y1')
             ->assertSee('H2');
+
+        $this->actingAs($admin)->get(route('road-segments.map', $segment))
+            ->assertOk()
+            ->assertSee('Editor Koordinat Rute')
+            ->assertSee('Simpan Complete')
+            ->assertSee('Reset Koordinat');
 
         $this->actingAs($admin)->get('/imports')
             ->assertOk()
@@ -52,6 +60,7 @@ class SirikaModuleAccessTest extends TestCase
     public function auditor_can_view_road_segments()
     {
         $this->seed(RoadSegmentSeeder::class);
+        $segment = RoadSegment::query()->firstOrFail();
 
         $auditor = User::factory()->create([
             'role' => User::ROLE_AUDITOR,
@@ -63,11 +72,20 @@ class SirikaModuleAccessTest extends TestCase
             ->assertSee('Master Segmen Rute')
             ->assertSee('Y1')
             ->assertSee('H2');
+
+        $this->actingAs($auditor)->get(route('road-segments.map', $segment))
+            ->assertOk()
+            ->assertSee('Editor Koordinat Rute')
+            ->assertDontSee('Simpan Complete')
+            ->assertDontSee('Reset Koordinat');
     }
 
     /** @test */
     public function security_can_access_scan_but_cannot_access_admin_import()
     {
+        $this->seed(RoadSegmentSeeder::class);
+        $segment = RoadSegment::query()->firstOrFail();
+
         $security = User::factory()->create([
             'role' => User::ROLE_SECURITY,
             'status' => User::STATUS_ACTIVE,
@@ -80,6 +98,9 @@ class SirikaModuleAccessTest extends TestCase
             ->assertSee('Input Token Manual');
 
         $this->actingAs($security)->get('/imports')
+            ->assertForbidden();
+
+        $this->actingAs($security)->get(route('road-segments.map', $segment))
             ->assertForbidden();
     }
 }

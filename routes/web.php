@@ -5,6 +5,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\PermitController;
 use App\Http\Controllers\PermitQrController;
+use App\Http\Controllers\PermitRouteMapController;
 use App\Http\Controllers\RoadSegmentController;
 use App\Http\Controllers\ScanController;
 use App\Models\User;
@@ -33,6 +34,18 @@ Route::middleware('auth')->group(function () {
         Route::get('/road-segments', [RoadSegmentController::class, 'index'])->name('road-segments.index');
     });
 
+    Route::get('/road-segments/{roadSegment}/map', [RoadSegmentController::class, 'map'])
+        ->middleware('role:' . implode(',', User::rolesForRoute('road-segments.map')))
+        ->name('road-segments.map');
+
+    Route::post('/road-segments/{roadSegment}/map', [RoadSegmentController::class, 'updateMap'])
+        ->middleware('role:' . implode(',', User::rolesForRoute('road-segments.map.update')))
+        ->name('road-segments.map.update');
+
+    Route::delete('/road-segments/{roadSegment}/map', [RoadSegmentController::class, 'resetMap'])
+        ->middleware('role:' . implode(',', User::rolesForRoute('road-segments.map.reset')))
+        ->name('road-segments.map.reset');
+
     Route::middleware('role:' . implode(',', User::rolesForRoute('imports.index')))->group(function () {
         Route::get('/imports', [ImportController::class, 'index'])->name('imports.index');
         Route::get('/imports/{importBatch}', [ImportController::class, 'show'])->name('imports.show');
@@ -49,6 +62,10 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:' . implode(',', User::rolesForRoute('permits.index')))->group(function () {
         Route::get('/permits', [PermitController::class, 'index'])->name('permits.index');
     });
+
+    Route::get('/permits/{permit}/route-map', [PermitRouteMapController::class, 'show'])
+        ->middleware('role:' . implode(',', User::rolesForRoute('permits.route-map.show')))
+        ->name('permits.route-map.show');
 
     Route::post('/permits/qr/bulk-generate', [PermitQrController::class, 'bulkGenerate'])
         ->middleware('role:' . implode(',', User::rolesForRoute('permits.qr.bulk-generate')))

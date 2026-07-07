@@ -18,6 +18,7 @@
         "webpack": "^5.91.0"
     },
     "dependencies": {
-        "html5-qrcode": "^2.3.8"
+        "html5-qrcode": "^2.3.8",
+        "leaflet": "^1.9.4"
     }
 }
