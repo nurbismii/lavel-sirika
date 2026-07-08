@@ -5726,6 +5726,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var leaflet_dist_leaflet_css__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! leaflet/dist/leaflet.css */ "./node_modules/leaflet/dist/leaflet.css");
 
 
+var ROUTE_PREVIEW_OPACITY = 0.45;
 function createBaseMap(element, mapConfig) {
   var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
   if (!element || !mapConfig) {
@@ -5756,10 +5757,11 @@ function drawSegments(instance, segments) {
   return segments.filter(function (segment) {
     return Array.isArray(segment.lat_lngs) && segment.lat_lngs.length >= 2;
   }).map(function (segment) {
+    var _options$opacity;
     var line = leaflet__WEBPACK_IMPORTED_MODULE_0___default().polyline(segment.lat_lngs, {
       color: color,
       weight: options.weight || 4,
-      opacity: options.opacity || 0.9
+      opacity: (_options$opacity = options.opacity) !== null && _options$opacity !== void 0 ? _options$opacity : ROUTE_PREVIEW_OPACITY
     }).addTo(instance.leaflet);
     if (segment.code) {
       line.bindTooltip(segment.code, {
@@ -5789,7 +5791,8 @@ window.sirikaRoutePreview = function (_ref) {
     init: function init() {
       this.leaflet = window.sirikaRenderRouteMap(this.$refs.map, this.map, this.segments, {
         color: '#166534',
-        weight: 4
+        weight: 4,
+        opacity: ROUTE_PREVIEW_OPACITY
       });
     }
   };

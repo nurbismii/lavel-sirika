@@ -1,6 +1,8 @@
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
+const ROUTE_PREVIEW_OPACITY = 0.45;
+
 function createBaseMap(element, mapConfig, options = {}) {
     if (!element || !mapConfig) {
         return null;
@@ -35,7 +37,7 @@ function drawSegments(instance, segments, options = {}) {
             const line = L.polyline(segment.lat_lngs, {
                 color,
                 weight: options.weight || 4,
-                opacity: options.opacity || 0.9,
+                opacity: options.opacity ?? ROUTE_PREVIEW_OPACITY,
             }).addTo(instance.leaflet);
 
             if (segment.code) {
@@ -68,6 +70,7 @@ window.sirikaRoutePreview = function ({ map, segments }) {
             this.leaflet = window.sirikaRenderRouteMap(this.$refs.map, this.map, this.segments, {
                 color: '#166534',
                 weight: 4,
+                opacity: ROUTE_PREVIEW_OPACITY,
             });
         },
     };
