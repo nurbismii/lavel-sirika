@@ -140,6 +140,20 @@ class User extends Authenticatable
             ],
             'permits.index' => [
                 self::ROLE_ADMIN_HR,
+                self::ROLE_AUDITOR,
+            ],
+            'permits.show' => [
+                self::ROLE_ADMIN_HR,
+                self::ROLE_AUDITOR,
+            ],
+            'permits.review.edit' => [
+                self::ROLE_ADMIN_HR,
+            ],
+            'permits.review.update' => [
+                self::ROLE_ADMIN_HR,
+            ],
+            'permits.review.activate' => [
+                self::ROLE_ADMIN_HR,
             ],
             'permits.route-map.show' => [
                 self::ROLE_ADMIN_HR,

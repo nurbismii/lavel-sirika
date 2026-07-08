@@ -5,6 +5,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\PermitController;
 use App\Http\Controllers\PermitQrController;
+use App\Http\Controllers\PermitReviewController;
 use App\Http\Controllers\PermitRouteMapController;
 use App\Http\Controllers\RoadSegmentController;
 use App\Http\Controllers\ScanController;
@@ -66,6 +67,22 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:' . implode(',', User::rolesForRoute('permits.index')))->group(function () {
         Route::get('/permits', [PermitController::class, 'index'])->name('permits.index');
     });
+
+    Route::get('/permits/{permit}', [PermitController::class, 'show'])
+        ->middleware('role:' . implode(',', User::rolesForRoute('permits.show')))
+        ->name('permits.show');
+
+    Route::get('/permits/{permit}/review', [PermitReviewController::class, 'edit'])
+        ->middleware('role:' . implode(',', User::rolesForRoute('permits.review.edit')))
+        ->name('permits.review.edit');
+
+    Route::post('/permits/{permit}/review', [PermitReviewController::class, 'update'])
+        ->middleware('role:' . implode(',', User::rolesForRoute('permits.review.update')))
+        ->name('permits.review.update');
+
+    Route::post('/permits/{permit}/review/activate', [PermitReviewController::class, 'activate'])
+        ->middleware('role:' . implode(',', User::rolesForRoute('permits.review.activate')))
+        ->name('permits.review.activate');
 
     Route::get('/permits/{permit}/route-map', [PermitRouteMapController::class, 'show'])
         ->middleware('role:' . implode(',', User::rolesForRoute('permits.route-map.show')))
