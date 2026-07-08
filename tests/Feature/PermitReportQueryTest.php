@@ -17,6 +17,13 @@ class PermitReportQueryTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow();
+
+        parent::tearDown();
+    }
+
     /** @test */
     public function it_filters_permits_by_status_review_status_source_color_parking_and_search()
     {
@@ -97,6 +104,44 @@ class PermitReportQueryTest extends TestCase
 
         $this->assertSame('active', $reports->qrStatusValue($permit));
         $this->assertSame('QR Aktif', $reports->qrStatusLabel($permit));
+    }
+
+    /** @test */
+    public function it_does_not_hydrate_token_hash_when_loading_report_tokens()
+    {
+        Carbon::setTestNow('2026-07-08 10:00:00');
+
+        $activePermit = $this->permit(['name' => 'QR HASH ACTIVE', 'plate' => 'DT 9301 QH']);
+        $revokedPermit = $this->permit(['name' => 'QR HASH REVOKED', 'plate' => 'DT 9302 QH']);
+
+        $this->token($activePermit, PermitToken::STATUS_ACTIVE, now()->addYear());
+        $this->token($revokedPermit, PermitToken::STATUS_REVOKED, now()->addYear(), now());
+
+        $results = app(PermitReportQuery::class)->query([])->get()->keyBy('id');
+
+        $this->assertFalse($results[$activePermit->id]->activeToken->offsetExists('token_hash'));
+        $this->assertArrayNotHasKey('token_hash', $results[$activePermit->id]->activeToken->getAttributes());
+        $this->assertFalse($results[$revokedPermit->id]->latestToken->offsetExists('token_hash'));
+        $this->assertArrayNotHasKey('token_hash', $results[$revokedPermit->id]->latestToken->getAttributes());
+    }
+
+    /** @test */
+    public function it_resolves_revoked_and_missing_qr_status_labels_from_loaded_tokens()
+    {
+        Carbon::setTestNow('2026-07-08 10:00:00');
+
+        $revokedPermit = $this->permit(['name' => 'QR LABEL REVOKED', 'plate' => 'DT 9202 QR']);
+        $missingPermit = $this->permit(['name' => 'QR LABEL MISSING', 'plate' => 'DT 9203 QM']);
+
+        $this->token($revokedPermit, PermitToken::STATUS_REVOKED, now()->addYear(), now());
+
+        $reports = app(PermitReportQuery::class);
+        $results = $reports->query([])->get()->keyBy('id');
+
+        $this->assertSame('revoked', $reports->qrStatusValue($results[$revokedPermit->id]));
+        $this->assertSame('QR Dicabut', $reports->qrStatusLabel($results[$revokedPermit->id]));
+        $this->assertSame('missing', $reports->qrStatusValue($results[$missingPermit->id]));
+        $this->assertSame('Belum dibuat', $reports->qrStatusLabel($results[$missingPermit->id]));
     }
 
     private function idsForQrStatus(PermitReportQuery $reports, string $qrStatus): array

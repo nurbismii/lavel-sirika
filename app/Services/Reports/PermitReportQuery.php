@@ -31,8 +31,24 @@ class PermitReportQuery
                 'vehicle',
                 'parkingLocation',
                 'reviewer',
-                'activeToken',
-                'latestToken',
+                'activeToken' => function ($query) {
+                    $query->select([
+                        'permit_tokens.id',
+                        'permit_tokens.vehicle_permit_id',
+                        'permit_tokens.status',
+                        'permit_tokens.expires_at',
+                        'permit_tokens.revoked_at',
+                    ]);
+                },
+                'latestToken' => function ($query) {
+                    $query->select([
+                        'permit_tokens.id',
+                        'permit_tokens.vehicle_permit_id',
+                        'permit_tokens.status',
+                        'permit_tokens.expires_at',
+                        'permit_tokens.revoked_at',
+                    ]);
+                },
             ])
             ->withCount('routeSegments')
             ->orderByDesc('vehicle_permits.created_at')
