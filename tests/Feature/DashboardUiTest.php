@@ -61,8 +61,8 @@ class DashboardUiTest extends TestCase
             ],
             [
                 'role' => User::ROLE_AUDITOR,
-                'allowed' => [route('road-segments.index')],
-                'blocked' => [route('imports.index'), route('permits.index'), route('scan.index')],
+                'allowed' => [route('road-segments.index'), route('permits.index')],
+                'blocked' => [route('imports.index'), route('scan.index')],
             ],
         ];
 
