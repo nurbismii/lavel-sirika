@@ -182,6 +182,22 @@ class User extends Authenticatable
                 self::ROLE_ADMIN_HR,
                 self::ROLE_SECURITY,
             ],
+            'reports.permits.index' => [
+                self::ROLE_ADMIN_HR,
+                self::ROLE_AUDITOR,
+            ],
+            'reports.permits.export' => [
+                self::ROLE_ADMIN_HR,
+                self::ROLE_AUDITOR,
+            ],
+            'reports.scans.index' => [
+                self::ROLE_ADMIN_HR,
+                self::ROLE_AUDITOR,
+            ],
+            'reports.scans.export' => [
+                self::ROLE_ADMIN_HR,
+                self::ROLE_AUDITOR,
+            ],
         ];
     }
 
