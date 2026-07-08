@@ -28,6 +28,7 @@
                             ['label' => 'Master Rute', 'route' => 'road-segments.index'],
                             ['label' => 'Import Excel', 'route' => 'imports.index'],
                             ['label' => 'Izin Kendaraan', 'route' => 'permits.index'],
+                            ['label' => 'Laporan Izin', 'route' => 'reports.permits.index'],
                             ['label' => 'Scan QR', 'route' => 'scan.index'],
                         ];
                     @endphp

@@ -5,6 +5,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\PermitController;
 use App\Http\Controllers\PermitQrController;
+use App\Http\Controllers\ReportPermitController;
 use App\Http\Controllers\PermitReviewController;
 use App\Http\Controllers\PermitRouteMapController;
 use App\Http\Controllers\RoadSegmentController;
@@ -111,6 +112,14 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:' . implode(',', User::rolesForRoute('scan.index')))->group(function () {
         Route::get('/scan', [ScanController::class, 'index'])->name('scan.index');
     });
+
+    Route::middleware('role:' . implode(',', User::rolesForRoute('reports.permits.index')))->group(function () {
+        Route::get('/reports/permits', [ReportPermitController::class, 'index'])->name('reports.permits.index');
+    });
+
+    Route::get('/reports/permits/export', [ReportPermitController::class, 'export'])
+        ->middleware('role:' . implode(',', User::rolesForRoute('reports.permits.export')))
+        ->name('reports.permits.export');
 
     Route::post('/scan/verify', [ScanController::class, 'verify'])
         ->middleware([
