@@ -669,6 +669,8 @@ class PermitReportQuery
         if ($qrStatus === 'missing') {
             $query->whereDoesntHave('tokens', function ($tokenQuery) {
                 $tokenQuery->where('status', PermitToken::STATUS_ACTIVE);
+            })->whereDoesntHave('tokens', function ($tokenQuery) {
+                $tokenQuery->where('status', PermitToken::STATUS_REVOKED);
             });
         }
 
