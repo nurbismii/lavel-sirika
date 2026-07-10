@@ -22,6 +22,18 @@ class DeploymentDocumentationTest extends TestCase
         $this->assertStringContainsString('php artisan config:cache', $contents);
         $this->assertStringContainsString('php artisan route:cache', $contents);
         $this->assertStringContainsString('php artisan view:cache', $contents);
+        $this->assertStringContainsString('php artisan --version', $contents);
+        $this->assertStringNotContainsString('php artisan about', $contents);
+        $this->assertLessThan(
+            strpos($contents, 'php artisan config:cache'),
+            strpos($contents, 'php artisan key:generate --show')
+        );
+        $this->assertLessThan(
+            strpos($contents, 'php artisan config:cache'),
+            strpos($contents, 'SIRIKA_SEED_USER_PASSWORD')
+        );
+        $this->assertStringContainsString('Live cPanel `index.php` tidak boleh pernah ditimpa dengan file yang belum dipatch', $contents);
+        $this->assertStringNotContainsString('upload seluruh isi `public/` terlebih dahulu lalu segera terapkan kembali patch', $contents);
         $this->assertStringContainsString('Backup database', $contents);
         $this->assertStringContainsString('Rollback', $contents);
         $this->assertStringContainsString('composer audit', $contents);

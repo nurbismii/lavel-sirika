@@ -113,6 +113,19 @@ Jalankan dari folder source Laravel, bukan dari `public_html/prod-sirika`:
 
 ```bash
 composer install --no-dev --optimize-autoloader
+```
+
+Finalisasi `.env` sebelum membangun cache konfigurasi:
+
+```bash
+php artisan key:generate --show
+```
+
+Untuk environment baru, copy hasil command tersebut ke `APP_KEY=` di `.env`. Isi credential database cPanel, pastikan `APP_DEBUG=false`, `APP_URL=https://sirika.vdnisite.com`, dan `SESSION_SECURE_COOKIE=true`. Jika seeder akan dijalankan, isi `SIRIKA_SEED_USER_PASSWORD` sekarang.
+
+Jangan menjalankan `php artisan key:generate` ulang pada production yang sudah berjalan kecuali sedang membuat environment baru. Setelah seluruh nilai `.env` final, bangun cache aplikasi:
+
+```bash
 php artisan config:clear
 php artisan route:clear
 php artisan view:clear
@@ -120,14 +133,6 @@ php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 ```
-
-Generate APP_KEY hanya untuk environment baru:
-
-```bash
-php artisan key:generate --show
-```
-
-Copy hasilnya ke `APP_KEY=` di `.env`. Jangan menjalankan `php artisan key:generate` ulang pada production yang sudah berjalan kecuali sedang membuat environment baru.
 
 Jalankan migration hanya jika database belum dibuat atau ada migration baru:
 
@@ -154,7 +159,7 @@ php artisan down --render="errors::503"
 4. Akses URL production dari browser atau HTTP client dan verifikasi response maintenance aktif dengan status HTTP `503` sebelum meng-upload atau menimpa source, vendor, maupun asset.
 5. Upload source baru ke folder source Laravel.
 6. Upload asset baru dari folder `public/` ke `public_html/prod-sirika`, tetapi jangan meng-upload atau menimpa `index.php`. File `public_html/prod-sirika/index.php` adalah file yang sudah disesuaikan untuk path cPanel.
-7. Jika proses upload tidak dapat mengecualikan `index.php`, upload seluruh isi `public/` terlebih dahulu lalu segera terapkan kembali patch path cPanel pada `index.php` sebelum traffic diarahkan ke release.
+7. Live cPanel `index.php` tidak boleh pernah ditimpa dengan file yang belum dipatch. Jika tool upload tidak dapat mengecualikan `index.php`, siapkan dan upload entrypoint yang sudah dipatch secara terpisah, atau stage asset di folder sementara terlebih dahulu lalu salin asset tanpa menimpa entrypoint live.
 8. Jalankan:
 
 ```bash
@@ -173,7 +178,7 @@ Jika tidak ada migration baru, `php artisan migrate --force` tetap aman secara L
 9. Saat maintenance mode masih aktif, jalankan smoke check CLI berikut dan pastikan tidak ada error:
 
 ```bash
-php artisan about
+php artisan --version
 php artisan migrate:status
 ```
 
@@ -235,7 +240,7 @@ php artisan route:cache
 php artisan view:cache
 ```
 
-7. Saat maintenance mode masih aktif, jalankan `php artisan about` dan `php artisan migrate:status` sebagai smoke check.
+7. Saat maintenance mode masih aktif, jalankan `php artisan --version` dan `php artisan migrate:status` sebagai smoke check.
 8. Setelah smoke check berhasil, jalankan `php artisan up`, lalu ulangi smoke test web.
 
 Jika rollback atau cache rebuild gagal, tetap pulihkan source, asset, dan cache release sebelumnya; jalankan `php artisan up` ketika aplikasi sudah aman dilayani kembali. Jika migration baru sudah berjalan, jangan rollback database tanpa backup dan evaluasi manual.
