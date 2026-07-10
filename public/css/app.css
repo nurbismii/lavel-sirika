@@ -208,7 +208,7 @@ img {
 }
 
 .stats-grid {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .panel {
@@ -266,6 +266,86 @@ img {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
+}
+
+.dashboard-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+}
+
+.summary-list,
+.activity-list {
+    margin: 16px 0 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--sirika-border);
+}
+
+.summary-list__item {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--sirika-border);
+}
+
+.summary-list__label {
+    color: var(--sirika-muted);
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.summary-list__value {
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.activity-list__item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 14px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--sirika-border);
+}
+
+.activity-list__type,
+.activity-list__title,
+.activity-list__description,
+.activity-list__meta,
+.activity-list__time,
+.activity-list__empty {
+    margin: 0;
+}
+
+.activity-list__type {
+    color: var(--sirika-primary);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.activity-list__title {
+    margin-top: 4px;
+    font-weight: 700;
+}
+
+.activity-list__description,
+.activity-list__meta,
+.activity-list__time,
+.activity-list__empty {
+    color: var(--sirika-muted);
+    font-size: 13px;
+}
+
+.activity-list__meta {
+    margin-top: 4px;
+}
+
+.activity-list__time {
+    white-space: nowrap;
+    text-align: right;
 }
 
 .button {
@@ -854,13 +934,15 @@ th {
 }
 
 @media (max-width: 1024px) {
-    .stats-grid {
+    .stats-grid,
+    .dashboard-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
 @media (max-width: 960px) {
-    .scan-layout {
+    .scan-layout,
+    .dashboard-grid {
         grid-template-columns: 1fr;
     }
 
@@ -936,9 +1018,19 @@ th {
 
     .form-grid,
     .password-field,
+    .dashboard-grid,
     .status-summary,
     .login-signal-grid {
         grid-template-columns: 1fr;
+    }
+
+    .activity-list__item {
+        grid-template-columns: 1fr;
+    }
+
+    .activity-list__time {
+        text-align: left;
+        white-space: normal;
     }
 
     .section-header {

@@ -158,7 +158,7 @@ class PermitListAfterImportTest extends TestCase
             ->assertSeeInOrder([
                 'Izin Aktif',
                 '1',
-                'Data izin aktif pada tabel final',
+                'Izin yang sudah disetujui dan berlaku',
                 'Perlu Review',
                 '1',
                 'Izin yang perlu verifikasi lanjutan',
