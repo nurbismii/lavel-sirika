@@ -68,9 +68,21 @@ Folder/file berikut tidak boleh berada di `public_html/prod-sirika`:
 7. Pastikan `APP_URL=https://sirika.vdnisite.com`.
 8. Pastikan `SESSION_SECURE_COOKIE=true`.
 
+## Konfigurasi Domain cPanel
+
+Di cPanel, buka menu **Domains** atau **Subdomains**, lalu konfigurasi domain `sirika.vdnisite.com` dengan Document Root `public_html/prod-sirika`.
+
+Langkah verifikasi mapping domain sebelum deployment dilanjutkan:
+
+1. Pastikan `sirika.vdnisite.com` tercantum di cPanel Domains/Subdomains.
+2. Pastikan Document Root yang ditampilkan adalah `public_html/prod-sirika`.
+3. Buat atau upload file uji sementara ke `public_html/prod-sirika`, akses `https://sirika.vdnisite.com`, lalu pastikan file tersebut dilayani dari folder itu. Hapus file uji setelah verifikasi.
+
 ## Menyesuaikan public index.php
 
 File `public_html/prod-sirika/index.php` harus menunjuk ke source Laravel di luar `public_html`.
+
+Gunakan file `index.php` cPanel yang sudah ada. Jangan mengganti seluruh isi file dengan snippet di bawah; operator harus ubah hanya tiga ekspresi path berikut pada entrypoint existing: path `maintenance.php`, path `vendor/autoload.php`, dan path `bootstrap/app.php`.
 
 Contoh jika source berada di `/home/CPANEL_USER/sirika-app`:
 

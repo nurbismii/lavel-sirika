@@ -28,6 +28,10 @@ class DeploymentDocumentationTest extends TestCase
         $this->assertStringContainsString('Laravel 8', $contents);
         $this->assertStringContainsString('jangan meng-upload atau menimpa `index.php`', $contents);
         $this->assertStringContainsString("__DIR__.'/../../sirika-app/storage/framework/maintenance.php'", $contents);
+        $this->assertStringContainsString('cPanel Domains/Subdomains', $contents);
+        $this->assertStringContainsString('Document Root `public_html/prod-sirika`', $contents);
+        $this->assertStringContainsString('verifikasi mapping domain', $contents);
+        $this->assertStringContainsString('ubah hanya tiga ekspresi path', $contents);
     }
 
     /** @test */
