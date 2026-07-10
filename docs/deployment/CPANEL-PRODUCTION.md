@@ -75,10 +75,16 @@ File `public_html/prod-sirika/index.php` harus menunjuk ke source Laravel di lua
 Contoh jika source berada di `/home/CPANEL_USER/sirika-app`:
 
 ```php
+if (file_exists($maintenance = __DIR__.'/../../sirika-app/storage/framework/maintenance.php')) {
+    require $maintenance;
+}
+
 require __DIR__.'/../../sirika-app/vendor/autoload.php';
 
 $app = require_once __DIR__.'/../../sirika-app/bootstrap/app.php';
 ```
+
+Jangan menghapus atau mengubah blok `maintenance.php`. Path tersebut harus menunjuk ke `storage/framework/maintenance.php` pada source Laravel di luar `public_html`, bukan ke folder public cPanel.
 
 Cek path aktual lewat Terminal cPanel:
 
@@ -127,8 +133,9 @@ php artisan db:seed --force
 
 1. Backup database.
 2. Upload source baru ke folder source Laravel.
-3. Upload asset baru dari folder `public/` ke `public_html/prod-sirika`.
-4. Jalankan:
+3. Upload asset baru dari folder `public/` ke `public_html/prod-sirika`, tetapi jangan meng-upload atau menimpa `index.php`. File `public_html/prod-sirika/index.php` adalah file yang sudah disesuaikan untuk path cPanel.
+4. Jika proses upload tidak dapat mengecualikan `index.php`, upload seluruh isi `public/` terlebih dahulu lalu segera terapkan kembali patch path cPanel pada `index.php` sebelum traffic diarahkan ke release.
+5. Jalankan:
 
 ```bash
 composer install --no-dev --optimize-autoloader

@@ -26,6 +26,8 @@ class DeploymentDocumentationTest extends TestCase
         $this->assertStringContainsString('Rollback', $contents);
         $this->assertStringContainsString('composer audit', $contents);
         $this->assertStringContainsString('Laravel 8', $contents);
+        $this->assertStringContainsString('jangan meng-upload atau menimpa `index.php`', $contents);
+        $this->assertStringContainsString("__DIR__.'/../../sirika-app/storage/framework/maintenance.php'", $contents);
     }
 
     /** @test */
