@@ -144,10 +144,17 @@ php artisan db:seed --force
 ## Deploy Update
 
 1. Backup database.
-2. Upload source baru ke folder source Laravel.
-3. Upload asset baru dari folder `public/` ke `public_html/prod-sirika`, tetapi jangan meng-upload atau menimpa `index.php`. File `public_html/prod-sirika/index.php` adalah file yang sudah disesuaikan untuk path cPanel.
-4. Jika proses upload tidak dapat mengecualikan `index.php`, upload seluruh isi `public/` terlebih dahulu lalu segera terapkan kembali patch path cPanel pada `index.php` sebelum traffic diarahkan ke release.
-5. Jalankan:
+2. Simpan copy source, asset `public/`, dan cache release aktif untuk pemulihan.
+3. Aktifkan maintenance mode sebelum mengubah source atau asset live:
+
+```bash
+php artisan down
+```
+
+4. Upload source baru ke folder source Laravel.
+5. Upload asset baru dari folder `public/` ke `public_html/prod-sirika`, tetapi jangan meng-upload atau menimpa `index.php`. File `public_html/prod-sirika/index.php` adalah file yang sudah disesuaikan untuk path cPanel.
+6. Jika proses upload tidak dapat mengecualikan `index.php`, upload seluruh isi `public/` terlebih dahulu lalu segera terapkan kembali patch path cPanel pada `index.php` sebelum traffic diarahkan ke release.
+7. Jalankan:
 
 ```bash
 composer install --no-dev --optimize-autoloader
@@ -162,6 +169,21 @@ php artisan view:cache
 
 Jika tidak ada migration baru, `php artisan migrate --force` tetap aman secara Laravel, tetapi operator harus membaca daftar migration sebelum deploy besar.
 
+8. Saat maintenance mode masih aktif, jalankan smoke check CLI berikut dan pastikan tidak ada error:
+
+```bash
+php artisan about
+php artisan migrate:status
+```
+
+9. Kembalikan traffic setelah smoke check berhasil:
+
+```bash
+php artisan up
+```
+
+10. Jalankan smoke test web pada bagian **Smoke Test Setelah Deploy**. Jika salah satu langkah gagal, jangan biarkan aplikasi terkunci: restore source, asset, dan cache release sebelumnya, lalu jalankan `php artisan up` ketika aplikasi sudah aman dilayani kembali.
+
 ## Permission
 
 Rekomendasi umum shared hosting:
@@ -171,6 +193,7 @@ Rekomendasi umum shared hosting:
 - `storage/` harus writable oleh user hosting.
 - `bootstrap/cache/` harus writable oleh user hosting.
 - `.env` tidak boleh berada di public web root.
+- Permission `.env`: `600` lebih disarankan; gunakan `640` hanya jika model group hosting membutuhkannya.
 
 Jika permission berbeda karena aturan hosting, ikuti prinsip: public hanya membaca file public, Laravel hanya menulis ke `storage/` dan `bootstrap/cache/`.
 
@@ -192,8 +215,14 @@ Rollback aman membutuhkan backup.
 
 1. Simpan copy release source dan public asset sebelum deploy update.
 2. Backup database sebelum menjalankan migration.
-3. Jika deploy gagal sebelum migration, restore source dan asset release sebelumnya.
-4. Jalankan cache ulang:
+3. Aktifkan maintenance mode sebelum memulihkan release:
+
+```bash
+php artisan down
+```
+
+4. Restore source, asset, dan cache release sebelumnya.
+5. Jalankan cache ulang:
 
 ```bash
 php artisan config:clear
@@ -204,10 +233,13 @@ php artisan route:cache
 php artisan view:cache
 ```
 
-Jika migration baru sudah berjalan, jangan rollback database tanpa backup dan evaluasi manual.
+6. Saat maintenance mode masih aktif, jalankan `php artisan about` dan `php artisan migrate:status` sebagai smoke check.
+7. Setelah smoke check berhasil, jalankan `php artisan up`, lalu ulangi smoke test web.
+
+Jika rollback atau cache rebuild gagal, tetap pulihkan source, asset, dan cache release sebelumnya; jalankan `php artisan up` ketika aplikasi sudah aman dilayani kembali. Jika migration baru sudah berjalan, jangan rollback database tanpa backup dan evaluasi manual.
 
 ## Audit Dependency
 
 `npm audit --omit=dev` terakhir bersih untuk dependency production Node.
 
-`composer audit` masih melaporkan advisory baseline pada Laravel 8 dan package bawaan Laravel 8 seperti `swiftmailer/swiftmailer`. Ini adalah risiko residual yang tidak diselesaikan di Phase 6 karena membutuhkan phase upgrade Laravel/PHP terpisah.
+`composer audit` masih melaporkan 3 advisory `laravel/framework` pada Laravel 8 dan 2 package abandoned: `fruitcake/laravel-cors` serta `swiftmailer/swiftmailer`. Sebelum release, tunda deployment production atau terima risiko secara eksplisit sampai dependency tersebut diremediasi pada phase upgrade dependency berikutnya. Risiko ini tidak diselesaikan di Phase 6 karena membutuhkan upgrade Laravel/PHP terpisah.

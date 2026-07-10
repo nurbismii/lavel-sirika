@@ -2,28 +2,14 @@
 
 namespace App\Http\Middleware;
 
-use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Http\Middleware\TrustHosts as Middleware;
 
 class TrustHosts extends Middleware
 {
     /**
-     * Create a new middleware instance.
-     *
-     * @param  \Illuminate\Contracts\Foundation\Application|null  $app
-     * @return void
-     */
-    public function __construct(Application $app = null)
-    {
-        if ($app !== null) {
-            parent::__construct($app);
-        }
-    }
-
-    /**
      * Get the host patterns that should be trusted.
      *
-     * @return array<int, string|null>
+     * @return array<int, string>
      */
     public function hosts()
     {
@@ -47,8 +33,6 @@ class TrustHosts extends Middleware
             return $hosts;
         }
 
-        return [
-            $this->allSubdomainsOfApplicationUrl(),
-        ];
+        return ['^sirika\\.vdnisite\\.com$'];
     }
 }

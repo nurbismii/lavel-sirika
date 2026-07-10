@@ -1,12 +1,14 @@
 <?php
 
+$trustedHosts = array_values(array_filter(array_map('trim', explode(',', env(
+    'SIRIKA_TRUSTED_HOSTS',
+    'sirika.vdnisite.com'
+)))));
+
 return [
     'seed_user_password' => env('SIRIKA_SEED_USER_PASSWORD'),
 
-    'trusted_hosts' => array_values(array_filter(array_map('trim', explode(',', env(
-        'SIRIKA_TRUSTED_HOSTS',
-        'sirika.vdnisite.com'
-    ))))),
+    'trusted_hosts' => $trustedHosts ?: ['sirika.vdnisite.com'],
 
     'route_map' => [
         'key' => env('SIRIKA_ROUTE_MAP_KEY', 'vdni-road-map-v1'),

@@ -25,10 +25,20 @@ class ProductionHardeningConfigTest extends TestCase
     {
         config(['sirika.trusted_hosts' => ['sirika.vdnisite.com', 'www.sirika.vdnisite.com']]);
 
-        $hosts = (new TrustHosts())->hosts();
+        $hosts = app(TrustHosts::class)->hosts();
 
         $this->assertContains('^sirika\.vdnisite\.com$', $hosts);
         $this->assertContains('^www\.sirika\.vdnisite\.com$', $hosts);
+    }
+
+    /** @test */
+    public function trust_hosts_falls_back_to_the_exact_production_host_when_configuration_is_empty()
+    {
+        config(['sirika.trusted_hosts' => []]);
+
+        $hosts = app(TrustHosts::class)->hosts();
+
+        $this->assertSame(['^sirika\\.vdnisite\\.com$'], $hosts);
     }
 
     /** @test */

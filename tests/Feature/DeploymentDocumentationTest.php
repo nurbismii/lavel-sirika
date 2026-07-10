@@ -32,6 +32,13 @@ class DeploymentDocumentationTest extends TestCase
         $this->assertStringContainsString('Document Root `public_html/prod-sirika`', $contents);
         $this->assertStringContainsString('verifikasi mapping domain', $contents);
         $this->assertStringContainsString('ubah hanya tiga ekspresi path', $contents);
+        $this->assertStringContainsString('php artisan down', $contents);
+        $this->assertStringContainsString('php artisan up', $contents);
+        $this->assertStringContainsString('3 advisory `laravel/framework`', $contents);
+        $this->assertStringContainsString('2 package abandoned', $contents);
+        $this->assertStringContainsString('tunda deployment production atau terima risiko secara eksplisit', $contents);
+        $this->assertStringContainsString('`600` lebih disarankan', $contents);
+        $this->assertStringContainsString('`640` hanya jika model group hosting membutuhkannya', $contents);
     }
 
     /** @test */
