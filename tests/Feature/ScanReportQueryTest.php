@@ -78,12 +78,12 @@ class ScanReportQueryTest extends TestCase
     /** @test */
     public function it_allows_scan_export_ranges_of_exactly_thirty_one_inclusive_days()
     {
+        $this->expectNotToPerformAssertions();
+
         app(ScanReportQuery::class)->assertExportRange([
             'date_from' => '2026-07-01',
             'date_to' => '2026-07-31',
         ]);
-
-        $this->assertTrue(true);
     }
 
     private function user(string $role, string $name): User
