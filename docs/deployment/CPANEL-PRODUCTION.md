@@ -148,13 +148,14 @@ php artisan db:seed --force
 3. Aktifkan maintenance mode sebelum mengubah source atau asset live:
 
 ```bash
-php artisan down
+php artisan down --render="errors::503"
 ```
 
-4. Upload source baru ke folder source Laravel.
-5. Upload asset baru dari folder `public/` ke `public_html/prod-sirika`, tetapi jangan meng-upload atau menimpa `index.php`. File `public_html/prod-sirika/index.php` adalah file yang sudah disesuaikan untuk path cPanel.
-6. Jika proses upload tidak dapat mengecualikan `index.php`, upload seluruh isi `public/` terlebih dahulu lalu segera terapkan kembali patch path cPanel pada `index.php` sebelum traffic diarahkan ke release.
-7. Jalankan:
+4. Akses URL production dari browser atau HTTP client dan verifikasi response maintenance aktif dengan status HTTP `503` sebelum meng-upload atau menimpa source, vendor, maupun asset.
+5. Upload source baru ke folder source Laravel.
+6. Upload asset baru dari folder `public/` ke `public_html/prod-sirika`, tetapi jangan meng-upload atau menimpa `index.php`. File `public_html/prod-sirika/index.php` adalah file yang sudah disesuaikan untuk path cPanel.
+7. Jika proses upload tidak dapat mengecualikan `index.php`, upload seluruh isi `public/` terlebih dahulu lalu segera terapkan kembali patch path cPanel pada `index.php` sebelum traffic diarahkan ke release.
+8. Jalankan:
 
 ```bash
 composer install --no-dev --optimize-autoloader
@@ -169,20 +170,20 @@ php artisan view:cache
 
 Jika tidak ada migration baru, `php artisan migrate --force` tetap aman secara Laravel, tetapi operator harus membaca daftar migration sebelum deploy besar.
 
-8. Saat maintenance mode masih aktif, jalankan smoke check CLI berikut dan pastikan tidak ada error:
+9. Saat maintenance mode masih aktif, jalankan smoke check CLI berikut dan pastikan tidak ada error:
 
 ```bash
 php artisan about
 php artisan migrate:status
 ```
 
-9. Kembalikan traffic setelah smoke check berhasil:
+10. Kembalikan traffic setelah smoke check berhasil:
 
 ```bash
 php artisan up
 ```
 
-10. Jalankan smoke test web pada bagian **Smoke Test Setelah Deploy**. Jika salah satu langkah gagal, jangan biarkan aplikasi terkunci: restore source, asset, dan cache release sebelumnya, lalu jalankan `php artisan up` ketika aplikasi sudah aman dilayani kembali.
+11. Jalankan smoke test web pada bagian **Smoke Test Setelah Deploy**. Jika salah satu langkah gagal, jangan biarkan aplikasi terkunci: restore source, asset, dan cache release sebelumnya, lalu jalankan `php artisan up` ketika aplikasi sudah aman dilayani kembali.
 
 ## Permission
 
@@ -218,11 +219,12 @@ Rollback aman membutuhkan backup.
 3. Aktifkan maintenance mode sebelum memulihkan release:
 
 ```bash
-php artisan down
+php artisan down --render="errors::503"
 ```
 
-4. Restore source, asset, dan cache release sebelumnya.
-5. Jalankan cache ulang:
+4. Akses URL production dari browser atau HTTP client dan verifikasi response maintenance aktif dengan status HTTP `503` sebelum memulihkan source, vendor, maupun asset release sebelumnya.
+5. Restore source, asset, dan cache release sebelumnya.
+6. Jalankan cache ulang:
 
 ```bash
 php artisan config:clear
@@ -233,8 +235,8 @@ php artisan route:cache
 php artisan view:cache
 ```
 
-6. Saat maintenance mode masih aktif, jalankan `php artisan about` dan `php artisan migrate:status` sebagai smoke check.
-7. Setelah smoke check berhasil, jalankan `php artisan up`, lalu ulangi smoke test web.
+7. Saat maintenance mode masih aktif, jalankan `php artisan about` dan `php artisan migrate:status` sebagai smoke check.
+8. Setelah smoke check berhasil, jalankan `php artisan up`, lalu ulangi smoke test web.
 
 Jika rollback atau cache rebuild gagal, tetap pulihkan source, asset, dan cache release sebelumnya; jalankan `php artisan up` ketika aplikasi sudah aman dilayani kembali. Jika migration baru sudah berjalan, jangan rollback database tanpa backup dan evaluasi manual.
 
