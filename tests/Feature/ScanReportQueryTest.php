@@ -65,6 +65,24 @@ class ScanReportQueryTest extends TestCase
     }
 
     /** @test */
+    public function it_does_not_hydrate_ip_address_for_scan_report_rows()
+    {
+        Carbon::setTestNow('2026-07-08 10:00:00');
+
+        $scanner = $this->user(User::ROLE_SECURITY, 'Scanner Private Ip');
+        $permit = $this->permit('SCAN PRIVATE IP USER', 'DT 9603 PI');
+
+        $this->scan($permit, $scanner, ScanLog::RESULT_VALID, '2026-07-08 08:00:00');
+
+        $scanLog = app(ScanReportQuery::class)->query([
+            'date_from' => '2026-07-08',
+            'date_to' => '2026-07-08',
+        ])->first();
+
+        $this->assertArrayNotHasKey('ip_address', $scanLog->getAttributes());
+    }
+
+    /** @test */
     public function it_rejects_scan_export_ranges_longer_than_thirty_one_days()
     {
         $this->expectException(ValidationException::class);

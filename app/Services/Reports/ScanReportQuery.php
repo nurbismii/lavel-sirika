@@ -27,6 +27,17 @@ class ScanReportQuery
         $to = Carbon::parse($filters['date_to'])->endOfDay();
 
         $query = ScanLog::query()
+            ->select([
+                'id',
+                'permit_id',
+                'scanned_by',
+                'scanned_at',
+                'result',
+                'device_info',
+                'notes',
+                'created_at',
+                'updated_at',
+            ])
             ->with([
                 'permit.employee',
                 'permit.vehicle',

@@ -29,6 +29,7 @@
                             ['label' => 'Import Excel', 'route' => 'imports.index'],
                             ['label' => 'Izin Kendaraan', 'route' => 'permits.index'],
                             ['label' => 'Laporan Izin', 'route' => 'reports.permits.index'],
+                            ['label' => 'Laporan Scan', 'route' => 'reports.scans.index'],
                             ['label' => 'Scan QR', 'route' => 'scan.index'],
                         ];
                     @endphp
