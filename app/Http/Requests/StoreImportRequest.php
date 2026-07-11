@@ -13,8 +13,10 @@ class StoreImportRequest extends FormRequest
 
     public function rules()
     {
+        $maxKilobytes = (int) config('sirika.import.max_file_kilobytes', 10240);
+
         return [
-            'file' => ['required', 'file', 'mimes:xlsx,xls', 'max:10240'],
+            'file' => ['required', 'file', 'mimes:xlsx,xls', 'max:' . $maxKilobytes],
         ];
     }
 

@@ -18,16 +18,22 @@ class PermitExcelImportService
 {
     private $headerMapper;
     private $normalizer;
+    private $fileValidator;
 
-    public function __construct(PermitImportHeaderMapper $headerMapper, PermitImportRowNormalizer $normalizer)
-    {
+    public function __construct(
+        PermitImportHeaderMapper $headerMapper,
+        PermitImportRowNormalizer $normalizer,
+        PermitImportFileValidator $fileValidator
+    ) {
         $this->headerMapper = $headerMapper;
         $this->normalizer = $normalizer;
+        $this->fileValidator = $fileValidator;
     }
 
     public function preview(UploadedFile $file, User $user): ImportBatch
     {
         $this->authorizePreview($user);
+        $this->fileValidator->validate($file);
 
         $batch = ImportBatch::create([
             'filename' => $file->getClientOriginalName(),
@@ -42,6 +48,13 @@ class PermitExcelImportService
 
             if ($rows === []) {
                 throw new \InvalidArgumentException('Sheet Excel kosong.');
+            }
+
+            $maxRows = (int) config('sirika.import.max_rows', 5000);
+            if (count($rows) > $maxRows) {
+                throw new \InvalidArgumentException(
+                    'Sheet Excel maksimal ' . $maxRows . ' baris termasuk header.'
+                );
             }
 
             $header = $this->headerMapper->findHeader($rows);

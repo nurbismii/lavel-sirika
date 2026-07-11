@@ -16,4 +16,17 @@ return [
         'width' => (int) env('SIRIKA_ROUTE_MAP_WIDTH', 3370),
         'height' => (int) env('SIRIKA_ROUTE_MAP_HEIGHT', 2384),
     ],
+
+    'import' => [
+        'max_file_kilobytes' => 10240,
+        'max_rows' => 5000,
+        'extensions' => ['xlsx', 'xls'],
+        'mime_types' => [
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/vnd.ms-excel',
+            'application/zip',
+            'application/x-ole-storage',
+            'application/octet-stream',
+        ],
+    ],
 ];
