@@ -250,3 +250,5 @@ Jika rollback atau cache rebuild gagal, tetap pulihkan source, asset, dan cache 
 `npm audit --omit=dev` terakhir bersih untuk dependency production Node.
 
 `composer audit` masih melaporkan 3 advisory `laravel/framework` pada Laravel 8 dan 2 package abandoned: `fruitcake/laravel-cors` serta `swiftmailer/swiftmailer`. Sebelum release, tunda deployment production atau terima risiko secara eksplisit sampai dependency tersebut diremediasi pada phase upgrade dependency berikutnya. Risiko ini tidak diselesaikan di Phase 6 karena membutuhkan upgrade Laravel/PHP terpisah.
+
+Sebelum setiap release, jalankan `composer audit` dan cocokkan hasilnya dengan `docs/security/DEPENDENCY-RISK-REGISTER.md`. Setiap advisory baru yang belum dinilai menghentikan release. Selama baseline PHP 7.4/Laravel 8 masih digunakan, deployment hanya dapat dilanjutkan setelah field penerimaan risiko di risk register diisi oleh pemilik sistem; developer tidak dapat menyetujui risiko tersebut atas nama pemilik sistem.
