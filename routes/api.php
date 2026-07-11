@@ -1,16 +1,8 @@
 <?php
 
-use App\Http\Controllers\Api\AuthenticatedUserController;
 use Illuminate\Support\Facades\Route;
 
 /*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-|
-| SIRIKA is currently a session-based web application. This authenticated
-| user endpoint remains controller-based so production route caching works.
-|
+| SIRIKA is a session-based web application. No public or token-authenticated
+| API routes are currently exposed.
 */
-
-Route::middleware('auth:sanctum')->get('/user', AuthenticatedUserController::class);
