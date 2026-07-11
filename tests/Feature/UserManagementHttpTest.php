@@ -109,15 +109,20 @@ class UserManagementHttpTest extends TestCase
             'password_confirmation' => 'secret123',
         ];
 
-        $this->actingAs($admin)
+        $createResponse = $this->actingAs($admin)
             ->from('/users/create')
             ->post('/users', $payload)
             ->assertRedirect('/users/create')
             ->assertSessionHasErrors('email');
 
+        $this->assertContains(
+            'Kolom email mengandung karakter yang tidak diizinkan.',
+            $createResponse->getSession()->get('errors')->get('email')
+        );
+
         $managedUser = User::factory()->create();
 
-        $this->actingAs($admin)
+        $updateResponse = $this->actingAs($admin)
             ->from('/users/' . $managedUser->id . '/edit')
             ->put('/users/' . $managedUser->id, [
                 'name' => $managedUser->name,
@@ -127,6 +132,11 @@ class UserManagementHttpTest extends TestCase
             ])
             ->assertRedirect('/users/' . $managedUser->id . '/edit')
             ->assertSessionHasErrors('email');
+
+        $this->assertContains(
+            'Kolom email mengandung karakter yang tidak diizinkan.',
+            $updateResponse->getSession()->get('errors')->get('email')
+        );
 
         $this->assertDatabaseMissing('users', ['email' => $payload['email']]);
         $this->assertNotSame("unsafe@example.com\nInjected: value", $managedUser->fresh()->email);

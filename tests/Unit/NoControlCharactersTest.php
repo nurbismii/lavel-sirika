@@ -15,5 +15,6 @@ class NoControlCharactersTest extends TestCase
         $this->assertTrue($rule->passes('email', 'valid@example.com'));
         $this->assertFalse($rule->passes('email', "unsafe@example.com\r\nBcc:test@example.com"));
         $this->assertFalse($rule->passes('email', "unsafe@example.com\x00"));
+        $this->assertFalse($rule->passes('email', "unsafe@example.com\x7F"));
     }
 }
