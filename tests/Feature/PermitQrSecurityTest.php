@@ -9,6 +9,7 @@ use App\Models\VehiclePermit;
 use App\Services\Permits\PermitScanService;
 use App\Services\Permits\PermitTokenService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class PermitQrSecurityTest extends TestCase
@@ -32,16 +33,26 @@ class PermitQrSecurityTest extends TestCase
     /** @test */
     public function invalid_scan_does_not_reveal_permit_data()
     {
+        $permit = $this->activePermit();
+        $validToken = app(PermitTokenService::class)->generateForPermit($permit)['plain_token'];
+        $randomToken = Str::random(64);
+
+        $this->assertNotSame($validToken, $randomToken);
+
         $scanner = User::factory()->create([
             'role' => User::ROLE_SECURITY,
             'status' => User::STATUS_ACTIVE,
         ]);
 
-        $result = app(PermitScanService::class)->scan(str_repeat('x', 64), $scanner);
+        $result = app(PermitScanService::class)->scan($randomToken, $scanner);
 
         $this->assertSame('invalid', $result['result']);
         $this->assertNull($result['permit']);
         $this->assertSame('QR tidak dikenal.', $result['message']);
+        $this->assertDatabaseHas('scan_logs', [
+            'permit_id' => null,
+            'result' => 'invalid',
+        ]);
     }
 
     private function activePermit()
