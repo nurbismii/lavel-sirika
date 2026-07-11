@@ -93,6 +93,46 @@ class UserManagementHttpTest extends TestCase
     }
 
     /** @test */
+    public function user_email_rejects_control_characters_on_create_and_update()
+    {
+        $admin = User::factory()->create([
+            'role' => User::ROLE_SUPER_ADMIN,
+            'status' => User::STATUS_ACTIVE,
+        ]);
+
+        $payload = [
+            'name' => 'Unsafe Email',
+            'email' => "unsafe@example.com\r\nBcc:test@example.com",
+            'role' => User::ROLE_AUDITOR,
+            'status' => User::STATUS_ACTIVE,
+            'password' => 'secret123',
+            'password_confirmation' => 'secret123',
+        ];
+
+        $this->actingAs($admin)
+            ->from('/users/create')
+            ->post('/users', $payload)
+            ->assertRedirect('/users/create')
+            ->assertSessionHasErrors('email');
+
+        $managedUser = User::factory()->create();
+
+        $this->actingAs($admin)
+            ->from('/users/' . $managedUser->id . '/edit')
+            ->put('/users/' . $managedUser->id, [
+                'name' => $managedUser->name,
+                'email' => "unsafe@example.com\nInjected: value",
+                'role' => User::ROLE_AUDITOR,
+                'status' => User::STATUS_ACTIVE,
+            ])
+            ->assertRedirect('/users/' . $managedUser->id . '/edit')
+            ->assertSessionHasErrors('email');
+
+        $this->assertDatabaseMissing('users', ['email' => $payload['email']]);
+        $this->assertNotSame("unsafe@example.com\nInjected: value", $managedUser->fresh()->email);
+    }
+
+    /** @test */
     public function non_super_admin_users_cannot_access_user_management()
     {
         $adminHr = User::factory()->create([

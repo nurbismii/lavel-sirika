@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\User;
+use App\Rules\NoControlCharacters;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -19,7 +20,7 @@ class StoreUserRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'email' => ['required', new NoControlCharacters(), 'email', 'max:255', 'unique:users,email'],
             'role' => ['required', Rule::in(array_keys(User::roleOptions()))],
             'status' => ['required', Rule::in(array_keys(User::statusOptions()))],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
