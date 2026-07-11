@@ -10,7 +10,9 @@ use App\Models\RoadSegment;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 use Maatwebsite\Excel\Facades\Excel;
 use Throwable;
 
@@ -112,9 +114,14 @@ class PermitExcelImportService
                 ]);
             });
         } catch (Throwable $exception) {
+            Log::warning('Permit Excel import failed.', [
+                'import_batch_id' => $batch->id,
+                'exception' => get_class($exception),
+            ]);
+
             $batch->update([
                 'status' => ImportBatch::STATUS_FAILED,
-                'error_summary' => $exception->getMessage(),
+                'error_summary' => $this->safeErrorSummary($exception),
             ]);
         }
 
@@ -134,6 +141,15 @@ class PermitExcelImportService
         }
 
         return $storedPath;
+    }
+
+    private function safeErrorSummary(Throwable $exception): string
+    {
+        if ($exception instanceof InvalidArgumentException) {
+            return $exception->getMessage();
+        }
+
+        return 'File Excel gagal diproses. Periksa format file lalu coba kembali.';
     }
 
     private function isEmptyRow(array $row): bool

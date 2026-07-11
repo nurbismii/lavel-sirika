@@ -10,6 +10,7 @@ use App\Services\Imports\PermitExcelImportService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use RuntimeException;
@@ -97,6 +98,8 @@ class ImportExcelPreviewTest extends TestCase
     /** @test */
     public function it_marks_batch_failed_when_file_storage_fails()
     {
+        Log::spy();
+
         $admin = User::factory()->create([
             'role' => User::ROLE_ADMIN_HR,
             'status' => User::STATUS_ACTIVE,
@@ -123,7 +126,14 @@ class ImportExcelPreviewTest extends TestCase
         $this->assertSame(ImportBatch::STATUS_FAILED, $batch->fresh()->status);
         $this->assertSame(1, ImportBatch::count());
         $this->assertSame(0, $batch->rows()->count());
-        $this->assertStringContainsString('Simulated storage failure.', $batch->fresh()->error_summary);
+        $this->assertSame('File Excel gagal diproses. Periksa format file lalu coba kembali.', $batch->error_summary);
+        Log::shouldHaveReceived('warning')->once()->withArgs(function ($message, $context) use ($batch) {
+            return $message === 'Permit Excel import failed.'
+                && $context['import_batch_id'] === $batch->id
+                && $context['exception'] === RuntimeException::class
+                && ! array_key_exists('path', $context)
+                && ! array_key_exists('contents', $context);
+        });
     }
 
     /** @test */
