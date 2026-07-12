@@ -18,6 +18,8 @@
                 <div>
                     <h2 class="panel-title">Scanner Kamera</h2>
                     <p class="panel-subtitle">Gunakan kamera perangkat untuk membaca QR izin kendaraan.</p>
+                    <p class="panel-subtitle">Kamera belakang digunakan sebagai default.</p>
+                    <p class="panel-subtitle">Kamera aktif: <span x-text="cameraDirectionLabel"></span></p>
 
                     <div id="sirika-qr-reader" class="qr-reader layout-gap"></div>
 
@@ -27,6 +29,9 @@
                         </button>
                         <button class="button" type="button" x-on:click="stopCamera" x-bind:disabled="! cameraRunning">
                             Stop Kamera
+                        </button>
+                        <button class="button" type="button" x-on:click="switchCamera" x-bind:disabled="!cameraAvailable || loading">
+                            Ganti Kamera
                         </button>
                     </div>
                 </div>
