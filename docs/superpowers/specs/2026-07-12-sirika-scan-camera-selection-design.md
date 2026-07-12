@@ -52,8 +52,9 @@ usable cameras exist. Existing Start and Stop controls remain.
 - No camera found: display `Kamera tidak ditemukan.`
 - Permission denied: display a specific instruction to allow camera access in
   the browser.
-- Rear camera unavailable: fall back automatically and identify the selected
-  camera in the UI.
+- Rear camera unavailable: fall back automatically. If the browser cannot
+  identify its physical direction, label it `Kamera perangkat` rather than
+  incorrectly calling it a rear camera.
 - Any stream startup/switch failure: reset `cameraRunning` and display a safe
   error without submitting a scan.
 

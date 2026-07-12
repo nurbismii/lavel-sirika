@@ -155,8 +155,11 @@ try {
     const cameraId = fallbackCameraId(await Html5Qrcode.getCameras());
     if (!cameraId) throw error;
     await this.qrReader.start(cameraId, config, onSuccess, onFailure);
+    this.cameraDirection = null;
 }
-this.cameraDirectionLabel = cameraDirectionLabel(this.cameraDirection);
+this.cameraDirectionLabel = this.cameraDirection
+    ? cameraDirectionLabel(this.cameraDirection)
+    : 'Kamera perangkat';
 this.cameraRunning = true;
 this.cameraAvailable = true;
 ```
