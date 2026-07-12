@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
     cameraConstraints,
     cameraDirectionLabel,
+    fallbackCameraId,
     oppositeCameraDirection,
 } from '../../resources/js/scan-camera.mjs';
 
@@ -20,4 +21,12 @@ test('uses front camera and identifies rear as its opposite', () => {
     });
     assert.equal(cameraDirectionLabel('user'), 'Kamera depan');
     assert.equal(oppositeCameraDirection('user'), 'environment');
+});
+
+test('returns null when no fallback camera exists', () => {
+    assert.equal(fallbackCameraId([]), null);
+});
+
+test('uses the first available camera as fallback', () => {
+    assert.equal(fallbackCameraId([{ id: 'fallback-camera' }]), 'fallback-camera');
 });

@@ -3,37 +3,59 @@ require('./bootstrap');
 import Alpine from 'alpinejs';
 import { Html5Qrcode } from 'html5-qrcode';
 import './route-map';
+import {
+    cameraConstraints,
+    cameraDirectionLabel,
+    fallbackCameraId,
+    oppositeCameraDirection,
+} from './scan-camera';
 
 window.sirikaScan = function ({ verifyUrl, csrfToken }) {
     return {
         qrReader: null,
         cameraRunning: false,
+        cameraDirection: 'environment',
+        cameraDirectionLabel: 'Kamera belakang',
+        cameraAvailable: false,
         loading: false,
         manualToken: '',
         result: null,
 
-        async startCamera() {
+        async startCamera(direction = this.cameraDirection) {
             if (this.cameraRunning || this.loading) {
                 return;
             }
 
             try {
                 this.qrReader = this.qrReader || new Html5Qrcode('sirika-qr-reader');
-                const cameras = await Html5Qrcode.getCameras();
+                const config = { fps: 10, qrbox: { width: 240, height: 240 } };
+                const onSuccess = (decodedText) => this.handleDecodedText(decodedText);
+                const onFailure = () => {};
 
-                if (!cameras.length) {
-                    this.result = { result: 'invalid', message: 'Kamera tidak ditemukan.', permit: null };
-                    return;
+                try {
+                    await this.qrReader.start(
+                        cameraConstraints(direction),
+                        config,
+                        onSuccess,
+                        onFailure
+                    );
+                    this.cameraDirection = direction;
+                } catch (error) {
+                    const cameraId = fallbackCameraId(await Html5Qrcode.getCameras());
+
+                    if (!cameraId) {
+                        throw error;
+                    }
+
+                    await this.qrReader.start(cameraId, config, onSuccess, onFailure);
+                    this.cameraDirection = null;
                 }
 
-                await this.qrReader.start(
-                    cameras[0].id,
-                    { fps: 10, qrbox: { width: 240, height: 240 } },
-                    (decodedText) => this.handleDecodedText(decodedText),
-                    () => {}
-                );
-
+                this.cameraDirectionLabel = this.cameraDirection
+                    ? cameraDirectionLabel(this.cameraDirection)
+                    : 'Kamera perangkat';
                 this.cameraRunning = true;
+                this.cameraAvailable = true;
             } catch (error) {
                 this.result = {
                     result: 'invalid',
@@ -41,7 +63,17 @@ window.sirikaScan = function ({ verifyUrl, csrfToken }) {
                     permit: null,
                 };
                 this.cameraRunning = false;
+                this.cameraAvailable = false;
             }
+        },
+
+        async switchCamera() {
+            if (!this.cameraRunning || this.loading) {
+                return;
+            }
+
+            await this.stopCamera();
+            await this.startCamera(oppositeCameraDirection(this.cameraDirection));
         },
 
         async stopCamera() {

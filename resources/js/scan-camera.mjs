@@ -14,3 +14,7 @@ export function cameraDirectionLabel(direction) {
 export function oppositeCameraDirection(direction) {
     return direction === 'user' ? 'environment' : 'user';
 }
+
+export function fallbackCameraId(cameras) {
+    return cameras.length ? cameras[0].id : null;
+}
