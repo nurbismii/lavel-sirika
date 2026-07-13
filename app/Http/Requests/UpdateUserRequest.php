@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\User;
+use App\Rules\NoControlCharacters;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -23,6 +24,7 @@ class UpdateUserRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'email' => [
                 'required',
+                new NoControlCharacters(),
                 'email',
                 'max:255',
                 Rule::unique('users', 'email')->ignore($user ? $user->id : null),

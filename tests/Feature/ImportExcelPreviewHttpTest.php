@@ -83,6 +83,26 @@ class ImportExcelPreviewHttpTest extends TestCase
     }
 
     /** @test */
+    public function oversized_excel_upload_is_rejected_before_preview()
+    {
+        $admin = User::factory()->create([
+            'role' => User::ROLE_ADMIN_HR,
+            'status' => User::STATUS_ACTIVE,
+        ]);
+
+        $this->actingAs($admin)->from(route('imports.index'))->post(route('imports.store'), [
+            'file' => UploadedFile::fake()->create(
+                'oversized.xlsx',
+                10241,
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            ),
+        ])->assertRedirect(route('imports.index'))
+            ->assertSessionHasErrors('file');
+
+        $this->assertSame(0, ImportBatch::count());
+    }
+
+    /** @test */
     public function admin_can_view_import_batch_preview()
     {
         $admin = User::factory()->create([

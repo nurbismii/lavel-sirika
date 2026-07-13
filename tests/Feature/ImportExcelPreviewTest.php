@@ -10,6 +10,7 @@ use App\Services\Imports\PermitExcelImportService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use RuntimeException;
@@ -97,6 +98,8 @@ class ImportExcelPreviewTest extends TestCase
     /** @test */
     public function it_marks_batch_failed_when_file_storage_fails()
     {
+        Log::spy();
+
         $admin = User::factory()->create([
             'role' => User::ROLE_ADMIN_HR,
             'status' => User::STATUS_ACTIVE,
@@ -109,7 +112,8 @@ class ImportExcelPreviewTest extends TestCase
 
         $service = new class(
             app(\App\Services\Imports\PermitImportHeaderMapper::class),
-            app(\App\Services\Imports\PermitImportRowNormalizer::class)
+            app(\App\Services\Imports\PermitImportRowNormalizer::class),
+            app(\App\Services\Imports\PermitImportFileValidator::class)
         ) extends PermitExcelImportService {
             protected function storeFile(UploadedFile $file): string
             {
@@ -122,7 +126,59 @@ class ImportExcelPreviewTest extends TestCase
         $this->assertSame(ImportBatch::STATUS_FAILED, $batch->fresh()->status);
         $this->assertSame(1, ImportBatch::count());
         $this->assertSame(0, $batch->rows()->count());
-        $this->assertStringContainsString('Simulated storage failure.', $batch->fresh()->error_summary);
+        $this->assertSame('File Excel gagal diproses. Periksa format file lalu coba kembali.', $batch->error_summary);
+        Log::shouldHaveReceived('warning')->once()->withArgs(function ($message, $context) use ($batch) {
+            return $message === 'Permit Excel import failed.'
+                && $context['import_batch_id'] === $batch->id
+                && $context['exception'] === RuntimeException::class
+                && ! array_key_exists('path', $context)
+                && ! array_key_exists('contents', $context);
+        });
+    }
+
+    /** @test */
+    public function service_rejects_a_disguised_non_excel_file_before_creating_a_batch()
+    {
+        $admin = User::factory()->create([
+            'role' => User::ROLE_ADMIN_HR,
+            'status' => User::STATUS_ACTIVE,
+        ]);
+
+        $path = tempnam(sys_get_temp_dir(), 'sirika-invalid-');
+        file_put_contents($path, 'not an excel workbook');
+        $file = new UploadedFile($path, 'disguised.xlsx', 'text/plain', null, true);
+
+        try {
+            app(PermitExcelImportService::class)->preview($file, $admin);
+            $this->fail('Expected invalid file validation exception.');
+        } catch (\InvalidArgumentException $exception) {
+            $this->assertStringContainsString('Tipe file', $exception->getMessage());
+        }
+
+        $this->assertSame(0, ImportBatch::count());
+    }
+
+    /** @test */
+    public function preview_rejects_workbooks_over_the_configured_row_limit_without_partial_rows()
+    {
+        config(['sirika.import.max_rows' => 2]);
+        $admin = User::factory()->create([
+            'role' => User::ROLE_ADMIN_HR,
+            'status' => User::STATUS_ACTIVE,
+        ]);
+
+        $file = $this->excelFile([
+            ['NIK', 'Nama', 'Plat Motor', 'Lokasi Parkir', 'Rute Kendaraan'],
+            ['1', 'A', 'DT 1 AA', 'P1', 'Y1'],
+            ['2', 'B', 'DT 2 AA', 'P1', 'Y1'],
+            ['3', 'C', 'DT 3 AA', 'P1', 'Y1'],
+        ]);
+
+        $batch = app(PermitExcelImportService::class)->preview($file, $admin);
+
+        $this->assertSame(ImportBatch::STATUS_FAILED, $batch->status);
+        $this->assertStringContainsString('maksimal 2 baris', $batch->error_summary);
+        $this->assertSame(0, $batch->rows()->count());
     }
 
     private function seedRoadSegments(array $codes)

@@ -10,7 +10,9 @@ use App\Models\RoadSegment;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 use Maatwebsite\Excel\Facades\Excel;
 use Throwable;
 
@@ -18,16 +20,22 @@ class PermitExcelImportService
 {
     private $headerMapper;
     private $normalizer;
+    private $fileValidator;
 
-    public function __construct(PermitImportHeaderMapper $headerMapper, PermitImportRowNormalizer $normalizer)
-    {
+    public function __construct(
+        PermitImportHeaderMapper $headerMapper,
+        PermitImportRowNormalizer $normalizer,
+        PermitImportFileValidator $fileValidator
+    ) {
         $this->headerMapper = $headerMapper;
         $this->normalizer = $normalizer;
+        $this->fileValidator = $fileValidator;
     }
 
     public function preview(UploadedFile $file, User $user): ImportBatch
     {
         $this->authorizePreview($user);
+        $this->fileValidator->validate($file);
 
         $batch = ImportBatch::create([
             'filename' => $file->getClientOriginalName(),
@@ -42,6 +50,13 @@ class PermitExcelImportService
 
             if ($rows === []) {
                 throw new \InvalidArgumentException('Sheet Excel kosong.');
+            }
+
+            $maxRows = (int) config('sirika.import.max_rows', 5000);
+            if (count($rows) > $maxRows) {
+                throw new \InvalidArgumentException(
+                    'Sheet Excel maksimal ' . $maxRows . ' baris termasuk header.'
+                );
             }
 
             $header = $this->headerMapper->findHeader($rows);
@@ -99,9 +114,14 @@ class PermitExcelImportService
                 ]);
             });
         } catch (Throwable $exception) {
+            Log::warning('Permit Excel import failed.', [
+                'import_batch_id' => $batch->id,
+                'exception' => get_class($exception),
+            ]);
+
             $batch->update([
                 'status' => ImportBatch::STATUS_FAILED,
-                'error_summary' => $exception->getMessage(),
+                'error_summary' => $this->safeErrorSummary($exception),
             ]);
         }
 
@@ -121,6 +141,15 @@ class PermitExcelImportService
         }
 
         return $storedPath;
+    }
+
+    private function safeErrorSummary(Throwable $exception): string
+    {
+        if ($exception instanceof InvalidArgumentException) {
+            return $exception->getMessage();
+        }
+
+        return 'File Excel gagal diproses. Periksa format file lalu coba kembali.';
     }
 
     private function isEmptyRow(array $row): bool
