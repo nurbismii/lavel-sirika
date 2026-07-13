@@ -93,6 +93,19 @@ class ScanQrHttpTest extends TestCase
     }
 
     /** @test */
+    public function scan_page_exposes_rear_camera_default_and_switch_control()
+    {
+        $html = $this->actingAs($this->security())
+            ->get(route('scan.index'))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringContainsString('Kamera belakang digunakan sebagai default.', $html);
+        $this->assertStringContainsString('x-on:click="switchCamera"', $html);
+        $this->assertStringContainsString('x-text="cameraDirectionLabel"', $html);
+    }
+
+    /** @test */
     public function security_can_verify_invalid_token_and_it_is_logged()
     {
         $this->actingAs($this->security())
