@@ -11,6 +11,9 @@
             <div class="route-map-panel">
                 <div>
                     <h2 class="panel-title">Ringkasan Koordinat</h2>
+                    @if ($canEditMap)
+                        <a class="button button-primary" href="{{ route('road-segments.create') }}">Tambah Segmen</a>
+                    @endif
                 </div>
 
                 <div class="route-stat-grid">
@@ -84,6 +87,12 @@
                                                 @method('DELETE')
                                                 <button class="button" type="submit">Reset</button>
                                             </form>
+                                        @endif
+                                        @if ($canEditMap && $segment->status === \App\Models\RoadSegment::STATUS_DRAFT && $coordinateStatus === 'complete')
+                                            <form method="POST" action="{{ route('road-segments.activate', $segment) }}">@csrf<button class="button" type="submit">Aktifkan</button></form>
+                                        @endif
+                                        @if ($canEditMap && $segment->status === \App\Models\RoadSegment::STATUS_ACTIVE)
+                                            <form method="POST" action="{{ route('road-segments.deactivate', $segment) }}">@csrf<button class="button" type="submit">Nonaktifkan</button></form>
                                         @endif
                                     </div>
                                 </td>

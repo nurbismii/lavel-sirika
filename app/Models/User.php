@@ -128,6 +128,10 @@ class User extends Authenticatable
             'road-segments.map.reset' => [
                 self::ROLE_ADMIN_HR,
             ],
+            'road-segments.create' => [self::ROLE_ADMIN_HR],
+            'road-segments.store' => [self::ROLE_ADMIN_HR],
+            'road-segments.activate' => [self::ROLE_ADMIN_HR],
+            'road-segments.deactivate' => [self::ROLE_ADMIN_HR],
             'imports.index' => [
                 self::ROLE_ADMIN_HR,
             ],

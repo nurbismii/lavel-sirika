@@ -384,6 +384,35 @@ class RoadSegmentMapHttpTest extends TestCase
         ]);
     }
 
+    /** @test */
+    public function admin_hr_can_create_a_draft_segment_but_cannot_activate_it_without_a_complete_polyline()
+    {
+        $admin = User::factory()->create([
+            'role' => User::ROLE_ADMIN_HR,
+            'status' => User::STATUS_ACTIVE,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('road-segments.store'), [
+                'code' => 'NEW-1',
+                'name' => 'Rute Baru',
+                'start_location' => 'Gerbang Utama',
+                'end_location' => 'Area Produksi',
+            ])
+            ->assertRedirect(route('road-segments.index'));
+
+        $segment = RoadSegment::where('code', 'NEW-1')->firstOrFail();
+
+        $this->assertSame('draft', $segment->status);
+        $this->assertNull($segment->polyline_json);
+
+        $this->actingAs($admin)
+            ->post(route('road-segments.activate', $segment))
+            ->assertSessionHasErrors('polyline_json');
+
+        $this->assertSame('draft', $segment->fresh()->status);
+    }
+
     private function segment(array $overrides = []): RoadSegment
     {
         return RoadSegment::create(array_merge([

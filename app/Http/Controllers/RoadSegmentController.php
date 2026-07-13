@@ -3,12 +3,43 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\UpdateRoadSegmentPolylineRequest;
+use App\Http\Requests\StoreRoadSegmentRequest;
 use App\Models\RoadSegment;
 use App\Services\Routes\RoadSegmentPolylineService;
 use App\Support\RouteMapConfig;
 
 class RoadSegmentController extends Controller
 {
+    public function create()
+    {
+        return view('road-segments.create');
+    }
+
+    public function store(StoreRoadSegmentRequest $request)
+    {
+        RoadSegment::create($request->validated() + ['status' => RoadSegment::STATUS_DRAFT]);
+
+        return redirect()->route('road-segments.index')->with('status', 'Segmen rute draft berhasil ditambahkan.');
+    }
+
+    public function activate(RoadSegment $roadSegment, RoadSegmentPolylineService $polylines)
+    {
+        if ($polylines->toSegmentDto($roadSegment)['coordinate_status'] !== RoadSegmentPolylineService::STATUS_COMPLETE) {
+            return back()->withErrors(['polyline_json' => 'Segmen hanya dapat diaktifkan setelah polyline lengkap disimpan.']);
+        }
+
+        $roadSegment->update(['status' => RoadSegment::STATUS_ACTIVE]);
+
+        return back()->with('status', 'Segmen rute berhasil diaktifkan.');
+    }
+
+    public function deactivate(RoadSegment $roadSegment)
+    {
+        $roadSegment->update(['status' => RoadSegment::STATUS_INACTIVE]);
+
+        return back()->with('status', 'Segmen rute dinonaktifkan.');
+    }
+
     public function index(RoadSegmentPolylineService $polylines)
     {
         $allSegments = RoadSegment::query()
