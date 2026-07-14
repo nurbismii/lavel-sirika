@@ -6,6 +6,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use RuntimeException;
 use Tests\TestCase;
 
 class SirikaDomainSchemaTest extends TestCase
@@ -115,5 +116,46 @@ class SirikaDomainSchemaTest extends TestCase
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+    }
+
+    /** @test */
+    public function vehicle_permit_unique_migration_reports_duplicate_existing_permit_rows()
+    {
+        $migration = new \AddUniqueEmployeeVehicleToVehiclePermitsTable();
+        $migration->down();
+
+        $employeeId = DB::table('employees')->insertGetId([
+            'nik' => 'EMP-UNIQUE-001',
+            'name' => 'Test Employee',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $vehicleId = DB::table('vehicles')->insertGetId([
+            'employee_id' => $employeeId,
+            'plate_number' => 'DD 9999 XX',
+            'vehicle_type' => 'motorcycle',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        foreach (['draft', 'needs_review'] as $status) {
+            DB::table('vehicle_permits')->insert([
+                'employee_id' => $employeeId,
+                'vehicle_id' => $vehicleId,
+                'approval_status' => 'approved',
+                'status' => $status,
+                'source' => 'manual',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Cannot add vehicle_permits_employee_vehicle_unique because duplicate permit rows exist');
+
+        $migration->up();
     }
 }

@@ -94,6 +94,10 @@ class PermitImportCommitService
             $warnings[] = 'Kendaraan sudah memiliki izin aktif, perlu review sebelum aktivasi.';
         }
 
+        if ($this->findExistingPermit($employee->id, $vehicle->id) !== null) {
+            throw new RuntimeException('Izin kendaraan untuk NIK dan plat ini sudah terdaftar.');
+        }
+
         $permit = VehiclePermit::query()->create([
             'employee_id' => $employee->id,
             'vehicle_id' => $vehicle->id,
@@ -204,6 +208,15 @@ class PermitImportCommitService
         return VehiclePermit::query()
             ->where('vehicle_id', $vehicleId)
             ->where('status', VehiclePermit::STATUS_ACTIVE)
+            ->lockForUpdate()
+            ->first();
+    }
+
+    private function findExistingPermit(int $employeeId, int $vehicleId): ?VehiclePermit
+    {
+        return VehiclePermit::query()
+            ->where('employee_id', $employeeId)
+            ->where('vehicle_id', $vehicleId)
             ->lockForUpdate()
             ->first();
     }

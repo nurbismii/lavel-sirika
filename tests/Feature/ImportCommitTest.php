@@ -129,7 +129,7 @@ class ImportCommitTest extends TestCase
     }
 
     /** @test */
-    public function it_downgrades_imported_valid_row_to_needs_review_when_vehicle_already_has_active_permit()
+    public function it_rejects_duplicate_permit_when_committing_an_existing_employee_vehicle_pair()
     {
         $admin = $this->admin();
         $batch = $this->batch($admin, [
@@ -176,18 +176,18 @@ class ImportCommitTest extends TestCase
             'notes' => '',
         ]);
 
-        app(PermitImportCommitService::class)->commit($batch);
+        try {
+            app(PermitImportCommitService::class)->commit($batch);
+            $this->fail('Expected duplicate permit to be rejected.');
+        } catch (RuntimeException $exception) {
+            $this->assertSame('Izin kendaraan untuk NIK dan plat ini sudah terdaftar.', $exception->getMessage());
+        }
 
-        $importedPermit = VehiclePermit::where('source_import_id', $batch->id)->first();
-        $this->assertNotNull($importedPermit);
-        $this->assertSame(VehiclePermit::STATUS_NEEDS_REVIEW, $importedPermit->status);
+        $this->assertSame(ImportBatch::STATUS_PREVIEWED, $batch->fresh()->status);
+        $this->assertSame(1, VehiclePermit::count());
 
         $row->refresh();
-        $this->assertSame(ImportRow::STATUS_COMMITTED, $row->status);
-        $this->assertContains(
-            'Kendaraan sudah memiliki izin aktif, perlu review sebelum aktivasi.',
-            $row->warnings
-        );
+        $this->assertSame(ImportRow::STATUS_VALID, $row->status);
     }
 
     /** @test */
