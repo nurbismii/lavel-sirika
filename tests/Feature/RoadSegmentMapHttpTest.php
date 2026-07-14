@@ -462,6 +462,91 @@ class RoadSegmentMapHttpTest extends TestCase
             ->assertSessionHasErrors('code');
     }
 
+    /** @test */
+    public function admin_hr_can_activate_a_segment_with_a_complete_polyline()
+    {
+        $admin = User::factory()->create([
+            'role' => User::ROLE_ADMIN_HR,
+            'status' => User::STATUS_ACTIVE,
+        ]);
+        $segment = $this->segment([
+            'status' => RoadSegment::STATUS_DRAFT,
+            'polyline_json' => [
+                'status' => 'complete',
+                'points' => [
+                    ['x' => 10, 'y' => 20],
+                    ['x' => 30, 'y' => 40],
+                ],
+            ],
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('road-segments.activate', $segment))
+            ->assertSessionHas('status', 'Segmen rute berhasil diaktifkan.');
+
+        $this->assertSame(RoadSegment::STATUS_ACTIVE, $segment->fresh()->status);
+    }
+
+    /** @test */
+    public function admin_hr_can_inactivate_a_route_segment_without_deleting_it()
+    {
+        $admin = User::factory()->create([
+            'role' => User::ROLE_ADMIN_HR,
+            'status' => User::STATUS_ACTIVE,
+        ]);
+        $segment = $this->segment(['status' => RoadSegment::STATUS_ACTIVE]);
+
+        $this->actingAs($admin)
+            ->post(route('road-segments.deactivate', $segment))
+            ->assertSessionHas('status', 'Segmen rute dinonaktifkan.');
+
+        $this->assertDatabaseHas('road_segments', [
+            'id' => $segment->id,
+            'status' => RoadSegment::STATUS_INACTIVE,
+        ]);
+    }
+
+    /** @test */
+    public function auditor_and_security_cannot_manage_route_segment_lifecycle()
+    {
+        $segment = $this->segment(['status' => RoadSegment::STATUS_ACTIVE]);
+
+        foreach ([User::ROLE_AUDITOR, User::ROLE_SECURITY] as $role) {
+            $user = User::factory()->create([
+                'role' => $role,
+                'status' => User::STATUS_ACTIVE,
+            ]);
+
+            $this->actingAs($user)
+                ->post(route('road-segments.deactivate', $segment))
+                ->assertForbidden();
+        }
+    }
+
+    /** @test */
+    public function route_segment_index_shows_management_actions_only_to_admin_hr()
+    {
+        $admin = User::factory()->create([
+            'role' => User::ROLE_ADMIN_HR,
+            'status' => User::STATUS_ACTIVE,
+        ]);
+        $auditor = User::factory()->create([
+            'role' => User::ROLE_AUDITOR,
+            'status' => User::STATUS_ACTIVE,
+        ]);
+        $segment = $this->segment(['code' => 'UI-1']);
+
+        $this->actingAs($admin)
+            ->get(route('road-segments.index'))
+            ->assertSee('Tambah Segmen')
+            ->assertSee(route('road-segments.edit', $segment));
+
+        $this->actingAs($auditor)
+            ->get(route('road-segments.index'))
+            ->assertDontSee('Tambah Segmen')
+            ->assertDontSee(route('road-segments.edit', $segment));
+    }
+
     private function segment(array $overrides = []): RoadSegment
     {
         return RoadSegment::create(array_merge([
