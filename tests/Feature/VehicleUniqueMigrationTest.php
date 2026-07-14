@@ -21,6 +21,8 @@ class VehicleUniqueMigrationTest extends TestCase
             'status' => 'active',
         ]);
 
+        (new \AddUniqueEmployeeVehicleToVehiclePermitsTable())->down();
+
         $migration = new \AddUniqueEmployeePlateToVehiclesTable();
         $migration->down();
 

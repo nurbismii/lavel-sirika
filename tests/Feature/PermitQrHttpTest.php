@@ -24,7 +24,7 @@ class PermitQrHttpTest extends TestCase
         ]);
     }
 
-    private function permit($status = VehiclePermit::STATUS_ACTIVE)
+    private function permit($status = VehiclePermit::STATUS_ACTIVE, $plateNumber = 'DT 7001 QR')
     {
         $employee = Employee::create([
             'nik' => 'EMP-' . uniqid(),
@@ -34,7 +34,7 @@ class PermitQrHttpTest extends TestCase
 
         $vehicle = Vehicle::create([
             'employee_id' => $employee->id,
-            'plate_number' => 'DT 7001 QR',
+            'plate_number' => $plateNumber,
             'vehicle_type' => 'motorcycle',
             'status' => 'active',
         ]);
@@ -117,9 +117,9 @@ class PermitQrHttpTest extends TestCase
     public function bulk_generate_creates_tokens_for_active_permits_without_existing_active_token()
     {
         $admin = $this->userWithRole(User::ROLE_ADMIN_HR);
-        $first = $this->permit();
-        $second = $this->permit();
-        $review = $this->permit(VehiclePermit::STATUS_NEEDS_REVIEW);
+        $first = $this->permit(VehiclePermit::STATUS_ACTIVE, 'DT 7001 Q1');
+        $second = $this->permit(VehiclePermit::STATUS_ACTIVE, 'DT 7002 Q2');
+        $review = $this->permit(VehiclePermit::STATUS_NEEDS_REVIEW, 'DT 7003 Q3');
 
         app(PermitTokenService::class)->generateForPermit($second);
 

@@ -158,4 +158,35 @@ class SirikaDomainSchemaTest extends TestCase
 
         $migration->up();
     }
+
+    /** @test */
+    public function vehicle_plate_unique_migration_reports_duplicate_plates_owned_by_different_employees()
+    {
+        $migration = new \AddUniqueEmployeeVehicleToVehiclePermitsTable();
+        $migration->down();
+
+        foreach (['EMP-PLATE-001', 'EMP-PLATE-002'] as $nik) {
+            $employeeId = DB::table('employees')->insertGetId([
+                'nik' => $nik,
+                'name' => 'Test Employee ' . $nik,
+                'status' => 'active',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            DB::table('vehicles')->insert([
+                'employee_id' => $employeeId,
+                'plate_number' => 'DD 9999 PP',
+                'vehicle_type' => 'motorcycle',
+                'status' => 'active',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Cannot add vehicles_plate_number_unique because duplicate vehicle plate rows exist');
+
+        $migration->up();
+    }
 }

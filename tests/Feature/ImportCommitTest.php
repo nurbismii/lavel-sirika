@@ -191,6 +191,62 @@ class ImportCommitTest extends TestCase
     }
 
     /** @test */
+    public function it_rejects_stale_valid_commit_when_plate_has_been_claimed_by_another_nik()
+    {
+        $admin = $this->admin();
+        $batch = $this->batch($admin, [
+            'success_rows' => 1,
+            'total_rows' => 1,
+        ]);
+
+        $existingEmployee = Employee::create([
+            'nik' => '211129282',
+            'name' => 'HARLINA',
+            'status' => 'active',
+        ]);
+        $existingVehicle = Vehicle::create([
+            'employee_id' => $existingEmployee->id,
+            'plate_number' => 'DT 4423 CI',
+            'vehicle_type' => 'motorcycle',
+            'status' => 'active',
+        ]);
+        VehiclePermit::create([
+            'employee_id' => $existingEmployee->id,
+            'vehicle_id' => $existingVehicle->id,
+            'permit_color' => 'biru',
+            'status' => VehiclePermit::STATUS_ACTIVE,
+            'source' => 'manual',
+        ]);
+
+        $row = $this->row($batch, 5, ImportRow::STATUS_VALID, [
+            'nik' => '200115677',
+            'employee_name' => 'FITRIAWATI',
+            'plate_number' => 'DT 4423 CI',
+            'parking_location_code' => '',
+            'route_raw' => '',
+            'route_segment_codes' => [],
+            'reason' => 'OFFICE',
+            'permit_color' => 'biru',
+            'approval_status' => 'approved',
+        ]);
+
+        try {
+            app(PermitImportCommitService::class)->commit($batch);
+            $this->fail('Expected stale commit with an already claimed plate to be rejected.');
+        } catch (RuntimeException $exception) {
+            $this->assertSame('Plat kendaraan sudah terdaftar untuk NIK lain.', $exception->getMessage());
+        }
+
+        $this->assertSame(ImportBatch::STATUS_PREVIEWED, $batch->fresh()->status);
+        $this->assertSame(1, Vehicle::count());
+        $this->assertSame(1, VehiclePermit::count());
+        $this->assertDatabaseMissing('employees', ['nik' => '200115677']);
+
+        $row->refresh();
+        $this->assertSame(ImportRow::STATUS_VALID, $row->status);
+    }
+
+    /** @test */
     public function it_commits_distinct_plates_for_the_same_nik_as_two_vehicles_and_permits()
     {
         $admin = $this->admin();

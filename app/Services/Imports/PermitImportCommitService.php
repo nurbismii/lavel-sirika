@@ -135,9 +135,13 @@ class PermitImportCommitService
 
     private function resolveVehicle(Employee $employee, string $plateNumber): Vehicle
     {
-        $vehicle = $this->findVehicleForUpdate($employee->id, $plateNumber);
+        $vehicle = $this->findVehicleByPlateForUpdate($plateNumber);
 
         if ($vehicle) {
+            if ((int) $vehicle->employee_id !== $employee->id) {
+                throw new RuntimeException('Plat kendaraan sudah terdaftar untuk NIK lain.');
+            }
+
             return $vehicle;
         }
 
@@ -149,25 +153,25 @@ class PermitImportCommitService
                 'status' => 'active',
             ]);
         } catch (QueryException $exception) {
-            $vehicle = $this->findVehicleForUpdate($employee->id, $plateNumber);
+            $vehicle = $this->findVehicleByPlateForUpdate($plateNumber);
 
             if ($vehicle) {
+                if ((int) $vehicle->employee_id !== $employee->id) {
+                    throw new RuntimeException('Plat kendaraan sudah terdaftar untuk NIK lain.');
+                }
+
                 return $vehicle;
             }
 
             throw $exception;
         }
 
-        return Vehicle::query()
-            ->whereKey($vehicle->id)
-            ->lockForUpdate()
-            ->firstOrFail();
+        return $this->findVehicleByPlateForUpdate($plateNumber) ?? $vehicle;
     }
 
-    private function findVehicleForUpdate(int $employeeId, string $plateNumber): ?Vehicle
+    private function findVehicleByPlateForUpdate(string $plateNumber): ?Vehicle
     {
         return Vehicle::query()
-            ->where('employee_id', $employeeId)
             ->where('plate_number', $plateNumber)
             ->lockForUpdate()
             ->first();
