@@ -191,6 +191,37 @@ class ImportCommitTest extends TestCase
     }
 
     /** @test */
+    public function it_commits_distinct_plates_for_the_same_nik_as_two_vehicles_and_permits()
+    {
+        $admin = $this->admin();
+        $batch = $this->batch($admin, [
+            'success_rows' => 2,
+            'total_rows' => 2,
+        ]);
+
+        foreach (['DT 4423 CI', 'DT 4424 CI'] as $offset => $plateNumber) {
+            $this->row($batch, 5 + $offset, ImportRow::STATUS_VALID, [
+                'nik' => '200115677',
+                'employee_name' => 'FITRIAWATI',
+                'plate_number' => $plateNumber,
+                'parking_location_code' => '',
+                'route_raw' => '',
+                'route_segment_codes' => [],
+                'reason' => 'OFFICE',
+                'permit_color' => 'biru',
+                'approval_status' => 'approved',
+            ]);
+        }
+
+        app(PermitImportCommitService::class)->commit($batch);
+
+        $this->assertSame(ImportBatch::STATUS_COMMITTED, $batch->fresh()->status);
+        $this->assertSame(1, Employee::where('nik', '200115677')->count());
+        $this->assertSame(2, Vehicle::where('employee_id', Employee::where('nik', '200115677')->value('id'))->count());
+        $this->assertSame(2, VehiclePermit::where('source_import_id', $batch->id)->count());
+    }
+
+    /** @test */
     public function needs_review_rows_do_not_persist_partial_route_segments()
     {
         $admin = $this->admin();

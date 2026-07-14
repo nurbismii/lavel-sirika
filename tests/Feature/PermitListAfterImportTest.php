@@ -144,9 +144,16 @@ class PermitListAfterImportTest extends TestCase
             'source' => 'import',
         ]);
 
+        $reviewVehicle = Vehicle::create([
+            'employee_id' => $employee->id,
+            'plate_number' => 'DT 4424 CI',
+            'vehicle_type' => 'motorcycle',
+            'status' => 'active',
+        ]);
+
         VehiclePermit::create([
             'employee_id' => $employee->id,
-            'vehicle_id' => $vehicle->id,
+            'vehicle_id' => $reviewVehicle->id,
             'permit_color' => 'kuning',
             'approval_status' => 'approved',
             'status' => VehiclePermit::STATUS_NEEDS_REVIEW,
