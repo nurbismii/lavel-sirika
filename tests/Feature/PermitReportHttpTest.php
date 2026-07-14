@@ -11,9 +11,13 @@ use App\Models\RoadSegment;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\VehiclePermit;
+use App\Services\Reports\PermitReportQuery;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Maatwebsite\Excel\Facades\Excel;
+use Maatwebsite\Excel\Excel as ExcelWriter;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use Tests\TestCase;
 
 class PermitReportHttpTest extends TestCase
@@ -120,6 +124,35 @@ class PermitReportHttpTest extends TestCase
 
             return true;
         });
+    }
+
+    /** @test */
+    public function permit_exports_write_formula_like_values_as_plain_text()
+    {
+        $permit = $this->permit([
+            'plate' => '=VLOOKUP(C457,[2]设备部!$D:$G,4,FALSE())',
+            'status' => VehiclePermit::STATUS_NEEDS_REVIEW,
+        ]);
+
+        foreach ([
+            new PermitReportExport(app(PermitReportQuery::class), []),
+            new PermitNeedsReviewExport(app(PermitReportQuery::class), [
+                'status' => VehiclePermit::STATUS_NEEDS_REVIEW,
+            ]),
+        ] as $export) {
+            $contents = Excel::raw($export, ExcelWriter::XLSX);
+            $path = tempnam(sys_get_temp_dir(), 'permit-export-') . '.xlsx';
+            file_put_contents($path, $contents);
+
+            $worksheet = IOFactory::load($path)->getActiveSheet();
+            $cell = $worksheet->getCell('D2');
+
+            $this->assertSame($permit->vehicle->plate_number, $cell->getValue());
+            $this->assertSame(DataType::TYPE_STRING, $cell->getDataType());
+            $this->assertTrue($cell->getStyle()->getQuotePrefix());
+
+            @unlink($path);
+        }
     }
 
     /** @test */

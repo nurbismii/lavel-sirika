@@ -6,10 +6,12 @@ use App\Models\VehiclePermit;
 use App\Services\Reports\PermitReportQuery;
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
+use PhpOffice\PhpSpreadsheet\Cell\StringValueBinder;
 
-class PermitReportExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoSize
+class PermitReportExport extends StringValueBinder implements FromQuery, WithCustomValueBinder, WithHeadings, WithMapping, ShouldAutoSize
 {
     private PermitReportQuery $reports;
     private array $filters;

@@ -8,13 +8,15 @@ use App\Services\Imports\RouteSegmentParser;
 use App\Services\Reports\PermitReportQuery;
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Cell\StringValueBinder;
 
-class PermitNeedsReviewExport implements FromQuery, WithHeadings, WithMapping, WithEvents, ShouldAutoSize
+class PermitNeedsReviewExport extends StringValueBinder implements FromQuery, WithCustomValueBinder, WithHeadings, WithMapping, WithEvents, ShouldAutoSize
 {
     private const ROUTE_RAW_COLUMN_INDEX = 8;
     private const ROUTE_VALIDATION_STATUS_COLUMN_INDEX = 10;
