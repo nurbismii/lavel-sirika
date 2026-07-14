@@ -9,7 +9,10 @@
                     <p class="panel-subtitle">Filter izin kendaraan, review, QR, dan rute untuk kebutuhan operasional.</p>
                 </div>
 
-                <a class="button button-primary" href="{{ route('reports.permits.export', request()->query()) }}">Export Excel</a>
+                <div class="form-actions">
+                    <a class="button button-primary" href="{{ route('reports.permits.export', request()->query()) }}">Export Excel</a>
+                    <a class="button button-primary" href="{{ route('reports.permits.needs-review.export', request()->query()) }}">Export Perlu Review</a>
+                </div>
             </div>
 
             @if ($errors->any())

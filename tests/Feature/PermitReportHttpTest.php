@@ -3,9 +3,11 @@
 namespace Tests\Feature;
 
 use App\Exports\PermitReportExport;
+use App\Exports\PermitNeedsReviewExport;
 use App\Models\Employee;
 use App\Models\ParkingLocation;
 use App\Models\PermitToken;
+use App\Models\RoadSegment;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\VehiclePermit;
@@ -120,6 +122,64 @@ class PermitReportHttpTest extends TestCase
         });
     }
 
+    /** @test */
+    public function needs_review_export_only_includes_needs_review_permits_and_flags_unavailable_routes()
+    {
+        Carbon::setTestNow('2026-07-14 10:00:00');
+        Excel::fake();
+
+        $admin = $this->user(User::ROLE_ADMIN_HR);
+        RoadSegment::create(['code' => 'Y1', 'name' => 'Y1', 'status' => RoadSegment::STATUS_ACTIVE]);
+        RoadSegment::create(['code' => 'D2', 'name' => 'D2', 'status' => RoadSegment::STATUS_INACTIVE]);
+        $review = $this->permit(['name' => 'PERLU REVIEW', 'status' => VehiclePermit::STATUS_NEEDS_REVIEW, 'route_raw' => 'Y1 -> D2 -> X99']);
+        $active = $this->permit(['name' => 'AKTIF', 'status' => VehiclePermit::STATUS_ACTIVE, 'route_raw' => 'Y1']);
+        $token = $this->token($review, PermitToken::STATUS_ACTIVE, now()->addYear());
+
+        $this->actingAs($admin)->get(route('reports.permits.needs-review.export', ['status' => VehiclePermit::STATUS_ACTIVE]));
+
+        Excel::assertDownloaded('sirika-izin-perlu-review-20260714-100000.xlsx', function (PermitNeedsReviewExport $export) use ($review, $active, $token) {
+            $rows = $export->query()->get();
+            $this->assertTrue($rows->contains('id', $review->id));
+            $this->assertFalse($rows->contains('id', $active->id));
+
+            $mapped = $export->map($review->fresh(['employee', 'vehicle', 'parkingLocation', 'reviewer']));
+            $this->assertSame('D2, X99', $mapped[8]);
+            $this->assertSame('Perlu perbaikan rute', $mapped[9]);
+            $this->assertNotContains($token->token_hash, $mapped);
+            $this->assertArrayHasKey(\Maatwebsite\Excel\Events\AfterSheet::class, $export->registerEvents());
+
+            return true;
+        });
+
+        $this->actingAs($admin)
+            ->get(route('reports.permits.index'))
+            ->assertOk()
+            ->assertSee(route('reports.permits.needs-review.export'))
+            ->assertSee('Export Perlu Review');
+    }
+
+    /** @test */
+    public function needs_review_export_marks_route_as_available_when_all_route_tokens_are_active()
+    {
+        Carbon::setTestNow('2026-07-14 10:00:00');
+
+        RoadSegment::create(['code' => 'Y1', 'name' => 'Y1', 'status' => RoadSegment::STATUS_ACTIVE]);
+        $permit = $this->permit([
+            'status' => VehiclePermit::STATUS_NEEDS_REVIEW,
+            'route_raw' => 'Y1',
+        ]);
+
+        $export = new PermitNeedsReviewExport(app(\App\Services\Reports\PermitReportQuery::class), [
+            'status' => VehiclePermit::STATUS_NEEDS_REVIEW,
+        ]);
+
+        $mapped = $export->map($permit->fresh(['employee', 'vehicle', 'parkingLocation', 'reviewer']));
+
+        $this->assertContains('Rute tersedia', $mapped);
+        $this->assertContains('-', $mapped);
+        $this->assertNotContains('Perlu perbaikan rute', $mapped);
+    }
+
     private function user(string $role): User
     {
         return User::factory()->create([
@@ -160,7 +220,7 @@ class PermitReportHttpTest extends TestCase
             'valid_until' => now()->addYear()->toDateString(),
             'status' => $overrides['status'] ?? VehiclePermit::STATUS_ACTIVE,
             'source' => $overrides['source'] ?? 'import',
-            'route_raw' => 'Y1',
+            'route_raw' => $overrides['route_raw'] ?? 'Y1',
         ]);
     }
 
