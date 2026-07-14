@@ -35,7 +35,7 @@
 - Consumes: \`StoreRoadSegmentRequest\` field rules and \`RoadSegment\` route-model binding.
 - Produces: GET \`road-segments/{roadSegment}/edit\` named \`road-segments.edit\`; PUT \`road-segments/{roadSegment}\` named \`road-segments.update\`.
 
-- [ ] **Step 1: Write the failing HTTP tests**
+- [x] **Step 1: Write the failing HTTP tests**
 
 \`\`\`php
 public function admin_hr_can_update_route_segment_metadata()
@@ -67,13 +67,13 @@ public function route_segment_update_rejects_a_code_used_by_another_segment()
 }
 \`\`\`
 
-- [ ] **Step 2: Run the focused test to verify it fails**
+- [x] **Step 2: Run the focused test to verify it fails**
 
 Run: \`php artisan test --filter=RoadSegmentMapHttpTest\`
 
 Expected: FAIL with \`Route [road-segments.update] not defined\`.
 
-- [ ] **Step 3: Write the minimal implementation**
+- [x] **Step 3: Write the minimal implementation**
 
 Create \`UpdateRoadSegmentRequest\`, matching the store rules but ignoring the bound segment in the unique rule:
 
@@ -103,13 +103,13 @@ public function update(UpdateRoadSegmentRequest $request, RoadSegment $roadSegme
 
 Add \`road-segments.edit\` and \`road-segments.update\` to \`User::routeRoles()\` with Admin HR. Register matching GET/PUT routes protected by those roles. Extract the four inputs into \`_form.blade.php\`, use \`old(..., $roadSegment->...) \`, and display \`@error\` feedback under each field. Render that partial from create and edit templates. Add an \`Edit\` link in the index only when \`$canEditMap\` is true.
 
-- [ ] **Step 4: Run the focused test to verify it passes**
+- [x] **Step 4: Run the focused test to verify it passes**
 
 Run: \`php artisan test --filter=RoadSegmentMapHttpTest\`
 
 Expected: PASS with no failures.
 
-- [ ] **Step 5: Commit the task**
+- [x] **Step 5: Commit the task**
 
 \`\`\`powershell
 git add app/Http/Requests/UpdateRoadSegmentRequest.php app/Http/Controllers/RoadSegmentController.php app/Models/User.php routes/web.php resources/views/road-segments tests/Feature/RoadSegmentMapHttpTest.php
@@ -126,7 +126,7 @@ git commit -m "feat: edit route segment metadata"
 - Consumes: \`road-segments.activate\`, \`road-segments.deactivate\`, and the existing complete polyline payload.
 - Produces: regression coverage for successful lifecycle transitions, read-only denials, and conditional actions.
 
-- [ ] **Step 1: Write failing lifecycle tests**
+- [x] **Step 1: Add lifecycle regression tests for the existing implementation**
 
 \`\`\`php
 public function admin_hr_can_activate_a_segment_with_a_complete_polyline()
@@ -156,23 +156,23 @@ public function auditor_and_security_cannot_manage_route_segment_lifecycle()
 }
 \`\`\`
 
-- [ ] **Step 2: Run focused tests to observe the failure**
+- [x] **Step 2: Run focused tests to verify existing lifecycle behavior**
 
 Run: \`php artisan test --filter=RoadSegmentMapHttpTest\`
 
 Expected: FAIL for an unimplemented assertion or rendering rule, not a test setup error.
 
-- [ ] **Step 3: Implement only the behavior required by the tests**
+- [x] **Step 3: Confirm existing controller and UI behavior meets lifecycle requirements**
 
 Keep activation and deactivation as POST actions. Ensure the index view renders \`Aktifkan\` only for draft records with complete coordinates, \`Nonaktifkan\` only for active records, and neither lifecycle form for read-only users. Both forms require \`@csrf\`; no delete route is introduced.
 
-- [ ] **Step 4: Run the focused tests again**
+- [x] **Step 4: Run the focused tests again**
 
 Run: \`php artisan test --filter=RoadSegmentMapHttpTest\`
 
 Expected: PASS with no failures.
 
-- [ ] **Step 5: Commit the task**
+- [x] **Step 5: Commit the task**
 
 \`\`\`powershell
 git add resources/views/road-segments/index.blade.php tests/Feature/RoadSegmentMapHttpTest.php
@@ -188,7 +188,7 @@ git commit -m "test: cover route segment lifecycle management"
 - Consumes: all route-segment routes, requests, views, and service queries.
 - Produces: a verified branch ready for review and an explicit merge decision.
 
-- [ ] **Step 1: Run focused and whitespace checks**
+- [x] **Step 1: Run focused and whitespace checks**
 
 \`\`\`powershell
 git diff --check
@@ -199,7 +199,7 @@ php artisan test --filter=RoadSegmentMapHttpTest
 
 Expected: exit code 0 and no whitespace or test failures.
 
-- [ ] **Step 2: Run the full PHP suite**
+- [x] **Step 2: Run the full PHP suite**
 
 \`\`\`powershell
 $env:APP_KEY='base64:W4bObKqQ19B0fPYZkuQEgS0F7mo4h1LM9RAQB6ZVbV0='
@@ -209,7 +209,7 @@ php artisan test
 
 Expected: exit code 0 with no failures.
 
-- [ ] **Step 3: Build assets if Node dependencies are available**
+- [x] **Step 3: Build assets if Node dependencies are available**
 
 Run: \`npm run production\`
 
@@ -223,4 +223,3 @@ git commit -m "docs: record route segment completion plan"
 \`\`\`
 
 Use \`superpowers:finishing-a-development-branch\` before merging. Do not merge without the user's explicit instruction.
-
