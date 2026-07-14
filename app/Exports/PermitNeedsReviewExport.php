@@ -11,9 +11,15 @@ use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
+use Maatwebsite\Excel\Events\AfterSheet;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 
 class PermitNeedsReviewExport implements FromQuery, WithHeadings, WithMapping, WithEvents, ShouldAutoSize
 {
+    private const ROUTE_RAW_COLUMN_INDEX = 8;
+    private const ROUTE_VALIDATION_STATUS_COLUMN_INDEX = 10;
+    private const ROUTE_NEEDS_REPAIR_STATUS = 'Perlu perbaikan rute';
+
     private PermitReportQuery $reports;
     private RouteSegmentParser $routeParser;
     private array $filters;
@@ -80,7 +86,31 @@ class PermitNeedsReviewExport implements FromQuery, WithHeadings, WithMapping, W
 
     public function registerEvents(): array
     {
-        return [];
+        return [
+            AfterSheet::class => function (AfterSheet $event) {
+                $sheet = $event->sheet->getDelegate();
+
+                for ($row = 2; $row <= $sheet->getHighestRow(); $row++) {
+                    $validationStatus = $sheet->getCellByColumnAndRow(self::ROUTE_VALIDATION_STATUS_COLUMN_INDEX, $row)->getValue();
+
+                    if ($validationStatus !== self::ROUTE_NEEDS_REPAIR_STATUS) {
+                        continue;
+                    }
+
+                    $sheet->getStyleByColumnAndRow(self::ROUTE_RAW_COLUMN_INDEX, $row)
+                        ->getFill()
+                        ->setFillType(Fill::FILL_SOLID)
+                        ->getStartColor()
+                        ->setARGB('FFFDE68A');
+
+                    $sheet->getStyleByColumnAndRow(self::ROUTE_VALIDATION_STATUS_COLUMN_INDEX, $row)
+                        ->getFill()
+                        ->setFillType(Fill::FILL_SOLID)
+                        ->getStartColor()
+                        ->setARGB('FFFBCFE8');
+                }
+            },
+        ];
     }
 
     private function unavailableRouteTokens($routeRaw): array

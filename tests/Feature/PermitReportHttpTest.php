@@ -143,12 +143,19 @@ class PermitReportHttpTest extends TestCase
             $this->assertFalse($rows->contains('id', $active->id));
 
             $mapped = $export->map($review->fresh(['employee', 'vehicle', 'parkingLocation', 'reviewer']));
-            $this->assertContains('D2, X99', $mapped);
-            $this->assertContains('Perlu perbaikan rute', $mapped);
+            $this->assertSame('D2, X99', $mapped[8]);
+            $this->assertSame('Perlu perbaikan rute', $mapped[9]);
             $this->assertNotContains($token->token_hash, $mapped);
+            $this->assertArrayHasKey(\Maatwebsite\Excel\Events\AfterSheet::class, $export->registerEvents());
 
             return true;
         });
+
+        $this->actingAs($admin)
+            ->get(route('reports.permits.index'))
+            ->assertOk()
+            ->assertSee(route('reports.permits.needs-review.export'))
+            ->assertSee('Export Perlu Review');
     }
 
     /** @test */
