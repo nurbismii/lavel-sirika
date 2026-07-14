@@ -151,6 +151,28 @@ class PermitReportHttpTest extends TestCase
         });
     }
 
+    /** @test */
+    public function needs_review_export_marks_route_as_available_when_all_route_tokens_are_active()
+    {
+        Carbon::setTestNow('2026-07-14 10:00:00');
+
+        RoadSegment::create(['code' => 'Y1', 'name' => 'Y1', 'status' => RoadSegment::STATUS_ACTIVE]);
+        $permit = $this->permit([
+            'status' => VehiclePermit::STATUS_NEEDS_REVIEW,
+            'route_raw' => 'Y1',
+        ]);
+
+        $export = new PermitNeedsReviewExport(app(\App\Services\Reports\PermitReportQuery::class), [
+            'status' => VehiclePermit::STATUS_NEEDS_REVIEW,
+        ]);
+
+        $mapped = $export->map($permit->fresh(['employee', 'vehicle', 'parkingLocation', 'reviewer']));
+
+        $this->assertContains('Rute tersedia', $mapped);
+        $this->assertContains('-', $mapped);
+        $this->assertNotContains('Perlu perbaikan rute', $mapped);
+    }
+
     private function user(string $role): User
     {
         return User::factory()->create([

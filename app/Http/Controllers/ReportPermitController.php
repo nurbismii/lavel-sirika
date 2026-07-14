@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Exports\PermitReportExport;
+use App\Exports\PermitNeedsReviewExport;
 use App\Http\Requests\ReportPermitRequest;
 use App\Models\ParkingLocation;
+use App\Models\VehiclePermit;
 use App\Services\Reports\PermitReportQuery;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -36,5 +38,16 @@ class ReportPermitController extends Controller
         $filename = 'sirika-laporan-izin-' . now()->format('Ymd-His') . '.xlsx';
 
         return Excel::download(new PermitReportExport($reports, $filters), $filename);
+    }
+
+    public function exportNeedsReview(ReportPermitRequest $request, PermitReportQuery $reports)
+    {
+        $filters = $reports->filters($request->validated());
+        $filters['status'] = VehiclePermit::STATUS_NEEDS_REVIEW;
+
+        return Excel::download(
+            new PermitNeedsReviewExport($reports, $filters),
+            'sirika-izin-perlu-review-' . now()->format('Ymd-His') . '.xlsx'
+        );
     }
 }

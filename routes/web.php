@@ -126,6 +126,10 @@ Route::middleware('auth')->group(function () {
         ->middleware('role:' . implode(',', User::rolesForRoute('reports.permits.export')))
         ->name('reports.permits.export');
 
+    Route::get('/reports/permits/export-needs-review', [ReportPermitController::class, 'exportNeedsReview'])
+        ->middleware('role:' . implode(',', User::rolesForRoute('reports.permits.export')))
+        ->name('reports.permits.needs-review.export');
+
     Route::middleware('role:' . implode(',', User::rolesForRoute('reports.scans.index')))->group(function () {
         Route::get('/reports/scans', [ReportScanController::class, 'index'])->name('reports.scans.index');
     });
