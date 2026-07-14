@@ -76,22 +76,40 @@ class PermitExcelImportService
 
             DB::transaction(function () use ($batch, $rows, $header, $activeRouteCodes, &$counts) {
                 $normalizedRows = $this->normalizedRows($rows, $header, $activeRouteCodes);
-                $existingPermitIdentities = $this->existingPermitIdentities($normalizedRows);
+                $existingPermits = $this->existingPermitIdentities($normalizedRows);
                 $firstRowsByIdentity = [];
+                $firstNiksByPlate = [];
 
                 foreach ($normalizedRows as $normalized) {
-                    $identity = $this->permitIdentity($normalized['normalized_data'] ?? []);
+                    $data = $normalized['normalized_data'] ?? [];
+                    $identity = $this->permitIdentity($data);
+                    $plate = $this->permitPlate($data);
+                    $nik = $identity === null ? null : explode('|', $identity, 2)[0];
 
                     if ($identity !== null && isset($firstRowsByIdentity[$identity])) {
                         $normalized['errors'][] = 'NIK dan plat kendaraan duplikat pada baris '
                             . $firstRowsByIdentity[$identity] . '.';
-                    } elseif ($identity !== null && isset($existingPermitIdentities[$identity])) {
+                    } elseif ($plate !== null && isset($firstNiksByPlate[$plate])
+                        && $firstNiksByPlate[$plate]['nik'] !== $nik) {
+                        $normalized['errors'][] = 'Plat kendaraan sudah digunakan oleh NIK lain pada baris '
+                            . $firstNiksByPlate[$plate]['row_number'] . '.';
+                    } elseif ($identity !== null && isset($existingPermits['identities'][$identity])) {
                         $normalized['errors'][] = 'Izin kendaraan untuk NIK dan plat ini sudah terdaftar.';
+                    } elseif ($plate !== null
+                        && $this->hasExistingPermitForDifferentNik($existingPermits['niks_by_plate'], $plate, $nik)) {
+                        $normalized['errors'][] = 'Plat kendaraan sudah terdaftar untuk NIK lain.';
                     }
 
                     if ($identity !== null) {
                         $firstRowsByIdentity[$identity] = $firstRowsByIdentity[$identity]
                             ?? $normalized['row_number'];
+                    }
+
+                    if ($plate !== null && !isset($firstNiksByPlate[$plate])) {
+                        $firstNiksByPlate[$plate] = [
+                            'nik' => $nik,
+                            'row_number' => $normalized['row_number'],
+                        ];
                     }
 
                     if ($normalized['errors'] !== []) {
@@ -193,38 +211,34 @@ class PermitExcelImportService
     private function existingPermitIdentities(array $normalizedRows): array
     {
         $identities = [];
+        $plates = [];
 
         foreach ($normalizedRows as $normalized) {
-            $identity = $this->permitIdentity($normalized['normalized_data'] ?? []);
+            $data = $normalized['normalized_data'] ?? [];
+            $identity = $this->permitIdentity($data);
+            $plate = $this->permitPlate($data);
 
             if ($identity !== null) {
                 $identities[$identity] = true;
             }
-        }
 
-        if ($identities === []) {
-            return [];
-        }
-
-        $niks = [];
-        $plates = [];
-        foreach ($normalizedRows as $normalized) {
-            $data = $normalized['normalized_data'] ?? [];
-            $identity = $this->permitIdentity($data);
-
-            if ($identity === null) {
-                continue;
+            if ($plate !== null) {
+                $plates[$plate] = true;
             }
-
-            $niks[$data['nik']] = true;
-            $plates[$data['plate_number']] = true;
         }
 
-        $existing = [];
+        if ($plates === []) {
+            return [
+                'identities' => [],
+                'niks_by_plate' => [],
+            ];
+        }
+
+        $existingIdentities = [];
+        $existingNiksByPlate = [];
         $rows = DB::table('vehicle_permits')
             ->join('employees', 'employees.id', '=', 'vehicle_permits.employee_id')
             ->join('vehicles', 'vehicles.id', '=', 'vehicle_permits.vehicle_id')
-            ->whereIn('employees.nik', array_keys($niks))
             ->whereIn('vehicles.plate_number', array_keys($plates))
             ->select('employees.nik', 'vehicles.plate_number')
             ->get();
@@ -236,11 +250,21 @@ class PermitExcelImportService
             ]);
 
             if ($identity !== null && isset($identities[$identity])) {
-                $existing[$identity] = true;
+                $existingIdentities[$identity] = true;
+            }
+
+            $plate = $this->permitPlate([
+                'plate_number' => $row->plate_number,
+            ]);
+            if ($plate !== null && $identity !== null) {
+                $existingNiksByPlate[$plate][explode('|', $identity, 2)[0]] = true;
             }
         }
 
-        return $existing;
+        return [
+            'identities' => $existingIdentities,
+            'niks_by_plate' => $existingNiksByPlate,
+        ];
     }
 
     private function permitIdentity(array $data): ?string
@@ -253,6 +277,28 @@ class PermitExcelImportService
         }
 
         return strtoupper($nik) . '|' . strtoupper($plate);
+    }
+
+    private function permitPlate(array $data): ?string
+    {
+        $plate = trim((string) ($data['plate_number'] ?? ''));
+
+        return $plate === '' ? null : strtoupper($plate);
+    }
+
+    private function hasExistingPermitForDifferentNik(array $niksByPlate, string $plate, ?string $nik): bool
+    {
+        if ($nik === null || !isset($niksByPlate[$plate])) {
+            return false;
+        }
+
+        foreach (array_keys($niksByPlate[$plate]) as $existingNik) {
+            if ($existingNik !== $nik) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function authorizePreview(User $user): void
