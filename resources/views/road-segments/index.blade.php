@@ -78,6 +78,9 @@
                                 <td>{{ $pointCount }}</td>
                                 <td>
                                     <div class="table-actions">
+                                        @if ($canEditMap)
+                                            <a class="button" href="{{ route('road-segments.edit', $segment) }}">Edit</a>
+                                        @endif
                                         <a class="button" href="{{ route('road-segments.map', $segment) }}">
                                             {{ $canEditMap ? 'Edit Peta' : 'Lihat Peta' }}
                                         </a>

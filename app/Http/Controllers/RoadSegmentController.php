@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\UpdateRoadSegmentPolylineRequest;
 use App\Http\Requests\StoreRoadSegmentRequest;
+use App\Http\Requests\UpdateRoadSegmentRequest;
 use App\Models\RoadSegment;
 use App\Services\Routes\RoadSegmentPolylineService;
 use App\Support\RouteMapConfig;
@@ -20,6 +21,20 @@ class RoadSegmentController extends Controller
         RoadSegment::create($request->validated() + ['status' => RoadSegment::STATUS_DRAFT]);
 
         return redirect()->route('road-segments.index')->with('status', 'Segmen rute draft berhasil ditambahkan.');
+    }
+
+    public function edit(RoadSegment $roadSegment)
+    {
+        return view('road-segments.edit', compact('roadSegment'));
+    }
+
+    public function update(UpdateRoadSegmentRequest $request, RoadSegment $roadSegment)
+    {
+        $roadSegment->update($request->validated());
+
+        return redirect()
+            ->route('road-segments.index')
+            ->with('status', 'Metadata segmen rute berhasil diperbarui.');
     }
 
     public function activate(RoadSegment $roadSegment, RoadSegmentPolylineService $polylines)

@@ -40,6 +40,8 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/road-segments/create', [RoadSegmentController::class, 'create'])->middleware('role:' . implode(',', User::rolesForRoute('road-segments.create')))->name('road-segments.create');
     Route::post('/road-segments', [RoadSegmentController::class, 'store'])->middleware('role:' . implode(',', User::rolesForRoute('road-segments.store')))->name('road-segments.store');
+    Route::get('/road-segments/{roadSegment}/edit', [RoadSegmentController::class, 'edit'])->middleware('role:' . implode(',', User::rolesForRoute('road-segments.edit')))->name('road-segments.edit');
+    Route::put('/road-segments/{roadSegment}', [RoadSegmentController::class, 'update'])->middleware('role:' . implode(',', User::rolesForRoute('road-segments.update')))->name('road-segments.update');
     Route::post('/road-segments/{roadSegment}/activate', [RoadSegmentController::class, 'activate'])->middleware('role:' . implode(',', User::rolesForRoute('road-segments.activate')))->name('road-segments.activate');
     Route::post('/road-segments/{roadSegment}/deactivate', [RoadSegmentController::class, 'deactivate'])->middleware('role:' . implode(',', User::rolesForRoute('road-segments.deactivate')))->name('road-segments.deactivate');
 

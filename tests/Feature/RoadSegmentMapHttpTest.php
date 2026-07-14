@@ -413,6 +413,55 @@ class RoadSegmentMapHttpTest extends TestCase
         $this->assertSame('draft', $segment->fresh()->status);
     }
 
+    /** @test */
+    public function admin_hr_can_update_route_segment_metadata()
+    {
+        $admin = User::factory()->create([
+            'role' => User::ROLE_ADMIN_HR,
+            'status' => User::STATUS_ACTIVE,
+        ]);
+        $segment = $this->segment(['code' => 'OLD-1']);
+
+        $this->actingAs($admin)
+            ->put(route('road-segments.update', $segment), [
+                'code' => ' new-1 ',
+                'name' => 'Jalur Baru',
+                'start_location' => 'Pos A',
+                'end_location' => 'Pos B',
+            ])
+            ->assertRedirect(route('road-segments.index'));
+
+        $this->assertDatabaseHas('road_segments', [
+            'id' => $segment->id,
+            'code' => 'NEW-1',
+            'name' => 'Jalur Baru',
+            'start_location' => 'Pos A',
+            'end_location' => 'Pos B',
+        ]);
+    }
+
+    /** @test */
+    public function route_segment_update_rejects_a_code_used_by_another_segment()
+    {
+        $admin = User::factory()->create([
+            'role' => User::ROLE_ADMIN_HR,
+            'status' => User::STATUS_ACTIVE,
+        ]);
+        $segment = $this->segment(['code' => 'OLD-1']);
+        $this->segment(['code' => 'USED-1']);
+
+        $this->actingAs($admin)
+            ->from(route('road-segments.edit', $segment))
+            ->put(route('road-segments.update', $segment), [
+                'code' => 'used-1',
+                'name' => 'Jalur',
+                'start_location' => 'A',
+                'end_location' => 'B',
+            ])
+            ->assertRedirect(route('road-segments.edit', $segment))
+            ->assertSessionHasErrors('code');
+    }
+
     private function segment(array $overrides = []): RoadSegment
     {
         return RoadSegment::create(array_merge([
