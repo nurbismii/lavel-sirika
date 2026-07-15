@@ -67,8 +67,8 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
-
+    //'timezone' => 'UTC',
+    'timezone' => 'Asia/Kuala_Lumpur',
     /*
     |--------------------------------------------------------------------------
     | Application Locale Configuration
@@ -80,8 +80,8 @@ return [
     |
     */
 
-    'locale' => 'en',
-
+    // 'locale' => 'en',
+    'locale' => 'id',
     /*
     |--------------------------------------------------------------------------
     | Application Fallback Locale
@@ -93,8 +93,8 @@ return [
     |
     */
 
-    'fallback_locale' => 'en',
-
+    // 'fallback_locale' => 'en',
+    'fallback_locale' => 'id',
     /*
     |--------------------------------------------------------------------------
     | Faker Locale
@@ -106,8 +106,8 @@ return [
     |
     */
 
-    'faker_locale' => 'en_US',
-
+    // 'faker_locale' => 'en_US',
+    'faker_locale' => 'id_ID',
     /*
     |--------------------------------------------------------------------------
     | Encryption Key
