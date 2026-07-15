@@ -143,6 +143,37 @@ class PermitQrServiceTest extends TestCase
     }
 
     /** @test */
+    public function token_service_generates_separate_qrs_for_active_permits_of_different_employees_sharing_a_vehicle()
+    {
+        $firstPermit = $this->createPermit();
+        $secondEmployee = Employee::create([
+            'nik' => 'EMP-' . uniqid(),
+            'name' => 'SHARED QR USER',
+            'status' => 'active',
+        ]);
+        $secondPermit = VehiclePermit::create([
+            'employee_id' => $secondEmployee->id,
+            'vehicle_id' => $firstPermit->vehicle_id,
+            'permit_color' => 'merah',
+            'approval_status' => 'approved',
+            'status' => VehiclePermit::STATUS_ACTIVE,
+            'source' => 'manual',
+        ]);
+
+        $service = app(PermitTokenService::class);
+        $firstToken = $service->generateForPermit($firstPermit);
+        $secondToken = $service->generateForPermit($secondPermit);
+
+        $this->assertNotSame($firstToken['plain_token'], $secondToken['plain_token']);
+        $this->assertNotSame($firstToken['permit_token']->id, $secondToken['permit_token']->id);
+        $this->assertSame($firstPermit->id, $firstToken['permit_token']->vehicle_permit_id);
+        $this->assertSame($secondPermit->id, $secondToken['permit_token']->vehicle_permit_id);
+        $this->assertSame(2, PermitToken::whereIn('vehicle_permit_id', [$firstPermit->id, $secondPermit->id])
+            ->where('status', PermitToken::STATUS_ACTIVE)
+            ->count());
+    }
+
+    /** @test */
     public function token_service_renew_revokes_old_token_and_creates_new_one_year_token()
     {
         $permit = $this->createPermit();
