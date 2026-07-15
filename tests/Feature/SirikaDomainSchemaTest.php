@@ -195,6 +195,76 @@ class SirikaDomainSchemaTest extends TestCase
     }
 
     /** @test */
+    public function final_schema_keeps_vehicle_plates_globally_unique_and_permit_pairs_unique()
+    {
+        $firstEmployeeId = DB::table('employees')->insertGetId([
+            'nik' => 'EMP-SCHEMA-001',
+            'name' => 'First Schema Employee',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $secondEmployeeId = DB::table('employees')->insertGetId([
+            'nik' => 'EMP-SCHEMA-002',
+            'name' => 'Second Schema Employee',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $vehicleId = DB::table('vehicles')->insertGetId([
+            'employee_id' => $firstEmployeeId,
+            'plate_number' => 'DD 1234 GLOBAL',
+            'vehicle_type' => 'motorcycle',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        DB::table('vehicle_permits')->insert([
+            'employee_id' => $firstEmployeeId,
+            'vehicle_id' => $vehicleId,
+            'approval_status' => 'approved',
+            'status' => 'draft',
+            'source' => 'manual',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        try {
+            DB::table('vehicles')->insert([
+                'employee_id' => $secondEmployeeId,
+                'plate_number' => 'DD 1234 GLOBAL',
+                'vehicle_type' => 'motorcycle',
+                'status' => 'active',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            $this->fail('Expected the global vehicle plate constraint to reject the duplicate plate.');
+        } catch (QueryException $exception) {
+            $this->assertNotEmpty($exception->getMessage());
+        }
+
+        try {
+            DB::table('vehicle_permits')->insert([
+                'employee_id' => $firstEmployeeId,
+                'vehicle_id' => $vehicleId,
+                'approval_status' => 'approved',
+                'status' => 'needs_review',
+                'source' => 'manual',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            $this->fail('Expected the employee and vehicle permit constraint to reject the duplicate pair.');
+        } catch (QueryException $exception) {
+            $this->assertNotEmpty($exception->getMessage());
+        }
+    }
+
+    /** @test */
     public function vehicle_permit_parking_location_migration_backfills_legacy_locations_without_duplicates()
     {
         $migration = new \CreateVehiclePermitParkingLocationsTable();

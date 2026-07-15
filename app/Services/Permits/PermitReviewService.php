@@ -216,6 +216,7 @@ class PermitReviewService
     private function ensureNoOtherActivePermit(VehiclePermit $permit): void
     {
         $existingPermit = VehiclePermit::query()
+            ->where('employee_id', $permit->employee_id)
             ->where('vehicle_id', $permit->vehicle_id)
             ->where('status', VehiclePermit::STATUS_ACTIVE)
             ->where('id', '!=', $permit->id)

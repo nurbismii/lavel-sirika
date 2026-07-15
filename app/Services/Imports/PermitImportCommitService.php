@@ -90,11 +90,6 @@ class PermitImportCommitService
             $permitStatus = VehiclePermit::STATUS_NEEDS_REVIEW;
         }
 
-        if ($this->findExistingActivePermit($vehicle->id) !== null) {
-            $permitStatus = VehiclePermit::STATUS_NEEDS_REVIEW;
-            $warnings[] = 'Kendaraan sudah memiliki izin aktif, perlu review sebelum aktivasi.';
-        }
-
         if ($this->findExistingPermit($employee->id, $vehicle->id) !== null) {
             throw new RuntimeException('Izin kendaraan untuk NIK dan plat ini sudah terdaftar.');
         }
@@ -141,10 +136,6 @@ class PermitImportCommitService
         $vehicle = $this->findVehicleByPlateForUpdate($plateNumber);
 
         if ($vehicle) {
-            if ((int) $vehicle->employee_id !== $employee->id) {
-                throw new RuntimeException('Plat kendaraan sudah terdaftar untuk NIK lain.');
-            }
-
             return $vehicle;
         }
 
@@ -159,10 +150,6 @@ class PermitImportCommitService
             $vehicle = $this->findVehicleByPlateForUpdate($plateNumber);
 
             if ($vehicle) {
-                if ((int) $vehicle->employee_id !== $employee->id) {
-                    throw new RuntimeException('Plat kendaraan sudah terdaftar untuk NIK lain.');
-                }
-
                 return $vehicle;
             }
 
@@ -237,15 +224,6 @@ class PermitImportCommitService
         $parkingCode = trim((string) $parkingCode);
 
         return $parkingCode !== '' && strlen($parkingCode) > self::MAX_PARKING_LOCATION_CODE_LENGTH;
-    }
-
-    private function findExistingActivePermit(int $vehicleId): ?VehiclePermit
-    {
-        return VehiclePermit::query()
-            ->where('vehicle_id', $vehicleId)
-            ->where('status', VehiclePermit::STATUS_ACTIVE)
-            ->lockForUpdate()
-            ->first();
     }
 
     private function findExistingPermit(int $employeeId, int $vehicleId): ?VehiclePermit

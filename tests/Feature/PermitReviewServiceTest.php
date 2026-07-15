@@ -232,6 +232,42 @@ class PermitReviewServiceTest extends TestCase
     }
 
     /** @test */
+    public function it_activates_a_second_employees_permit_for_a_shared_vehicle()
+    {
+        $reviewer = $this->user(User::ROLE_ADMIN_HR);
+        $permit = $this->permit(VehiclePermit::STATUS_NEEDS_REVIEW);
+        $parking = $this->parking('P1');
+        $this->segment('Y1');
+        $otherEmployee = Employee::create([
+            'nik' => 'EMP-' . uniqid(),
+            'name' => 'SHARED VEHICLE USER',
+            'status' => 'active',
+        ]);
+
+        VehiclePermit::create([
+            'employee_id' => $otherEmployee->id,
+            'vehicle_id' => $permit->vehicle_id,
+            'parking_location_id' => $parking->id,
+            'permit_color' => 'merah',
+            'approval_status' => 'approved',
+            'status' => VehiclePermit::STATUS_ACTIVE,
+            'source' => 'manual',
+            'route_raw' => 'Y1',
+        ]);
+
+        $activated = app(PermitReviewService::class)->activate($permit, [
+            'parking_location_id' => $parking->id,
+            'route_raw' => 'Y1',
+            'review_note' => 'Kendaraan dipakai bersama dan data telah diverifikasi.',
+        ], $reviewer);
+
+        $this->assertSame(VehiclePermit::STATUS_ACTIVE, $activated->status);
+        $this->assertSame(2, VehiclePermit::where('vehicle_id', $permit->vehicle_id)
+            ->where('status', VehiclePermit::STATUS_ACTIVE)
+            ->count());
+    }
+
+    /** @test */
     public function it_locks_the_vehicle_row_before_checking_active_duplicate_permits()
     {
         $reviewer = $this->user(User::ROLE_ADMIN_HR);
@@ -251,10 +287,10 @@ class PermitReviewServiceTest extends TestCase
         ], $reviewer);
 
         $vehicleQueryIndex = $this->firstQueryIndexContaining($queries, 'from "vehicles"');
-        $activePermitQueryIndex = $this->firstQueryIndexContaining($queries, '"vehicle_id" = ? and "status" = ? and "id" != ?');
+        $activePermitQueryIndex = $this->firstQueryIndexContaining($queries, '"employee_id" = ? and "vehicle_id" = ? and "status" = ? and "id" != ?');
 
         $this->assertNotNull($vehicleQueryIndex, 'Expected activation to query and lock the shared vehicle row.');
-        $this->assertNotNull($activePermitQueryIndex, 'Expected activation to check duplicate active permits.');
+        $this->assertNotNull($activePermitQueryIndex, 'Expected activation to scope duplicate active-permit checks to the employee and vehicle pair.');
         $this->assertLessThan($activePermitQueryIndex, $vehicleQueryIndex);
     }
 
