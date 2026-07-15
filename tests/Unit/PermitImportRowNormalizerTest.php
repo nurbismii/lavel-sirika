@@ -57,6 +57,17 @@ class PermitImportRowNormalizerTest extends TestCase
     }
 
     /** @test */
+    public function it_suppresses_duplicate_parking_location_codes()
+    {
+        $raw = ['1', 'DT 4423 CI', 'FITRIAWATI', '200115677', 'GENERAL AFFAIR', 'GA KANTOR', 'ADMIN', "CY-CC-P02 /\nCY-CC-P02", 'Y1 -> D2', 'OFFICE', 'BIRU', '0812', 'approved', '', 'GENERAL AFFAIR'];
+
+        $result = (new PermitImportRowNormalizer(new RouteSegmentParser()))->normalize($raw, $this->columns(), ['Y1', 'D2'], 5);
+
+        $this->assertSame(['CY-CC-P02'], $result['normalized_data']['parking_location_codes']);
+        $this->assertSame('CY-CC-P02', $result['normalized_data']['parking_location_code']);
+    }
+
+    /** @test */
     public function it_marks_blank_plate_as_invalid()
     {
         $raw = ['1', '', 'FITRIAWATI', '200115677', 'GENERAL AFFAIR', 'GA KANTOR', 'ADMIN', 'GA-MES1-P01', 'Y1Ã¢â€ â€™D2', 'OFFICE', 'BIRU Ã¨â€œÂÃ¨â€°Â²', '0812', 'Ã¢Ë†Å¡', '', 'GENERAL AFFAIR'];

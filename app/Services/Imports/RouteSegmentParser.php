@@ -78,7 +78,7 @@ class RouteSegmentParser
             $route = preg_replace('/(?<![A-Z0-9-])' . preg_quote($parkingCode, '/') . '(?![A-Z0-9-])/i', ' ', $route);
         }
 
-        return preg_replace('/\b[A-Z0-9]+(?:-[A-Z0-9]+){2,}\b/i', ' ', $route);
+        return preg_replace('/\b[A-Z0-9]+(?:-[A-Z0-9]+)*-P\d+\b/i', ' ', $route);
     }
 
     private function extractRemainingFreeText($rawRoute, array $knownCodes)
