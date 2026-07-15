@@ -4,12 +4,14 @@ namespace Tests\Feature;
 
 use App\Models\ImportBatch;
 use App\Models\ImportRow;
+use App\Models\ParkingLocation;
 use App\Models\RoadSegment;
 use App\Models\User;
 use App\Models\Employee;
 use App\Models\Vehicle;
 use App\Models\VehiclePermit;
 use App\Services\Imports\PermitExcelImportService;
+use App\Services\Imports\PermitImportCommitService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -22,6 +24,43 @@ use Tests\TestCase;
 class ImportExcelPreviewTest extends TestCase
 {
     use RefreshDatabase;
+
+    /** @test */
+    public function excel_fixture_preview_and_import_keep_all_parking_locations_visible_in_list_and_qr()
+    {
+        $this->seedRoadSegments(['Y1', 'D2']);
+        $admin = User::factory()->create([
+            'role' => User::ROLE_ADMIN_HR,
+            'status' => User::STATUS_ACTIVE,
+        ]);
+
+        $file = $this->excelFile([
+            ['VDNI Formulir', '', '', '', '', '', '', '', '', '', '', '', ''],
+            ['Plat Motor', 'Nama', 'NIK', 'Dep', 'Bagian', 'Jabatan', 'Lokasi Parkir', 'Rute Kendaraan', 'Alasan Masuk', 'Warna Kartu Izin Masuk', 'Nomor Kontak', 'Hasil Persetujuan', 'DIVISI'],
+            ['DT 7711 MP', 'EXCEL MULTI PARKING', '200115711', 'GENERAL AFFAIR', 'GA KANTOR', 'ADMIN', 'P02, P01', 'Y1 -> D2 -> P02, P01', 'OFFICE', 'BIRU', '0812', 'disetujui', 'GENERAL AFFAIR'],
+        ]);
+
+        $batch = app(PermitExcelImportService::class)->preview($file, $admin);
+
+        $this->assertSame(ImportBatch::STATUS_PREVIEWED, $batch->fresh()->status);
+        $this->assertSame(1, $batch->fresh()->success_rows);
+        $this->assertSame(['P02', 'P01'], $batch->rows()->first()->normalized_data['parking_location_codes']);
+
+        app(PermitImportCommitService::class)->commit($batch);
+
+        $permit = VehiclePermit::query()->where('source_import_id', $batch->id)->firstOrFail();
+
+        $this->assertSame(ParkingLocation::query()->where('code', 'P02')->value('id'), $permit->parking_location_id);
+        $this->assertSame(['P01', 'P02'], $permit->parkingLocations()->orderBy('code')->pluck('code')->all());
+
+        $this->actingAs($admin)->get(route('permits.index'))
+            ->assertOk()
+            ->assertSee('P01, P02');
+
+        $this->actingAs($admin)->post(route('permits.qr.generate', $permit))
+            ->assertOk()
+            ->assertSee('P01, P02');
+    }
 
     /** @test */
     public function it_creates_preview_batch_from_excel_file()

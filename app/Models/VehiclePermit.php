@@ -77,6 +77,7 @@ class VehiclePermit extends Model
         $codes = $locations->pluck('code')
             ->filter()
             ->unique()
+            ->sort(SORT_STRING)
             ->values();
 
         if ($codes->isEmpty() && $this->parkingLocation) {

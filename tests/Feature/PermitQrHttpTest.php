@@ -107,15 +107,15 @@ class PermitQrHttpTest extends TestCase
         $admin = $this->userWithRole(User::ROLE_ADMIN_HR);
         $permit = $this->permit();
         $secondParking = ParkingLocation::create([
-            'code' => 'GA-MES2-P02-' . uniqid(),
-            'name' => 'GA-MES2-P02',
+            'code' => 'AA-MES1-P01-' . uniqid(),
+            'name' => 'AA-MES1-P01',
             'status' => 'active',
         ]);
         $permit->parkingLocations()->sync([$permit->parking_location_id, $secondParking->id]);
 
         $this->actingAs($admin)->post(route('permits.qr.generate', $permit))
             ->assertOk()
-            ->assertSee($permit->parkingLocation->code . ', ' . $secondParking->code);
+            ->assertSee($secondParking->code . ', ' . $permit->parkingLocation->code);
     }
 
     /** @test */
