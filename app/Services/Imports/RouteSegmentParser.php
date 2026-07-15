@@ -4,9 +4,9 @@ namespace App\Services\Imports;
 
 class RouteSegmentParser
 {
-    public function parse($rawRoute, array $activeCodes)
+    public function parse($rawRoute, array $activeCodes, array $parkingCodes = [])
     {
-        $rawRoute = trim((string) $rawRoute);
+        $rawRoute = $this->normalizeSeparators($rawRoute);
 
         if ($rawRoute === '') {
             return [
@@ -20,7 +20,7 @@ class RouteSegmentParser
             return strlen($b) <=> strlen($a);
         });
 
-        $routeWithoutParkingCodes = preg_replace('/[A-Z]{2,}-[A-Z0-9]+-P\d+/i', ' ', $rawRoute);
+        $routeWithoutParkingCodes = $this->removeParkingCodes($rawRoute, $parkingCodes);
         preg_match_all('/[A-Z]{1,3}\d{1,2}/i', $routeWithoutParkingCodes, $matches);
         $tokens = array_values(array_unique(array_map('strtoupper', $matches[0])));
 
@@ -57,6 +57,28 @@ class RouteSegmentParser
     private function looksLikeParkingCode($token)
     {
         return preg_match('/^P\d+$/i', $token) === 1;
+    }
+
+    private function normalizeSeparators($rawRoute)
+    {
+        $rawRoute = trim((string) $rawRoute);
+
+        return preg_replace('/\s+-\s+/', ' → ', $rawRoute);
+    }
+
+    private function removeParkingCodes($rawRoute, array $parkingCodes)
+    {
+        $route = $rawRoute;
+        $parkingCodes = array_filter(array_map('trim', $parkingCodes));
+        usort($parkingCodes, function ($a, $b) {
+            return strlen($b) <=> strlen($a);
+        });
+
+        foreach ($parkingCodes as $parkingCode) {
+            $route = preg_replace('/(?<![A-Z0-9-])' . preg_quote($parkingCode, '/') . '(?![A-Z0-9-])/i', ' ', $route);
+        }
+
+        return preg_replace('/\b[A-Z0-9]+(?:-[A-Z0-9]+)*-P\d+\b/i', ' ', $route);
     }
 
     private function extractRemainingFreeText($rawRoute, array $knownCodes)

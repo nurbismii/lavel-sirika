@@ -42,4 +42,26 @@ class RouteSegmentParserTest extends TestCase
         $this->assertSame(['Y1', 'D2'], $result['codes']);
         $this->assertContains('Rute mengandung teks bebas yang perlu review: jalan baru', $result['warnings']);
     }
+
+    /** @test */
+    public function it_removes_supplied_and_hierarchical_parking_codes_from_arrow_and_spaced_dash_routes()
+    {
+        $result = (new RouteSegmentParser())->parse(
+            'GA-MES1-P01 → Y1 - D2 → PLTU-PC-6-P10',
+            ['Y1', 'D2'],
+            ['GA-MES1-P01']
+        );
+
+        $this->assertSame(['Y1', 'D2'], $result['codes']);
+        $this->assertSame([], $result['warnings']);
+    }
+
+    /** @test */
+    public function it_keeps_hyphenated_free_text_for_review_when_it_is_not_a_parking_code()
+    {
+        $result = (new RouteSegmentParser())->parse('Y1-jalan-baru-akses-D2', ['Y1', 'D2']);
+
+        $this->assertSame(['Y1', 'D2'], $result['codes']);
+        $this->assertContains('Rute mengandung teks bebas yang perlu review: jalan baru akses', $result['warnings']);
+    }
 }

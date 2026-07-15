@@ -9,7 +9,7 @@ class PermitRouteMapController extends Controller
 {
     public function show(VehiclePermit $permit, PermitRouteMapService $routeMaps)
     {
-        $permit->loadMissing(['employee', 'vehicle', 'parkingLocation', 'routeSegments']);
+        $permit->loadMissing(['employee', 'vehicle', 'parkingLocations', 'routeSegments']);
 
         return view('permits.route-map.show', [
             'permit' => $permit,

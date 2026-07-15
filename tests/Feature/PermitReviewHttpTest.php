@@ -16,6 +16,30 @@ class PermitReviewHttpTest extends TestCase
     use RefreshDatabase;
 
     /** @test */
+    public function activation_rejects_an_inactive_parking_location_in_the_selected_locations()
+    {
+        $admin = $this->user(User::ROLE_ADMIN_HR);
+        $permit = $this->permit(VehiclePermit::STATUS_NEEDS_REVIEW, 'INACTIVE PARKING USER', 'DT 5399 IP');
+        $activeParking = $this->parking('P1');
+        $inactiveParking = ParkingLocation::create([
+            'code' => 'P2',
+            'name' => 'Parkir P2',
+            'status' => 'inactive',
+        ]);
+        $this->segment('Y1');
+
+        $this->from(route('permits.review.edit', $permit))
+            ->actingAs($admin)
+            ->post(route('permits.review.activate', $permit), [
+                'parking_location_ids' => [$activeParking->id, $inactiveParking->id],
+                'route_raw' => 'Y1',
+                'review_note' => 'Memeriksa validasi lokasi parkir.',
+            ])
+            ->assertRedirect(route('permits.review.edit', $permit))
+            ->assertSessionHasErrors('parking_location_ids.1');
+    }
+
+    /** @test */
     public function permit_review_routes_are_mapped_to_the_expected_roles()
     {
         $this->assertSame([User::ROLE_ADMIN_HR, User::ROLE_AUDITOR], User::rolesForRoute('permits.index'));

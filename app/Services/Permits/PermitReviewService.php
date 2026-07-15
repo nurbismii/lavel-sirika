@@ -26,13 +26,17 @@ class PermitReviewService
             $lockedPermit = $this->lockPermit($permit);
             $this->ensureNeedsReview($lockedPermit);
 
+            $parkingLocations = $this->resolveParkingLocations($data);
+
             $lockedPermit->update([
-                'parking_location_id' => $data['parking_location_id'] ?? null,
+                'parking_location_id' => $parkingLocations[0]->id ?? null,
                 'route_raw' => $this->cleanText($data['route_raw'] ?? null),
                 'review_note' => $this->cleanText($data['review_note'] ?? null),
             ]);
 
-            return $lockedPermit->fresh(['employee', 'vehicle', 'parkingLocation', 'routeSegments', 'reviewer']);
+            $lockedPermit->parkingLocations()->sync(collect($parkingLocations)->pluck('id')->all());
+
+            return $lockedPermit->fresh(['employee', 'vehicle', 'parkingLocation', 'parkingLocations', 'routeSegments', 'reviewer']);
         });
     }
 
@@ -44,7 +48,7 @@ class PermitReviewService
             $this->ensurePermitHasCoreRelations($lockedPermit);
             $this->lockVehicle($lockedPermit->vehicle_id);
 
-            $parking = $this->resolveParkingLocation($data['parking_location_id'] ?? null);
+            $parkingLocations = $this->resolveParkingLocations($data, true);
             $routeRaw = $this->cleanText($data['route_raw'] ?? null);
             $reviewNote = $this->cleanText($data['review_note'] ?? null);
 
@@ -58,13 +62,15 @@ class PermitReviewService
             $this->ensureNoOtherActivePermit($lockedPermit);
 
             $lockedPermit->update([
-                'parking_location_id' => $parking->id,
+                'parking_location_id' => $parkingLocations[0]->id,
                 'route_raw' => $routeRaw,
                 'review_note' => $reviewNote,
                 'reviewed_by' => $reviewer->id,
                 'reviewed_at' => now(),
                 'status' => VehiclePermit::STATUS_ACTIVE,
             ]);
+
+            $lockedPermit->parkingLocations()->sync(collect($parkingLocations)->pluck('id')->all());
 
             $lockedPermit->permitRouteSegments()->delete();
 
@@ -78,7 +84,7 @@ class PermitReviewService
                 $sequence++;
             }
 
-            return $lockedPermit->fresh(['employee', 'vehicle', 'parkingLocation', 'permitRouteSegments', 'routeSegments', 'reviewer']);
+            return $lockedPermit->fresh(['employee', 'vehicle', 'parkingLocation', 'parkingLocations', 'permitRouteSegments', 'routeSegments', 'reviewer']);
         });
     }
 
@@ -116,22 +122,42 @@ class PermitReviewService
         }
     }
 
-    private function resolveParkingLocation($parkingLocationId): ParkingLocation
+    private function resolveParkingLocations(array $data, bool $required = false): array
     {
-        if (! $parkingLocationId) {
+        $parkingLocationIds = $data['parking_location_ids'] ?? [];
+
+        if ($parkingLocationIds === [] && ! empty($data['parking_location_id'])) {
+            $parkingLocationIds = [$data['parking_location_id']];
+        }
+
+        $parkingLocationIds = array_values(array_unique(array_filter(
+            $parkingLocationIds,
+            function ($parkingLocationId) {
+                return $parkingLocationId !== null && $parkingLocationId !== '';
+            }
+        )));
+
+        if ($required && $parkingLocationIds === []) {
             throw new InvalidArgumentException('Pilih lokasi parkir sebelum aktivasi izin.');
         }
 
-        $parking = ParkingLocation::query()
-            ->whereKey($parkingLocationId)
+        if ($parkingLocationIds === []) {
+            return [];
+        }
+
+        $parkingLocations = ParkingLocation::query()
+            ->whereIn('id', $parkingLocationIds)
             ->where('status', 'active')
-            ->first();
+            ->get()
+            ->keyBy('id');
 
-        if (! $parking) {
+        if ($parkingLocations->count() !== count($parkingLocationIds)) {
             throw new InvalidArgumentException('Pilih lokasi parkir sebelum aktivasi izin.');
         }
 
-        return $parking;
+        return array_map(function ($parkingLocationId) use ($parkingLocations) {
+            return $parkingLocations->get($parkingLocationId);
+        }, $parkingLocationIds);
     }
 
     private function resolveRouteCodes(?string $routeRaw): array

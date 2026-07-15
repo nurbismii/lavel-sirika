@@ -21,7 +21,7 @@ class PermitController extends Controller
         ];
 
         $query = VehiclePermit::query()
-            ->with(['employee', 'vehicle', 'parkingLocation', 'activeToken', 'latestToken', 'routeSegments'])
+            ->with(['employee', 'vehicle', 'parkingLocations', 'activeToken', 'latestToken', 'routeSegments'])
             ->latest();
 
         $this->applyFilters($query, $filters);
@@ -42,7 +42,7 @@ class PermitController extends Controller
         $permit->loadMissing([
             'employee',
             'vehicle',
-            'parkingLocation',
+            'parkingLocations',
             'activeToken',
             'latestToken',
             'routeSegments',
@@ -65,7 +65,11 @@ class PermitController extends Controller
         }
 
         if ($filters['parking_location_id']) {
-            $query->where('parking_location_id', $filters['parking_location_id']);
+            $query->where(function ($parkingFilterQuery) use ($filters) {
+                $parkingFilterQuery->whereHas('parkingLocations', function ($parkingQuery) use ($filters) {
+                    $parkingQuery->whereKey($filters['parking_location_id']);
+                })->orWhere('parking_location_id', $filters['parking_location_id']);
+            });
         }
 
         if ($filters['search']) {

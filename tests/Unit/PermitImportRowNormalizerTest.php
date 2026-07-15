@@ -44,6 +44,41 @@ class PermitImportRowNormalizerTest extends TestCase
     }
 
     /** @test */
+    public function it_normalizes_multiple_parking_locations_and_excludes_them_from_route_segments()
+    {
+        $raw = ['1', 'DT 4423 CI', 'FITRIAWATI', '200115677', 'GENERAL AFFAIR', 'GA KANTOR', 'ADMIN', "CY-CC-P02 /\nCY-CC-P03", 'GA-MES1-P01 → Y1 → D2 → PLTU-PC-6-P10', 'OFFICE', 'BIRU', '0812', 'approved', '', 'GENERAL AFFAIR'];
+
+        $result = (new PermitImportRowNormalizer(new RouteSegmentParser()))->normalize($raw, $this->columns(), ['Y1', 'D2'], 5);
+
+        $this->assertSame(ImportRow::STATUS_VALID, $result['status']);
+        $this->assertSame(['CY-CC-P02', 'CY-CC-P03'], $result['normalized_data']['parking_location_codes']);
+        $this->assertSame(['Y1', 'D2'], $result['normalized_data']['route_segment_codes']);
+        $this->assertSame([], $result['warnings']);
+    }
+
+    /** @test */
+    public function it_normalizes_multiple_parking_locations_separated_by_a_bare_slash()
+    {
+        $raw = ['1', 'DT 4423 CI', 'FITRIAWATI', '200115677', 'GENERAL AFFAIR', 'GA KANTOR', 'ADMIN', 'CY-CC-P02/CY-CC-P03', 'Y1 -> D2', 'OFFICE', 'BIRU', '0812', 'approved', '', 'GENERAL AFFAIR'];
+
+        $result = (new PermitImportRowNormalizer(new RouteSegmentParser()))->normalize($raw, $this->columns(), ['Y1', 'D2'], 5);
+
+        $this->assertSame(['CY-CC-P02', 'CY-CC-P03'], $result['normalized_data']['parking_location_codes']);
+        $this->assertSame('CY-CC-P02', $result['normalized_data']['parking_location_code']);
+    }
+
+    /** @test */
+    public function it_suppresses_duplicate_parking_location_codes()
+    {
+        $raw = ['1', 'DT 4423 CI', 'FITRIAWATI', '200115677', 'GENERAL AFFAIR', 'GA KANTOR', 'ADMIN', "CY-CC-P02 /\nCY-CC-P02", 'Y1 -> D2', 'OFFICE', 'BIRU', '0812', 'approved', '', 'GENERAL AFFAIR'];
+
+        $result = (new PermitImportRowNormalizer(new RouteSegmentParser()))->normalize($raw, $this->columns(), ['Y1', 'D2'], 5);
+
+        $this->assertSame(['CY-CC-P02'], $result['normalized_data']['parking_location_codes']);
+        $this->assertSame('CY-CC-P02', $result['normalized_data']['parking_location_code']);
+    }
+
+    /** @test */
     public function it_marks_blank_plate_as_invalid()
     {
         $raw = ['1', '', 'FITRIAWATI', '200115677', 'GENERAL AFFAIR', 'GA KANTOR', 'ADMIN', 'GA-MES1-P01', 'Y1Ã¢â€ â€™D2', 'OFFICE', 'BIRU Ã¨â€œÂÃ¨â€°Â²', '0812', 'Ã¢Ë†Å¡', '', 'GENERAL AFFAIR'];

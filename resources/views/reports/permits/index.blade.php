@@ -127,7 +127,7 @@
                                 <td>{{ optional($permit->employee)->nik ?? '-' }}</td>
                                 <td>{{ optional($permit->employee)->name ?? '-' }}</td>
                                 <td>{{ optional($permit->vehicle)->plate_number ?? '-' }}</td>
-                                <td>{{ optional($permit->parkingLocation)->code ?? '-' }}</td>
+                                <td>{{ $permit->parkingLocationCodes() ?: '-' }}</td>
                                 <td><span class="status-pill">{{ $permit->status }}</span></td>
                                 <td>
                                     <span class="status-pill">{{ $reports->qrStatusLabel($permit) }}</span>

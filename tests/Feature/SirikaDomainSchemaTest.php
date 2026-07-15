@@ -40,6 +40,10 @@ class SirikaDomainSchemaTest extends TestCase
             'id', 'employee_id', 'vehicle_id', 'parking_location_id', 'permit_color', 'reason', 'approval_status', 'valid_from', 'valid_until', 'status', 'source', 'source_import_id', 'route_raw',
         ]));
 
+        $this->assertTrue(Schema::hasColumns('vehicle_permit_parking_locations', [
+            'vehicle_permit_id', 'parking_location_id', 'created_at', 'updated_at',
+        ]));
+
         $this->assertTrue(Schema::hasColumns('permit_route_segments', [
             'id', 'vehicle_permit_id', 'road_segment_id', 'sequence',
         ]));
@@ -188,5 +192,64 @@ class SirikaDomainSchemaTest extends TestCase
         $this->expectExceptionMessage('Cannot add vehicles_plate_number_unique because duplicate vehicle plate rows exist');
 
         $migration->up();
+    }
+
+    /** @test */
+    public function vehicle_permit_parking_location_migration_backfills_legacy_locations_without_duplicates()
+    {
+        $migration = new \CreateVehiclePermitParkingLocationsTable();
+        $migration->down();
+
+        $employeeId = DB::table('employees')->insertGetId([
+            'nik' => 'EMP-PARKING-001',
+            'name' => 'Parking Test Employee',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $vehicleId = DB::table('vehicles')->insertGetId([
+            'employee_id' => $employeeId,
+            'plate_number' => 'DD 1234 PARK',
+            'vehicle_type' => 'motorcycle',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $parkingLocationId = DB::table('parking_locations')->insertGetId([
+            'code' => 'PARKING-001',
+            'name' => 'Parking 001',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $permitId = DB::table('vehicle_permits')->insertGetId([
+            'employee_id' => $employeeId,
+            'vehicle_id' => $vehicleId,
+            'parking_location_id' => $parkingLocationId,
+            'approval_status' => 'approved',
+            'status' => 'draft',
+            'source' => 'manual',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $migration->up();
+
+        $this->assertDatabaseHas('vehicle_permit_parking_locations', [
+            'vehicle_permit_id' => $permitId,
+            'parking_location_id' => $parkingLocationId,
+        ]);
+
+        $this->expectException(QueryException::class);
+
+        DB::table('vehicle_permit_parking_locations')->insert([
+            'vehicle_permit_id' => $permitId,
+            'parking_location_id' => $parkingLocationId,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     }
 }

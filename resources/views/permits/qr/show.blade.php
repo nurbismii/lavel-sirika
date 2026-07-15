@@ -30,7 +30,7 @@
                 </div>
                 <div>
                     <dt>Lokasi Parkir</dt>
-                    <dd>{{ optional($permit->parkingLocation)->code ?? '-' }}</dd>
+                    <dd>{{ $permit->parkingLocationCodes() ?: '-' }}</dd>
                 </div>
                 <div>
                     <dt>Status Token</dt>

@@ -29,7 +29,7 @@ class PermitReportQuery
             ->with([
                 'employee',
                 'vehicle',
-                'parkingLocation',
+                'parkingLocations',
                 'reviewer',
                 'activeToken' => function ($query) {
                     $query->select([
@@ -158,7 +158,11 @@ class PermitReportQuery
         }
 
         if ($filters['parking_location_id']) {
-            $query->where('vehicle_permits.parking_location_id', $filters['parking_location_id']);
+            $query->where(function ($parkingFilterQuery) use ($filters) {
+                $parkingFilterQuery->whereHas('parkingLocations', function ($parkingQuery) use ($filters) {
+                    $parkingQuery->whereKey($filters['parking_location_id']);
+                })->orWhere('vehicle_permits.parking_location_id', $filters['parking_location_id']);
+            });
         }
 
         if ($filters['source']) {

@@ -77,7 +77,7 @@ class PermitNeedsReviewExport extends StringValueBinder implements FromQuery, Wi
             optional($permit->employee)->department ?? '-',
             optional($permit->vehicle)->plate_number ?? '-',
             optional($permit->vehicle)->vehicle_type ?? '-',
-            optional($permit->parkingLocation)->code ?? '-',
+            $permit->parkingLocationCodes() ?: '-',
             $permit->status ?? '-',
             $routeRaw !== '' ? $routeRaw : '-',
             $unavailableRoutes === [] ? '-' : implode(', ', $unavailableRoutes),

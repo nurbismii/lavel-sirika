@@ -102,6 +102,23 @@ class PermitQrHttpTest extends TestCase
     }
 
     /** @test */
+    public function qr_views_render_all_selected_parking_locations()
+    {
+        $admin = $this->userWithRole(User::ROLE_ADMIN_HR);
+        $permit = $this->permit();
+        $secondParking = ParkingLocation::create([
+            'code' => 'AA-MES1-P01-' . uniqid(),
+            'name' => 'AA-MES1-P01',
+            'status' => 'active',
+        ]);
+        $permit->parkingLocations()->sync([$permit->parking_location_id, $secondParking->id]);
+
+        $this->actingAs($admin)->post(route('permits.qr.generate', $permit))
+            ->assertOk()
+            ->assertSee($secondParking->code . ', ' . $permit->parkingLocation->code);
+    }
+
+    /** @test */
     public function security_cannot_access_admin_qr_routes()
     {
         $security = $this->userWithRole(User::ROLE_SECURITY);

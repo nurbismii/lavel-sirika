@@ -37,7 +37,7 @@ class PermitScanService
         $token = PermitToken::with([
             'permit.employee',
             'permit.vehicle',
-            'permit.parkingLocation',
+            'permit.parkingLocations',
             'permit.routeSegments',
         ])
             ->where('token_hash', hash('sha256', $plainToken))
@@ -146,7 +146,7 @@ class PermitScanService
         return [
             'employee_name' => optional($permit->employee)->name,
             'plate_number' => optional($permit->vehicle)->plate_number,
-            'parking_code' => optional($permit->parkingLocation)->code,
+            'parking_code' => $permit->parkingLocationCodes() ?: null,
         ];
     }
 
@@ -155,7 +155,7 @@ class PermitScanService
         $data = [
             'employee_name' => optional($permit->employee)->name,
             'plate_number' => optional($permit->vehicle)->plate_number,
-            'parking_code' => optional($permit->parkingLocation)->code,
+            'parking_code' => $permit->parkingLocationCodes() ?: null,
             'permit_color' => $permit->permit_color,
             'status' => $permit->status,
             'route_raw' => $permit->route_raw,
