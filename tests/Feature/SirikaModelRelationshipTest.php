@@ -71,6 +71,51 @@ class SirikaModelRelationshipTest extends TestCase
     }
 
     /** @test */
+    public function permit_and_parking_location_support_multiple_parking_relationships()
+    {
+        $employee = Employee::create([
+            'nik' => '200115679',
+            'name' => 'MULTI PARKING',
+            'status' => 'active',
+        ]);
+
+        $vehicle = Vehicle::create([
+            'employee_id' => $employee->id,
+            'plate_number' => 'DT 9900 MP',
+            'vehicle_type' => 'car',
+            'status' => 'active',
+        ]);
+
+        $permit = VehiclePermit::create([
+            'employee_id' => $employee->id,
+            'vehicle_id' => $vehicle->id,
+            'approval_status' => 'approved',
+            'status' => 'draft',
+            'source' => 'manual',
+        ]);
+
+        $firstLocation = ParkingLocation::create([
+            'code' => 'GA-MES1-P01',
+            'name' => 'GA MES 1 P01',
+            'status' => 'active',
+        ]);
+        $secondLocation = ParkingLocation::create([
+            'code' => 'GA-MES3-P02',
+            'name' => 'GA MES 3 P02',
+            'status' => 'active',
+        ]);
+
+        $permit->parkingLocations()->attach([$firstLocation->id, $secondLocation->id]);
+
+        $this->assertSame(
+            ['GA-MES1-P01', 'GA-MES3-P02'],
+            $permit->parkingLocations()->orderBy('parking_locations.code')->pluck('code')->all()
+        );
+        $this->assertTrue($firstLocation->vehiclePermits->first()->is($permit));
+        $this->assertTrue($secondLocation->vehiclePermits->first()->is($permit));
+    }
+
+    /** @test */
     public function road_segment_import_batch_and_scan_log_relationships_work()
     {
         $uploader = User::factory()->create();

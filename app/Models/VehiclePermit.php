@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class VehiclePermit extends Model
 {
@@ -55,6 +56,16 @@ class VehiclePermit extends Model
     public function parkingLocation()
     {
         return $this->belongsTo(ParkingLocation::class);
+    }
+
+    public function parkingLocations(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            ParkingLocation::class,
+            'vehicle_permit_parking_locations',
+            'vehicle_permit_id',
+            'parking_location_id'
+        )->withTimestamps();
     }
 
     public function reviewer()
