@@ -39,7 +39,8 @@ class PermitImportRowNormalizer
         $plate = $this->normalizeText($rawData['plate_number']);
         $name = $this->normalizeText($rawData['employee_name']);
         $nik = $this->normalizeText($rawData['nik']);
-        $parking = $this->normalizeText($rawData['parking_location']);
+        $parkingCodes = $this->normalizeParkingCodes($rawData['parking_location']);
+        $parking = $parkingCodes[0] ?? '';
         $routeRaw = $this->normalizeText($rawData['route_raw']);
         $color = $this->normalizeColor($rawData['permit_color']);
         $approved = $this->isApproved($rawData['approval_status']);
@@ -68,11 +69,11 @@ class PermitImportRowNormalizer
             $warnings[] = 'Plat motor berisi lebih dari satu nilai';
         }
 
-        if ($parking === '') {
+        if ($parkingCodes === []) {
             $warnings[] = 'Lokasi parkir kosong';
         }
 
-        $route = $this->routeParser->parse($routeRaw, $activeRouteCodes);
+        $route = $this->routeParser->parse($routeRaw, $activeRouteCodes, $parkingCodes);
         $warnings = array_merge($warnings, $route['warnings']);
 
         $status = ImportRow::STATUS_VALID;
@@ -96,6 +97,7 @@ class PermitImportRowNormalizer
                 'contact_number' => $this->normalizeText($rawData['contact_number']),
                 'plate_number' => $plate,
                 'parking_location_code' => $parking,
+                'parking_location_codes' => $parkingCodes,
                 'route_raw' => $routeRaw,
                 'route_segment_codes' => $route['codes'],
                 'reason' => $this->normalizeText($rawData['reason']),
@@ -126,6 +128,17 @@ class PermitImportRowNormalizer
         $value = preg_replace('/\s+/', ' ', $value);
 
         return trim($value);
+    }
+
+    private function normalizeParkingCodes($value)
+    {
+        $codes = preg_split('/[\r\n,]+|\s+\/\s+/', (string) $value);
+        $codes = array_map([$this, 'normalizeText'], $codes ?: []);
+        $codes = array_filter($codes, function ($code) {
+            return $code !== '';
+        });
+
+        return array_values(array_unique($codes));
     }
 
     private function normalizeColor($value)
