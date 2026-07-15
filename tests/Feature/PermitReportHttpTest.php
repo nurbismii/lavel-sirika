@@ -164,8 +164,8 @@ class PermitReportHttpTest extends TestCase
         $admin = $this->user(User::ROLE_ADMIN_HR);
         RoadSegment::create(['code' => 'Y1', 'name' => 'Y1', 'status' => RoadSegment::STATUS_ACTIVE]);
         RoadSegment::create(['code' => 'D2', 'name' => 'D2', 'status' => RoadSegment::STATUS_INACTIVE]);
-        $review = $this->permit(['name' => 'PERLU REVIEW', 'status' => VehiclePermit::STATUS_NEEDS_REVIEW, 'route_raw' => 'Y1 -> D2 -> X99']);
-        $active = $this->permit(['name' => 'AKTIF', 'status' => VehiclePermit::STATUS_ACTIVE, 'route_raw' => 'Y1']);
+        $review = $this->permit(['name' => 'PERLU REVIEW', 'plate' => 'DT 9300 RP', 'status' => VehiclePermit::STATUS_NEEDS_REVIEW, 'route_raw' => 'Y1 -> D2 -> X99']);
+        $active = $this->permit(['name' => 'AKTIF', 'plate' => 'DT 9301 RP', 'status' => VehiclePermit::STATUS_ACTIVE, 'route_raw' => 'Y1']);
         $token = $this->token($review, PermitToken::STATUS_ACTIVE, now()->addYear());
 
         $this->actingAs($admin)->get(route('reports.permits.needs-review.export', ['status' => VehiclePermit::STATUS_ACTIVE]));

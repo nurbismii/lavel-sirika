@@ -167,16 +167,28 @@ class PermitReviewServiceTest extends TestCase
     }
 
     /** @test */
-    public function it_blocks_activation_when_vehicle_has_another_active_permit()
+    public function it_activates_needs_review_permit_for_second_vehicle_when_first_vehicle_has_active_permit()
     {
         $reviewer = $this->user(User::ROLE_ADMIN_HR);
         $permit = $this->permit(VehiclePermit::STATUS_NEEDS_REVIEW);
         $parking = $this->parking('P1');
         $this->segment('Y1');
+        $firstVehicleId = $permit->vehicle_id;
+
+        $secondVehicle = Vehicle::create([
+            'employee_id' => $permit->employee_id,
+            'plate_number' => 'DT ' . random_int(1000, 9999) . ' RV',
+            'vehicle_type' => 'motorcycle',
+            'status' => 'active',
+        ]);
+
+        $permit->update([
+            'vehicle_id' => $secondVehicle->id,
+        ]);
 
         VehiclePermit::create([
             'employee_id' => $permit->employee_id,
-            'vehicle_id' => $permit->vehicle_id,
+            'vehicle_id' => $firstVehicleId,
             'parking_location_id' => $parking->id,
             'permit_color' => 'merah',
             'approval_status' => 'approved',
@@ -185,14 +197,14 @@ class PermitReviewServiceTest extends TestCase
             'route_raw' => 'Y1',
         ]);
 
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Kendaraan ini masih memiliki izin aktif lain. Nonaktifkan izin lama sebelum aktivasi.');
-
-        app(PermitReviewService::class)->activate($permit, [
+        $activated = app(PermitReviewService::class)->activate($permit, [
             'parking_location_id' => $parking->id,
             'route_raw' => 'Y1',
             'review_note' => 'Valid.',
         ], $reviewer);
+
+        $this->assertSame(VehiclePermit::STATUS_ACTIVE, $activated->status);
+        $this->assertSame($secondVehicle->id, $activated->vehicle_id);
     }
 
     /** @test */

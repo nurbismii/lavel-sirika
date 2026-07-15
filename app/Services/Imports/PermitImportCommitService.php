@@ -94,6 +94,10 @@ class PermitImportCommitService
             $warnings[] = 'Kendaraan sudah memiliki izin aktif, perlu review sebelum aktivasi.';
         }
 
+        if ($this->findExistingPermit($employee->id, $vehicle->id) !== null) {
+            throw new RuntimeException('Izin kendaraan untuk NIK dan plat ini sudah terdaftar.');
+        }
+
         $permit = VehiclePermit::query()->create([
             'employee_id' => $employee->id,
             'vehicle_id' => $vehicle->id,
@@ -131,9 +135,13 @@ class PermitImportCommitService
 
     private function resolveVehicle(Employee $employee, string $plateNumber): Vehicle
     {
-        $vehicle = $this->findVehicleForUpdate($employee->id, $plateNumber);
+        $vehicle = $this->findVehicleByPlateForUpdate($plateNumber);
 
         if ($vehicle) {
+            if ((int) $vehicle->employee_id !== $employee->id) {
+                throw new RuntimeException('Plat kendaraan sudah terdaftar untuk NIK lain.');
+            }
+
             return $vehicle;
         }
 
@@ -145,25 +153,25 @@ class PermitImportCommitService
                 'status' => 'active',
             ]);
         } catch (QueryException $exception) {
-            $vehicle = $this->findVehicleForUpdate($employee->id, $plateNumber);
+            $vehicle = $this->findVehicleByPlateForUpdate($plateNumber);
 
             if ($vehicle) {
+                if ((int) $vehicle->employee_id !== $employee->id) {
+                    throw new RuntimeException('Plat kendaraan sudah terdaftar untuk NIK lain.');
+                }
+
                 return $vehicle;
             }
 
             throw $exception;
         }
 
-        return Vehicle::query()
-            ->whereKey($vehicle->id)
-            ->lockForUpdate()
-            ->firstOrFail();
+        return $this->findVehicleByPlateForUpdate($plateNumber) ?? $vehicle;
     }
 
-    private function findVehicleForUpdate(int $employeeId, string $plateNumber): ?Vehicle
+    private function findVehicleByPlateForUpdate(string $plateNumber): ?Vehicle
     {
         return Vehicle::query()
-            ->where('employee_id', $employeeId)
             ->where('plate_number', $plateNumber)
             ->lockForUpdate()
             ->first();
@@ -204,6 +212,15 @@ class PermitImportCommitService
         return VehiclePermit::query()
             ->where('vehicle_id', $vehicleId)
             ->where('status', VehiclePermit::STATUS_ACTIVE)
+            ->lockForUpdate()
+            ->first();
+    }
+
+    private function findExistingPermit(int $employeeId, int $vehicleId): ?VehiclePermit
+    {
+        return VehiclePermit::query()
+            ->where('employee_id', $employeeId)
+            ->where('vehicle_id', $vehicleId)
             ->lockForUpdate()
             ->first();
     }

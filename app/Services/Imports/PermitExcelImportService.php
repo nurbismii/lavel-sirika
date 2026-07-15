@@ -75,21 +75,46 @@ class PermitExcelImportService
             ];
 
             DB::transaction(function () use ($batch, $rows, $header, $activeRouteCodes, &$counts) {
-                foreach ($rows as $index => $row) {
-                    if ($index <= $header['row_index']) {
-                        continue;
+                $normalizedRows = $this->normalizedRows($rows, $header, $activeRouteCodes);
+                $existingPermits = $this->existingPermitIdentities($normalizedRows);
+                $firstRowsByIdentity = [];
+                $firstNiksByPlate = [];
+
+                foreach ($normalizedRows as $normalized) {
+                    $data = $normalized['normalized_data'] ?? [];
+                    $identity = $this->permitIdentity($data);
+                    $plate = $this->permitPlate($data);
+                    $nik = $identity === null ? null : explode('|', $identity, 2)[0];
+
+                    if ($identity !== null && isset($firstRowsByIdentity[$identity])) {
+                        $normalized['errors'][] = 'NIK dan plat kendaraan duplikat pada baris '
+                            . $firstRowsByIdentity[$identity] . '.';
+                    } elseif ($plate !== null && isset($firstNiksByPlate[$plate])
+                        && $firstNiksByPlate[$plate]['nik'] !== $nik) {
+                        $normalized['errors'][] = 'Plat kendaraan sudah digunakan oleh NIK lain pada baris '
+                            . $firstNiksByPlate[$plate]['row_number'] . '.';
+                    } elseif ($identity !== null && isset($existingPermits['identities'][$identity])) {
+                        $normalized['errors'][] = 'Izin kendaraan untuk NIK dan plat ini sudah terdaftar.';
+                    } elseif ($plate !== null
+                        && $this->hasExistingPermitForDifferentNik($existingPermits['niks_by_plate'], $plate, $nik)) {
+                        $normalized['errors'][] = 'Plat kendaraan sudah terdaftar untuk NIK lain.';
                     }
 
-                    if ($this->isEmptyRow($row)) {
-                        continue;
+                    if ($identity !== null) {
+                        $firstRowsByIdentity[$identity] = $firstRowsByIdentity[$identity]
+                            ?? $normalized['row_number'];
                     }
 
-                    $normalized = $this->normalizer->normalize(
-                        $row,
-                        $header['columns'],
-                        $activeRouteCodes,
-                        $index + 1
-                    );
+                    if ($plate !== null && !isset($firstNiksByPlate[$plate])) {
+                        $firstNiksByPlate[$plate] = [
+                            'nik' => $nik,
+                            'row_number' => $normalized['row_number'],
+                        ];
+                    }
+
+                    if ($normalized['errors'] !== []) {
+                        $normalized['status'] = ImportRow::STATUS_INVALID;
+                    }
 
                     $counts[$normalized['status']]++;
 
@@ -161,6 +186,119 @@ class PermitExcelImportService
         }
 
         return true;
+    }
+
+    private function normalizedRows(array $rows, array $header, array $activeRouteCodes): array
+    {
+        $normalizedRows = [];
+
+        foreach ($rows as $index => $row) {
+            if ($index <= $header['row_index'] || $this->isEmptyRow($row)) {
+                continue;
+            }
+
+            $normalizedRows[] = $this->normalizer->normalize(
+                $row,
+                $header['columns'],
+                $activeRouteCodes,
+                $index + 1
+            );
+        }
+
+        return $normalizedRows;
+    }
+
+    private function existingPermitIdentities(array $normalizedRows): array
+    {
+        $identities = [];
+        $plates = [];
+
+        foreach ($normalizedRows as $normalized) {
+            $data = $normalized['normalized_data'] ?? [];
+            $identity = $this->permitIdentity($data);
+            $plate = $this->permitPlate($data);
+
+            if ($identity !== null) {
+                $identities[$identity] = true;
+            }
+
+            if ($plate !== null) {
+                $plates[$plate] = true;
+            }
+        }
+
+        if ($plates === []) {
+            return [
+                'identities' => [],
+                'niks_by_plate' => [],
+            ];
+        }
+
+        $existingIdentities = [];
+        $existingNiksByPlate = [];
+        $rows = DB::table('vehicle_permits')
+            ->join('employees', 'employees.id', '=', 'vehicle_permits.employee_id')
+            ->join('vehicles', 'vehicles.id', '=', 'vehicle_permits.vehicle_id')
+            ->whereIn('vehicles.plate_number', array_keys($plates))
+            ->select('employees.nik', 'vehicles.plate_number')
+            ->get();
+
+        foreach ($rows as $row) {
+            $identity = $this->permitIdentity([
+                'nik' => $row->nik,
+                'plate_number' => $row->plate_number,
+            ]);
+
+            if ($identity !== null && isset($identities[$identity])) {
+                $existingIdentities[$identity] = true;
+            }
+
+            $plate = $this->permitPlate([
+                'plate_number' => $row->plate_number,
+            ]);
+            if ($plate !== null && $identity !== null) {
+                $existingNiksByPlate[$plate][explode('|', $identity, 2)[0]] = true;
+            }
+        }
+
+        return [
+            'identities' => $existingIdentities,
+            'niks_by_plate' => $existingNiksByPlate,
+        ];
+    }
+
+    private function permitIdentity(array $data): ?string
+    {
+        $nik = trim((string) ($data['nik'] ?? ''));
+        $plate = trim((string) ($data['plate_number'] ?? ''));
+
+        if ($nik === '' || $plate === '') {
+            return null;
+        }
+
+        return strtoupper($nik) . '|' . strtoupper($plate);
+    }
+
+    private function permitPlate(array $data): ?string
+    {
+        $plate = trim((string) ($data['plate_number'] ?? ''));
+
+        return $plate === '' ? null : strtoupper($plate);
+    }
+
+    private function hasExistingPermitForDifferentNik(array $niksByPlate, string $plate, ?string $nik): bool
+    {
+        if ($nik === null || !isset($niksByPlate[$plate])) {
+            return false;
+        }
+
+        foreach (array_keys($niksByPlate[$plate]) as $existingNik) {
+            if ($existingNik !== $nik) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function authorizePreview(User $user): void
