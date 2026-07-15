@@ -251,7 +251,7 @@ class ImportCommitTest extends TestCase
     }
 
     /** @test */
-    public function it_rejects_stale_valid_commit_when_plate_has_been_claimed_by_another_nik()
+    public function it_commits_a_stale_valid_row_when_plate_is_owned_by_another_nik()
     {
         $admin = $this->admin();
         $batch = $this->batch($admin, [
@@ -290,20 +290,50 @@ class ImportCommitTest extends TestCase
             'approval_status' => 'approved',
         ]);
 
-        try {
-            app(PermitImportCommitService::class)->commit($batch);
-            $this->fail('Expected stale commit with an already claimed plate to be rejected.');
-        } catch (RuntimeException $exception) {
-            $this->assertSame('Plat kendaraan sudah terdaftar untuk NIK lain.', $exception->getMessage());
-        }
+        app(PermitImportCommitService::class)->commit($batch);
 
-        $this->assertSame(ImportBatch::STATUS_PREVIEWED, $batch->fresh()->status);
+        $this->assertSame(ImportBatch::STATUS_COMMITTED, $batch->fresh()->status);
         $this->assertSame(1, Vehicle::count());
-        $this->assertSame(1, VehiclePermit::count());
-        $this->assertDatabaseMissing('employees', ['nik' => '200115677']);
+        $this->assertSame(2, VehiclePermit::count());
+        $this->assertDatabaseHas('employees', ['nik' => '200115677']);
 
         $row->refresh();
-        $this->assertSame(ImportRow::STATUS_VALID, $row->status);
+        $this->assertSame(ImportRow::STATUS_COMMITTED, $row->status);
+    }
+
+    /** @test */
+    public function it_commits_two_niks_with_the_same_plate_as_one_vehicle_and_two_active_permits()
+    {
+        $admin = $this->admin();
+        $batch = $this->batch($admin, [
+            'success_rows' => 2,
+            'total_rows' => 2,
+        ]);
+
+        foreach ([
+            ['nik' => '200115677', 'name' => 'FITRIAWATI'],
+            ['nik' => '211129282', 'name' => 'HARLINA'],
+        ] as $offset => $employee) {
+            $this->row($batch, 5 + $offset, ImportRow::STATUS_VALID, [
+                'nik' => $employee['nik'],
+                'employee_name' => $employee['name'],
+                'plate_number' => 'DT 4423 CI',
+                'parking_location_code' => '',
+                'route_raw' => '',
+                'route_segment_codes' => [],
+                'reason' => 'OFFICE',
+                'permit_color' => 'biru',
+                'approval_status' => 'approved',
+            ]);
+        }
+
+        app(PermitImportCommitService::class)->commit($batch);
+
+        $this->assertSame(ImportBatch::STATUS_COMMITTED, $batch->fresh()->status);
+        $this->assertSame(1, Vehicle::count());
+        $this->assertSame(2, VehiclePermit::count());
+        $this->assertSame(2, VehiclePermit::where('status', VehiclePermit::STATUS_ACTIVE)->count());
+        $this->assertSame(1, VehiclePermit::distinct()->count('vehicle_id'));
     }
 
     /** @test */

@@ -292,7 +292,7 @@ class ImportExcelPreviewTest extends TestCase
     }
 
     /** @test */
-    public function it_rejects_a_plate_used_by_a_different_nik_in_the_same_preview()
+    public function it_allows_a_plate_used_by_different_niks_in_the_same_preview()
     {
         $this->seedRoadSegments(['Y1']);
 
@@ -312,26 +312,23 @@ class ImportExcelPreviewTest extends TestCase
 
         $batch = app(PermitExcelImportService::class)->preview($file, $admin);
 
-        $this->assertSame(2, $batch->fresh()->success_rows);
-        $this->assertSame(1, $batch->fresh()->failed_rows);
+        $this->assertSame(3, $batch->fresh()->success_rows);
+        $this->assertSame(0, $batch->fresh()->failed_rows);
         $this->assertDatabaseHas('import_rows', [
             'import_batch_id' => $batch->id,
             'row_number' => 5,
-            'status' => ImportRow::STATUS_INVALID,
+            'status' => ImportRow::STATUS_VALID,
         ]);
         $this->assertDatabaseHas('import_rows', [
             'import_batch_id' => $batch->id,
             'row_number' => 6,
             'status' => ImportRow::STATUS_VALID,
         ]);
-        $this->assertContains(
-            'Plat kendaraan sudah digunakan oleh NIK lain pada baris 4.',
-            $batch->rows()->where('row_number', 5)->first()->errors
-        );
+        $this->assertSame([], $batch->rows()->where('row_number', 5)->first()->errors);
     }
 
     /** @test */
-    public function it_rejects_a_plate_owned_by_a_different_nik_in_an_existing_permit()
+    public function it_allows_a_plate_owned_by_a_different_nik_in_an_existing_permit()
     {
         $this->seedRoadSegments(['Y1']);
 
@@ -367,12 +364,9 @@ class ImportExcelPreviewTest extends TestCase
 
         $batch = app(PermitExcelImportService::class)->preview($file, $admin);
 
-        $this->assertSame(0, $batch->fresh()->success_rows);
-        $this->assertSame(1, $batch->fresh()->failed_rows);
-        $this->assertContains(
-            'Plat kendaraan sudah terdaftar untuk NIK lain.',
-            $batch->rows()->where('row_number', 4)->first()->errors
-        );
+        $this->assertSame(1, $batch->fresh()->success_rows);
+        $this->assertSame(0, $batch->fresh()->failed_rows);
+        $this->assertSame([], $batch->rows()->where('row_number', 4)->first()->errors);
     }
 
     private function seedRoadSegments(array $codes)
