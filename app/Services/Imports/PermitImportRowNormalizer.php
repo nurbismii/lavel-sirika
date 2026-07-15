@@ -132,7 +132,7 @@ class PermitImportRowNormalizer
 
     private function normalizeParkingCodes($value)
     {
-        $codes = preg_split('/[\r\n,]+|\s+\/\s+/', (string) $value);
+        $codes = preg_split('/[\r\n,\/]+/', (string) $value);
         $codes = array_map([$this, 'normalizeText'], $codes ?: []);
         $codes = array_filter($codes, function ($code) {
             return $code !== '';
