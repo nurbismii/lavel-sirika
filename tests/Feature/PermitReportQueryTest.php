@@ -70,6 +70,22 @@ class PermitReportQueryTest extends TestCase
     }
 
     /** @test */
+    public function it_filters_and_displays_permits_by_any_selected_parking_location()
+    {
+        $firstParking = $this->parking('P1');
+        $secondParking = $this->parking('P2');
+        $permit = $this->permit(['parking_location_id' => $firstParking->id]);
+        $permit->parkingLocations()->sync([$firstParking->id, $secondParking->id]);
+
+        $results = app(PermitReportQuery::class)->query([
+            'parking_location_id' => $secondParking->id,
+        ])->get();
+
+        $this->assertSame([$permit->id], $results->pluck('id')->all());
+        $this->assertSame('P1, P2', $results->first()->parkingLocationCodes());
+    }
+
+    /** @test */
     public function it_filters_permits_by_qr_status()
     {
         Carbon::setTestNow('2026-07-08 10:00:00');

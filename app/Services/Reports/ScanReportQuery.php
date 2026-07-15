@@ -41,7 +41,7 @@ class ScanReportQuery
             ->with([
                 'permit.employee',
                 'permit.vehicle',
-                'permit.parkingLocation',
+                'permit.parkingLocations',
                 'scanner',
             ])
             ->whereBetween('scanned_at', [$from, $to])

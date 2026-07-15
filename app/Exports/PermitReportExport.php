@@ -63,7 +63,7 @@ class PermitReportExport extends StringValueBinder implements FromQuery, WithCus
             optional($permit->employee)->department ?? '-',
             optional($permit->vehicle)->plate_number ?? '-',
             optional($permit->vehicle)->vehicle_type ?? '-',
-            optional($permit->parkingLocation)->code ?? '-',
+            $permit->parkingLocationCodes() ?: '-',
             $permit->permit_color ?? '-',
             $permit->status ?? '-',
             $this->reports->qrStatusLabel($permit),

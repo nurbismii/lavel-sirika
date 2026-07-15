@@ -42,7 +42,7 @@
                 </div>
                 <div>
                     <dt>Parkir</dt>
-                    <dd>{{ optional($permit->parkingLocation)->code ?? '-' }}</dd>
+                    <dd>{{ $permit->parkingLocationCodes() ?: '-' }}</dd>
                 </div>
                 <div>
                     <dt>Warna</dt>

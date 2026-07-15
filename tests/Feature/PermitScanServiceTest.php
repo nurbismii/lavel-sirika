@@ -91,6 +91,26 @@ class PermitScanServiceTest extends TestCase
     }
 
     /** @test */
+    public function scan_service_returns_all_selected_parking_codes()
+    {
+        $permit = $this->createPermit();
+        $secondParking = ParkingLocation::create([
+            'code' => 'GA-MES2-P02-' . uniqid(),
+            'name' => 'GA-MES2-P02',
+            'status' => 'active',
+        ]);
+        $permit->parkingLocations()->sync([$permit->parking_location_id, $secondParking->id]);
+        $tokenResult = app(PermitTokenService::class)->generateForPermit($permit);
+
+        $result = app(PermitScanService::class)->scan($tokenResult['plain_token'], $this->securityUser());
+
+        $this->assertSame(
+            $permit->parkingLocation->code . ', ' . $secondParking->code,
+            $result['permit']['parking_code']
+        );
+    }
+
+    /** @test */
     public function scan_service_keeps_valid_result_when_route_map_build_fails()
     {
         $permit = $this->createPermit();

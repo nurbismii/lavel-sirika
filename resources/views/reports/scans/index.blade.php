@@ -97,7 +97,7 @@
                                 <td>{{ optional(optional($permit)->employee)->nik ?? '-' }}</td>
                                 <td>{{ optional(optional($permit)->employee)->name ?? '-' }}</td>
                                 <td>{{ optional(optional($permit)->vehicle)->plate_number ?? '-' }}</td>
-                                <td>{{ optional(optional($permit)->parkingLocation)->code ?? '-' }}</td>
+                                <td>{{ $permit ? ($permit->parkingLocationCodes() ?: '-') : '-' }}</td>
                                 <td>{{ optional($permit)->status ?? '-' }}</td>
                                 <td>{{ $scanLog->notes ?? '-' }}</td>
                             </tr>

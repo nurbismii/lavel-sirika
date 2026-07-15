@@ -68,6 +68,24 @@ class VehiclePermit extends Model
         )->withTimestamps();
     }
 
+    public function parkingLocationCodes(): string
+    {
+        $locations = $this->relationLoaded('parkingLocations')
+            ? $this->parkingLocations
+            : $this->parkingLocations()->get();
+
+        $codes = $locations->pluck('code')
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($codes->isEmpty() && $this->parkingLocation) {
+            $codes->push($this->parkingLocation->code);
+        }
+
+        return $codes->implode(', ');
+    }
+
     public function reviewer()
     {
         return $this->belongsTo(User::class, 'reviewed_by');

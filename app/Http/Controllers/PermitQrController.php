@@ -23,7 +23,7 @@ class PermitQrController extends Controller
             return $this->redirectWithError($exception->getMessage());
         }
 
-        $permit->load(['employee', 'vehicle', 'parkingLocation', 'activeToken']);
+        $permit->load(['employee', 'vehicle', 'parkingLocations', 'activeToken']);
 
         return view('permits.qr.show', [
             'permit' => $permit,
@@ -43,7 +43,7 @@ class PermitQrController extends Controller
 
     public function show(VehiclePermit $permit)
     {
-        $permit->load(['employee', 'vehicle', 'parkingLocation', 'activeToken']);
+        $permit->load(['employee', 'vehicle', 'parkingLocations', 'activeToken']);
         $token = $permit->activeToken;
 
         abort_unless($token, 404);
@@ -63,7 +63,7 @@ class PermitQrController extends Controller
             return $this->redirectWithError($exception->getMessage());
         }
 
-        $permit->load(['employee', 'vehicle', 'parkingLocation']);
+        $permit->load(['employee', 'vehicle', 'parkingLocations']);
 
         return view('permits.qr.print', [
             'permit' => $permit,
@@ -80,7 +80,7 @@ class PermitQrController extends Controller
             return $this->redirectWithError($exception->getMessage());
         }
 
-        $permit->load(['employee', 'vehicle', 'parkingLocation']);
+        $permit->load(['employee', 'vehicle', 'parkingLocations']);
 
         return view('permits.qr.show', [
             'permit' => $permit,

@@ -21,7 +21,7 @@
                     <p class="permit-card__value">{{ optional($permit->employee)->name ?? '-' }}</p>
 
                     <p class="permit-card__label">Parkir</p>
-                    <p class="permit-card__value">{{ optional($permit->parkingLocation)->code ?? '-' }}</p>
+                    <p class="permit-card__value">{{ $permit->parkingLocationCodes() ?: '-' }}</p>
 
                     <p class="permit-card__label">Berlaku sampai</p>
                     <p class="permit-card__value">{{ optional($token->expires_at)->format('d M Y') ?? '-' }}</p>

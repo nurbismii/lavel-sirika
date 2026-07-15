@@ -55,7 +55,7 @@ class ScanReportExport implements FromQuery, WithHeadings, WithMapping, ShouldAu
             optional(optional($permit)->employee)->nik ?? '-',
             optional(optional($permit)->employee)->name ?? '-',
             optional(optional($permit)->vehicle)->plate_number ?? '-',
-            optional(optional($permit)->parkingLocation)->code ?? '-',
+            $permit ? ($permit->parkingLocationCodes() ?: '-') : '-',
             optional($permit)->permit_color ?? '-',
             optional($permit)->status ?? '-',
             optional($permit)->source ?? '-',
