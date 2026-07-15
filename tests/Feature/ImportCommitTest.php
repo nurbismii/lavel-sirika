@@ -21,6 +21,37 @@ class ImportCommitTest extends TestCase
     use RefreshDatabase;
 
     /** @test */
+    public function it_persists_all_imported_parking_location_codes_and_keeps_the_first_as_legacy_location()
+    {
+        $admin = $this->admin();
+        $batch = $this->batch($admin, [
+            'success_rows' => 1,
+            'total_rows' => 1,
+        ]);
+
+        $this->row($batch, 5, ImportRow::STATUS_VALID, [
+            'nik' => '200115699',
+            'employee_name' => 'MULTI PARKING IMPORT USER',
+            'plate_number' => 'DT 4499 MP',
+            'parking_location_code' => 'P01',
+            'parking_location_codes' => ['P01', 'P02'],
+            'route_raw' => '',
+            'route_segment_codes' => [],
+            'approval_status' => 'approved',
+        ]);
+
+        app(PermitImportCommitService::class)->commit($batch);
+
+        $permit = VehiclePermit::query()->where('source_import_id', $batch->id)->firstOrFail();
+
+        $this->assertSame(ParkingLocation::query()->where('code', 'P01')->value('id'), $permit->parking_location_id);
+        $this->assertSame(
+            ['P01', 'P02'],
+            $permit->parkingLocations()->orderBy('parking_locations.code')->pluck('code')->all()
+        );
+    }
+
+    /** @test */
     public function it_commits_valid_and_needs_review_rows_without_touching_invalid_rows()
     {
         $admin = $this->admin();

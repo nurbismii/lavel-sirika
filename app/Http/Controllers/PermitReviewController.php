@@ -25,7 +25,7 @@ class PermitReviewController extends Controller
                 ->with('error', 'Izin ini tidak berada dalam status needs_review.');
         }
 
-        $permit->loadMissing(['employee', 'vehicle', 'parkingLocation', 'routeSegments', 'reviewer']);
+        $permit->loadMissing(['employee', 'vehicle', 'parkingLocation', 'parkingLocations', 'routeSegments', 'reviewer']);
 
         return view('permits.review.edit', [
             'permit' => $permit,

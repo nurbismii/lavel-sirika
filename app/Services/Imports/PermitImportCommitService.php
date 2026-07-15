@@ -79,13 +79,14 @@ class PermitImportCommitService
         $vehicle = $this->resolveVehicle($employee, $data['plate_number']);
 
         $warnings = $row->warnings ?: [];
-        $parkingLocation = $this->resolveParkingLocation($data['parking_location_code'] ?? null, $warnings);
+        $parkingLocations = $this->resolveParkingLocations($data, $warnings);
+        $parkingLocation = $parkingLocations[0] ?? null;
 
         $permitStatus = $row->status === ImportRow::STATUS_VALID
             ? VehiclePermit::STATUS_ACTIVE
             : VehiclePermit::STATUS_NEEDS_REVIEW;
 
-        if ($parkingLocation === null && $this->hasUnsafeParkingLocation($data['parking_location_code'] ?? null)) {
+        if ($parkingLocation === null && $this->hasUnsafeParkingLocations($data)) {
             $permitStatus = VehiclePermit::STATUS_NEEDS_REVIEW;
         }
 
@@ -112,6 +113,8 @@ class PermitImportCommitService
             'source_import_id' => $batch->id,
             'route_raw' => $data['route_raw'] ?? null,
         ]);
+
+        $permit->parkingLocations()->sync(collect($parkingLocations)->pluck('id')->all());
 
         if ($permitStatus === VehiclePermit::STATUS_ACTIVE) {
             $this->attachRouteSegments($permit, $data['route_segment_codes'] ?? []);
@@ -177,27 +180,56 @@ class PermitImportCommitService
             ->first();
     }
 
-    private function resolveParkingLocation($parkingCode, array &$warnings): ?ParkingLocation
+    private function resolveParkingLocations(array $data, array &$warnings): array
     {
-        $parkingCode = trim((string) $parkingCode);
+        $parkingCodes = $data['parking_location_codes'] ?? [];
 
-        if ($parkingCode === '') {
-            return null;
+        if ($parkingCodes === [] && ! empty($data['parking_location_code'])) {
+            $parkingCodes = [$data['parking_location_code']];
         }
 
-        if ($this->hasUnsafeParkingLocation($parkingCode)) {
-            $warnings[] = 'Lokasi parkir terlalu panjang untuk master data, perlu review manual.';
+        $parkingLocations = [];
 
-            return null;
+        foreach (array_values(array_unique($parkingCodes)) as $parkingCode) {
+            $parkingCode = trim((string) $parkingCode);
+
+            if ($parkingCode === '') {
+                continue;
+            }
+
+            if ($this->hasUnsafeParkingLocation($parkingCode)) {
+                $warnings[] = 'Lokasi parkir terlalu panjang untuk master data, perlu review manual.';
+
+                continue;
+            }
+
+            $parkingLocations[] = ParkingLocation::query()->firstOrCreate(
+                ['code' => $parkingCode],
+                [
+                    'name' => $parkingCode,
+                    'status' => 'active',
+                ]
+            );
         }
 
-        return ParkingLocation::query()->firstOrCreate(
-            ['code' => $parkingCode],
-            [
-                'name' => $parkingCode,
-                'status' => 'active',
-            ]
-        );
+        return $parkingLocations;
+    }
+
+    private function hasUnsafeParkingLocations(array $data): bool
+    {
+        $parkingCodes = $data['parking_location_codes'] ?? [];
+
+        if ($parkingCodes === [] && ! empty($data['parking_location_code'])) {
+            $parkingCodes = [$data['parking_location_code']];
+        }
+
+        foreach ($parkingCodes as $parkingCode) {
+            if ($this->hasUnsafeParkingLocation($parkingCode)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function hasUnsafeParkingLocation($parkingCode): bool

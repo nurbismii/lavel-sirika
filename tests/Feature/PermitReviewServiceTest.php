@@ -20,6 +20,30 @@ class PermitReviewServiceTest extends TestCase
     use RefreshDatabase;
 
     /** @test */
+    public function it_activates_a_permit_with_all_selected_active_parking_locations_and_uses_the_first_for_legacy_compatibility()
+    {
+        $reviewer = $this->user(User::ROLE_ADMIN_HR);
+        $permit = $this->permit(VehiclePermit::STATUS_NEEDS_REVIEW);
+        $firstParking = $this->parking('P1');
+        $secondParking = $this->parking('P2');
+        $this->segment('Y1');
+
+        $activated = app(PermitReviewService::class)->activate($permit, [
+            'parking_location_ids' => [$firstParking->id, $secondParking->id],
+            'route_raw' => 'Y1',
+            'review_note' => 'Dua lokasi parkir telah diverifikasi.',
+        ], $reviewer);
+
+        $this->assertSame($firstParking->id, $activated->parking_location_id);
+        $this->assertSame(
+            [$firstParking->id, $secondParking->id],
+            $activated->parkingLocations()->orderBy('parking_locations.code')->pluck('parking_locations.id')->map(function ($id) {
+                return (int) $id;
+            })->all()
+        );
+    }
+
+    /** @test */
     public function it_saves_review_draft_without_activating_the_permit()
     {
         $permit = $this->permit(VehiclePermit::STATUS_NEEDS_REVIEW);

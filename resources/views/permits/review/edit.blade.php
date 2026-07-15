@@ -52,16 +52,18 @@
 
                 <div class="form-grid">
                     <div class="form-field">
-                        <label for="parking_location_id">Lokasi Parkir</label>
-                        <select class="form-control" id="parking_location_id" name="parking_location_id">
-                            <option value="">Pilih lokasi parkir</option>
+                        <label for="parking_location_ids">Lokasi Parkir</label>
+                        <select class="form-control" id="parking_location_ids" name="parking_location_ids[]" multiple>
                             @foreach ($parkingLocations as $parkingLocation)
-                                <option value="{{ $parkingLocation->id }}" {{ (string) old('parking_location_id', $permit->parking_location_id) === (string) $parkingLocation->id ? 'selected' : '' }}>
+                                <option value="{{ $parkingLocation->id }}" {{ in_array((string) $parkingLocation->id, array_map('strval', (array) old('parking_location_ids', $permit->parkingLocations->pluck('id')->all())), true) ? 'selected' : '' }}>
                                     {{ $parkingLocation->code }}
                                 </option>
                             @endforeach
                         </select>
-                        @error('parking_location_id')
+                        @error('parking_location_ids')
+                            <span class="field-error">{{ $message }}</span>
+                        @enderror
+                        @error('parking_location_ids.*')
                             <span class="field-error">{{ $message }}</span>
                         @enderror
                     </div>
