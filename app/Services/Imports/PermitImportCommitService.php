@@ -86,7 +86,7 @@ class PermitImportCommitService
             ? VehiclePermit::STATUS_ACTIVE
             : VehiclePermit::STATUS_NEEDS_REVIEW;
 
-        if ($parkingLocation === null && $this->hasUnsafeParkingLocations($data)) {
+        if ($this->hasUnsafeParkingLocations($data)) {
             $permitStatus = VehiclePermit::STATUS_NEEDS_REVIEW;
         }
 

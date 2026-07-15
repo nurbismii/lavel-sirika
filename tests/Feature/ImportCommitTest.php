@@ -52,6 +52,35 @@ class ImportCommitTest extends TestCase
     }
 
     /** @test */
+    public function it_marks_imported_permit_for_review_when_any_parking_location_code_is_unsafe()
+    {
+        $admin = $this->admin();
+        $batch = $this->batch($admin, [
+            'success_rows' => 1,
+            'total_rows' => 1,
+        ]);
+        $unsafeCode = str_repeat('P', 65);
+
+        $this->row($batch, 5, ImportRow::STATUS_VALID, [
+            'nik' => '200115688',
+            'employee_name' => 'MIXED PARKING IMPORT USER',
+            'plate_number' => 'DT 4488 MU',
+            'parking_location_code' => 'P01',
+            'parking_location_codes' => ['P01', $unsafeCode],
+            'route_raw' => '',
+            'route_segment_codes' => [],
+            'approval_status' => 'approved',
+        ]);
+
+        app(PermitImportCommitService::class)->commit($batch);
+
+        $permit = VehiclePermit::query()->where('source_import_id', $batch->id)->firstOrFail();
+
+        $this->assertSame(VehiclePermit::STATUS_NEEDS_REVIEW, $permit->status);
+        $this->assertSame(['P01'], $permit->parkingLocations()->pluck('code')->all());
+    }
+
+    /** @test */
     public function it_commits_valid_and_needs_review_rows_without_touching_invalid_rows()
     {
         $admin = $this->admin();
