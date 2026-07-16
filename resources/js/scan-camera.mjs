@@ -16,5 +16,7 @@ export function oppositeCameraDirection(direction) {
 }
 
 export function fallbackCameraId(cameras) {
-    return cameras.length ? cameras[0].id : null;
+    const rearCamera = cameras.find(({ label = '' }) => /back|rear|environment/i.test(label));
+
+    return rearCamera ? rearCamera.id : (cameras.length ? cameras[0].id : null);
 }
