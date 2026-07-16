@@ -31,7 +31,7 @@ window.sirikaScan = function ({ verifyUrl, csrfToken }) {
             this.cameraStarting = true;
 
             try {
-                this.qrReader = this.qrReader || new Html5Qrcode('sirika-qr-reader');
+                this.qrReader = new Html5Qrcode('sirika-qr-reader');
                 const config = { fps: 10, qrbox: { width: 240, height: 240 } };
                 const onSuccess = (decodedText) => this.handleDecodedText(decodedText);
                 const onFailure = () => {};
@@ -49,6 +49,7 @@ window.sirikaScan = function ({ verifyUrl, csrfToken }) {
 
                     for (const cameraId of fallbackCameraIds(await Html5Qrcode.getCameras())) {
                         try {
+                            this.qrReader = new Html5Qrcode('sirika-qr-reader');
                             await this.qrReader.start(cameraId, config, onSuccess, onFailure);
                             this.cameraDirection = null;
                             finalError = null;

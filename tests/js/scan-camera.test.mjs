@@ -79,3 +79,13 @@ test('locks duplicate camera starts until the active start completes', async () 
     assert.match(appSource, /this\.cameraStarting = true/);
     assert.match(appSource, /finally \{\s*this\.cameraStarting = false;/);
 });
+
+test('creates a fresh reader before each fallback camera start', async () => {
+    const appSource = await readFile(new URL('../../resources/js/app.js', import.meta.url), 'utf8');
+
+    assert.match(appSource, /this\.qrReader = new Html5Qrcode\('sirika-qr-reader'\);/);
+    assert.match(
+        appSource,
+        /for \(const cameraId of fallbackCameraIds\(await Html5Qrcode\.getCameras\(\)\)\) \{[\s\S]*?this\.qrReader = new Html5Qrcode\('sirika-qr-reader'\);[\s\S]*?await this\.qrReader\.start\(cameraId/
+    );
+});
