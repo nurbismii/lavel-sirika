@@ -20,3 +20,21 @@ export function fallbackCameraId(cameras) {
 
     return rearCamera ? rearCamera.id : (cameras.length ? cameras[0].id : null);
 }
+
+export function fallbackCameraIds(cameras) {
+    const rearCameras = cameras.filter(({ label = '' }) => /back|rear|environment/i.test(label));
+    const otherCameras = cameras.filter(({ label = '' }) => !/back|rear|environment/i.test(label));
+
+    return [...new Set([...rearCameras, ...otherCameras].map(({ id }) => id).filter(Boolean))];
+}
+
+export function cameraErrorMessage(error) {
+    const messages = {
+        NotAllowedError: 'Izin kamera ditolak. Izinkan akses kamera di pengaturan browser.',
+        NotReadableError: 'Kamera sedang digunakan aplikasi lain. Tutup aplikasi lain lalu coba lagi.',
+        NotFoundError: 'Kamera tidak ditemukan di perangkat ini.',
+        SecurityError: 'Akses kamera tidak diizinkan pada halaman ini. Gunakan koneksi HTTPS.',
+    };
+
+    return messages[error?.name] || 'Kamera gagal dimulai. Coba lagi.';
+}
