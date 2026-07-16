@@ -1,9 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import {
+    cameraErrorMessage,
     cameraConstraints,
     cameraDirectionLabel,
     fallbackCameraId,
+    fallbackCameraIds,
     oppositeCameraDirection,
 } from '../../resources/js/scan-camera.mjs';
 
@@ -39,4 +42,31 @@ test('prefers a rear camera when it is not first in the device list', () => {
 
 test('uses the first available camera as fallback', () => {
     assert.equal(fallbackCameraId([{ id: 'fallback-camera' }]), 'fallback-camera');
+});
+
+test('orders unique rear camera IDs before other cameras', () => {
+    assert.deepEqual(
+        fallbackCameraIds([
+            { id: 'front', label: 'Front Camera' },
+            { id: 'rear', label: 'Back Camera' },
+            { id: 'front', label: 'Front Camera' },
+        ]),
+        ['rear', 'front']
+    );
+});
+
+test('explains when camera access is denied', () => {
+    assert.equal(
+        cameraErrorMessage({ name: 'NotAllowedError' }),
+        'Izin kamera ditolak. Izinkan akses kamera di pengaturan browser.'
+    );
+});
+
+test('retries each fallback camera ID before surfacing a camera startup error', async () => {
+    const appSource = await readFile(new URL('../../resources/js/app.js', import.meta.url), 'utf8');
+
+    assert.match(appSource, /fallbackCameraIds/);
+    assert.match(appSource, /for \(const cameraId of fallbackCameraIds\(await Html5Qrcode\.getCameras\(\)\)\)/);
+    assert.match(appSource, /console\.error\(error\)/);
+    assert.match(appSource, /message: cameraErrorMessage\(error\)/);
 });
