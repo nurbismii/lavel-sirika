@@ -6,7 +6,8 @@ import './route-map';
 import {
     cameraConstraints,
     cameraDirectionLabel,
-    fallbackCameraId,
+    cameraErrorMessage,
+    fallbackCameraIds,
     oppositeCameraDirection,
 } from './scan-camera';
 
@@ -41,14 +42,22 @@ window.sirikaScan = function ({ verifyUrl, csrfToken }) {
                     );
                     this.cameraDirection = direction;
                 } catch (error) {
-                    const cameraId = fallbackCameraId(await Html5Qrcode.getCameras());
+                    let finalError = error;
 
-                    if (!cameraId) {
-                        throw error;
+                    for (const cameraId of fallbackCameraIds(await Html5Qrcode.getCameras())) {
+                        try {
+                            await this.qrReader.start(cameraId, config, onSuccess, onFailure);
+                            this.cameraDirection = null;
+                            finalError = null;
+                            break;
+                        } catch (fallbackError) {
+                            finalError = fallbackError;
+                        }
                     }
 
-                    await this.qrReader.start(cameraId, config, onSuccess, onFailure);
-                    this.cameraDirection = null;
+                    if (finalError) {
+                        throw finalError;
+                    }
                 }
 
                 this.cameraDirectionLabel = this.cameraDirection
@@ -57,9 +66,10 @@ window.sirikaScan = function ({ verifyUrl, csrfToken }) {
                 this.cameraRunning = true;
                 this.cameraAvailable = true;
             } catch (error) {
+                console.error(error);
                 this.result = {
                     result: 'invalid',
-                    message: 'Kamera tidak dapat dibuka.',
+                    message: cameraErrorMessage(error),
                     permit: null,
                 };
                 this.cameraRunning = false;

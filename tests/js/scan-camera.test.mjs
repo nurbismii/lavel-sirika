@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import {
     cameraErrorMessage,
     cameraConstraints,
@@ -59,4 +60,13 @@ test('explains when camera access is denied', () => {
         cameraErrorMessage({ name: 'NotAllowedError' }),
         'Izin kamera ditolak. Izinkan akses kamera di pengaturan browser.'
     );
+});
+
+test('retries each fallback camera ID before surfacing a camera startup error', async () => {
+    const appSource = await readFile(new URL('../../resources/js/app.js', import.meta.url), 'utf8');
+
+    assert.match(appSource, /fallbackCameraIds/);
+    assert.match(appSource, /for \(const cameraId of fallbackCameraIds\(await Html5Qrcode\.getCameras\(\)\)\)/);
+    assert.match(appSource, /console\.error\(error\)/);
+    assert.match(appSource, /message: cameraErrorMessage\(error\)/);
 });
