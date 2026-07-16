@@ -48,10 +48,12 @@ class PermitQrController extends Controller
 
         abort_unless($token, 404);
 
+        $plainToken = $this->tokens->plainTokenForDisplay($token);
+
         return view('permits.qr.show', [
             'permit' => $permit,
             'token' => $token,
-            'qrSvg' => null,
+            'qrSvg' => $plainToken ? $this->tokens->renderSvg($plainToken) : null,
         ]);
     }
 

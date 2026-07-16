@@ -76,8 +76,7 @@ class PermitQrHttpTest extends TestCase
             ->assertSee('QR Digital')
             ->assertSee('QR HTTP USER')
             ->assertSee('DT 7001 QR')
-            ->assertSee('QR lama tidak bisa ditampilkan ulang karena token mentah tidak disimpan. Gunakan renew untuk membuat QR baru.')
-            ->assertDontSee('<svg', false);
+            ->assertSee('<svg', false);
 
         $generatedTokenId = $permit->fresh()->activeToken->id;
 
@@ -100,6 +99,23 @@ class PermitQrHttpTest extends TestCase
 
         $this->assertSame(PermitToken::STATUS_REVOKED, PermitToken::find($printedTokenId)->status);
         $this->assertNotSame($printedTokenId, $permit->fresh()->activeToken->id);
+    }
+
+    /** @test */
+    public function admin_can_display_an_active_qr_without_renewing_it()
+    {
+        $admin = $this->userWithRole(User::ROLE_ADMIN_HR);
+        $permit = $this->permit();
+
+        $this->actingAs($admin)->post(route('permits.qr.generate', $permit));
+        $activeTokenId = $permit->fresh()->activeToken->id;
+
+        $this->actingAs($admin)->get(route('permits.qr.show', $permit))
+            ->assertOk()
+            ->assertSee('QR Digital')
+            ->assertSee('<svg', false);
+
+        $this->assertSame($activeTokenId, $permit->fresh()->activeToken->id);
     }
 
     /** @test */

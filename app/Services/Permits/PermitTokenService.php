@@ -8,7 +8,10 @@ use BaconQrCode\Renderer\Image\SvgImageBackEnd;
 use BaconQrCode\Renderer\ImageRenderer;
 use BaconQrCode\Renderer\RendererStyle\RendererStyle;
 use BaconQrCode\Writer;
+use Illuminate\Contracts\Encryption\DecryptException;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 
@@ -90,6 +93,23 @@ class PermitTokenService
         return (new Writer($renderer))->writeString($plainToken);
     }
 
+    public function plainTokenForDisplay(PermitToken $token): ?string
+    {
+        if (empty($token->token_encrypted)) {
+            return null;
+        }
+
+        try {
+            return Crypt::decryptString($token->token_encrypted);
+        } catch (DecryptException $exception) {
+            Log::warning('Permit QR token could not be decrypted for display.', [
+                'permit_token_id' => $token->id,
+            ]);
+
+            return null;
+        }
+    }
+
     private function createTokenForPermit(VehiclePermit $permit): array
     {
         $plainToken = Str::random(64);
@@ -97,6 +117,7 @@ class PermitTokenService
         $token = PermitToken::create([
             'vehicle_permit_id' => $permit->id,
             'token_hash' => hash('sha256', $plainToken),
+            'token_encrypted' => Crypt::encryptString($plainToken),
             'status' => PermitToken::STATUS_ACTIVE,
             'expires_at' => now()->addYear(),
         ]);

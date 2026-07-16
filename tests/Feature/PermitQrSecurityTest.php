@@ -9,6 +9,7 @@ use App\Models\VehiclePermit;
 use App\Services\Permits\PermitScanService;
 use App\Services\Permits\PermitTokenService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -17,7 +18,7 @@ class PermitQrSecurityTest extends TestCase
     use RefreshDatabase;
 
     /** @test */
-    public function generated_qr_plaintext_is_only_persisted_as_a_sha256_hash()
+    public function generated_qr_plaintext_is_persisted_as_a_hash_and_encrypted_ciphertext()
     {
         $permit = $this->activePermit();
         $result = app(PermitTokenService::class)->generateForPermit($permit);
@@ -26,6 +27,9 @@ class PermitQrSecurityTest extends TestCase
         $this->assertSame(64, strlen($result['plain_token']));
         $this->assertSame(hash('sha256', $result['plain_token']), $token->token_hash);
         $this->assertNotSame($result['plain_token'], $token->token_hash);
+        $this->assertNotNull($token->token_encrypted);
+        $this->assertNotSame($result['plain_token'], $token->token_encrypted);
+        $this->assertSame($result['plain_token'], Crypt::decryptString($token->token_encrypted));
         $this->assertStringNotContainsString('/scan', $result['plain_token']);
         $this->assertStringNotContainsString('signature=', $result['plain_token']);
     }

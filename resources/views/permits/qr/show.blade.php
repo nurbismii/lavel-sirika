@@ -9,13 +9,13 @@
     <section class="page-section panel">
         <div class="panel-body">
             <h2 class="panel-title">QR Digital</h2>
-            <p class="panel-subtitle">Token mentah tidak disimpan. QR tampil saat generate atau renew; cetak ulang akan membuat token baru.</p>
+            <p class="panel-subtitle">QR aktif dapat ditampilkan kembali. Gunakan renew hanya saat QR lama perlu dicabut dan diganti.</p>
 
             @if ($qrSvg)
                 <div class="layout-gap permit-card__qr">{!! $qrSvg !!}</div>
             @else
                 <x-alert type="info" class="layout-gap">
-                    QR lama tidak bisa ditampilkan ulang karena token mentah tidak disimpan. Gunakan renew untuk membuat QR baru.
+                    QR ini dibuat sebelum fitur tampilan ulang tersedia. Gunakan renew untuk membuat QR baru.
                 </x-alert>
             @endif
 

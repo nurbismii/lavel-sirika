@@ -12,6 +12,7 @@ class PermitToken extends Model
     protected $fillable = [
         'vehicle_permit_id',
         'token_hash',
+        'token_encrypted',
         'status',
         'expires_at',
         'revoked_at',
