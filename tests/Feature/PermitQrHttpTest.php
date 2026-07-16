@@ -85,7 +85,8 @@ class PermitQrHttpTest extends TestCase
             ->assertOk()
             ->assertSee('SIRIKA VDNI')
             ->assertSee('DT 7001 QR')
-            ->assertSee('<svg', false);
+            ->assertSee('<svg', false)
+            ->assertSee('class="permit-card__qr"', false);
 
         $printedTokenId = $permit->fresh()->activeToken->id;
 

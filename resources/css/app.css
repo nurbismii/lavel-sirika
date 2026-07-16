@@ -728,11 +728,20 @@ th {
     min-height: 180px;
     display: grid;
     place-items: center;
-    border: 1px dashed var(--sirika-border);
+    padding: 10px;
+    overflow: hidden;
+    border: 1px solid var(--sirika-border);
     border-radius: 8px;
+    background: #ffffff;
     text-align: center;
     color: var(--sirika-muted);
     font-size: 13px;
+}
+
+.permit-card__qr > svg {
+    display: block;
+    max-width: 100%;
+    height: auto;
 }
 
 .scan-layout {
