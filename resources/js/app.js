@@ -15,6 +15,7 @@ window.sirikaScan = function ({ verifyUrl, csrfToken }) {
     return {
         qrReader: null,
         cameraRunning: false,
+        cameraStarting: false,
         cameraDirection: 'environment',
         cameraDirectionLabel: 'Kamera belakang',
         cameraAvailable: false,
@@ -23,9 +24,11 @@ window.sirikaScan = function ({ verifyUrl, csrfToken }) {
         result: null,
 
         async startCamera(direction = this.cameraDirection) {
-            if (this.cameraRunning || this.loading) {
+            if (this.cameraRunning || this.cameraStarting || this.loading) {
                 return;
             }
+
+            this.cameraStarting = true;
 
             try {
                 this.qrReader = this.qrReader || new Html5Qrcode('sirika-qr-reader');
@@ -74,6 +77,8 @@ window.sirikaScan = function ({ verifyUrl, csrfToken }) {
                 };
                 this.cameraRunning = false;
                 this.cameraAvailable = false;
+            } finally {
+                this.cameraStarting = false;
             }
         },
 

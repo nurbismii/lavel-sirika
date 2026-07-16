@@ -70,3 +70,12 @@ test('retries each fallback camera ID before surfacing a camera startup error', 
     assert.match(appSource, /console\.error\(error\)/);
     assert.match(appSource, /message: cameraErrorMessage\(error\)/);
 });
+
+test('locks duplicate camera starts until the active start completes', async () => {
+    const appSource = await readFile(new URL('../../resources/js/app.js', import.meta.url), 'utf8');
+
+    assert.match(appSource, /cameraStarting: false/);
+    assert.match(appSource, /if \(this\.cameraRunning \|\| this\.cameraStarting \|\| this\.loading\)/);
+    assert.match(appSource, /this\.cameraStarting = true/);
+    assert.match(appSource, /finally \{\s*this\.cameraStarting = false;/);
+});

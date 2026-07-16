@@ -24,7 +24,7 @@
                     <div id="sirika-qr-reader" class="qr-reader layout-gap"></div>
 
                     <div class="quick-actions layout-gap">
-                        <button class="button button-primary" type="button" x-on:click="startCamera" x-bind:disabled="cameraRunning || loading">
+                        <button class="button button-primary" type="button" x-on:click="startCamera" x-bind:disabled="cameraRunning || cameraStarting || loading">
                             Mulai Kamera
                         </button>
                         <button class="button" type="button" x-on:click="stopCamera" x-bind:disabled="! cameraRunning">
