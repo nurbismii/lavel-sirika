@@ -27,6 +27,16 @@ test('returns null when no fallback camera exists', () => {
     assert.equal(fallbackCameraId([]), null);
 });
 
+test('prefers a rear camera when it is not first in the device list', () => {
+    assert.equal(
+        fallbackCameraId([
+            { id: 'front-camera', label: 'Front Camera' },
+            { id: 'rear-camera', label: 'Back Camera' },
+        ]),
+        'rear-camera'
+    );
+});
+
 test('uses the first available camera as fallback', () => {
     assert.equal(fallbackCameraId([{ id: 'fallback-camera' }]), 'fallback-camera');
 });
