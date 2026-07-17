@@ -71,10 +71,13 @@ class PermitDataEditHttpTest extends TestCase
             'reviewed_at' => $originalReviewedAt,
             'review_note' => 'Perlu dokumen tambahan',
         ]);
+        $originalTokenHash = hash('sha512', 'permit-token-' . $permit->id);
+        $originalTokenExpiresAt = now()->addYear()->startOfSecond();
         $token = PermitToken::create([
             'vehicle_permit_id' => $permit->id,
-            'token_hash' => hash('sha512', 'permit-token-' . $permit->id),
+            'token_hash' => $originalTokenHash,
             'status' => PermitToken::STATUS_ACTIVE,
+            'expires_at' => $originalTokenExpiresAt,
         ]);
         $firstParking = $this->parkingLocation('P-01');
         $secondParking = $this->parkingLocation('P-02');
@@ -100,7 +103,12 @@ class PermitDataEditHttpTest extends TestCase
             $permit->reviewed_at->format('Y-m-d H:i:s')
         );
         $this->assertSame('Perlu dokumen tambahan', $permit->review_note);
-        $this->assertDatabaseHas('permit_tokens', ['id' => $token->id, 'status' => PermitToken::STATUS_ACTIVE]);
+        $this->assertDatabaseHas('permit_tokens', [
+            'id' => $token->id,
+            'token_hash' => $originalTokenHash,
+            'status' => PermitToken::STATUS_ACTIVE,
+            'expires_at' => $originalTokenExpiresAt->format('Y-m-d H:i:s'),
+        ]);
         $this->assertSame($secondParking->id, $permit->parking_location_id);
         $this->assertSame('JLN-02 -> JLN-01', $permit->route_raw);
         $this->assertDatabaseHas('employees', ['id' => $permit->employee_id, 'nik' => 'EMP-UPDATED-01', 'name' => 'Nama Diperbarui']);
