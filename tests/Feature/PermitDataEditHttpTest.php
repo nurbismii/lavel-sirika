@@ -3,6 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\Employee;
+use App\Models\ParkingLocation;
+use App\Models\PermitRouteSegment;
+use App\Models\PermitToken;
+use App\Models\RoadSegment;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\VehiclePermit;
@@ -27,6 +31,68 @@ class PermitDataEditHttpTest extends TestCase
         $this->actingAs($auditor)
             ->get(route('permits.edit', $permit))
             ->assertForbidden();
+    }
+
+    /** @test */
+    public function admin_can_update_permit_identity_parking_and_ordered_route_without_changing_status()
+    {
+        $permit = $this->permit();
+        $reviewer = $this->user(User::ROLE_ADMIN_HR);
+        $originalReviewedAt = now()->subDay();
+        $permit->update([
+            'status' => VehiclePermit::STATUS_NEEDS_REVIEW,
+            'reviewed_by' => $reviewer->id,
+            'reviewed_at' => $originalReviewedAt,
+            'review_note' => 'Perlu dokumen tambahan',
+        ]);
+        $token = PermitToken::create([
+            'vehicle_permit_id' => $permit->id,
+            'token_hash' => hash('sha512', 'permit-token-' . $permit->id),
+            'status' => PermitToken::STATUS_ACTIVE,
+        ]);
+        $firstParking = $this->parkingLocation('P-01');
+        $secondParking = $this->parkingLocation('P-02');
+        $firstSegment = $this->roadSegment('JLN-01');
+        $secondSegment = $this->roadSegment('JLN-02');
+
+        $this->actingAs($reviewer)
+            ->put(route('permits.update', $permit), [
+                'nik' => 'EMP-UPDATED-01',
+                'name' => 'Nama Diperbarui',
+                'plate_number' => 'DT 7002 PE',
+                'parking_location_ids' => [$secondParking->id, $firstParking->id],
+                'road_segment_ids' => [$secondSegment->id, $firstSegment->id],
+            ])
+            ->assertRedirect(route('permits.show', $permit))
+            ->assertSessionHas('success');
+
+        $permit->refresh();
+        $this->assertSame(VehiclePermit::STATUS_NEEDS_REVIEW, $permit->status);
+        $this->assertSame($reviewer->id, $permit->reviewed_by);
+        $this->assertSame(
+            $originalReviewedAt->format('Y-m-d H:i:s'),
+            $permit->reviewed_at->format('Y-m-d H:i:s')
+        );
+        $this->assertSame('Perlu dokumen tambahan', $permit->review_note);
+        $this->assertDatabaseHas('permit_tokens', ['id' => $token->id, 'status' => PermitToken::STATUS_ACTIVE]);
+        $this->assertSame($secondParking->id, $permit->parking_location_id);
+        $this->assertSame('JLN-02 -> JLN-01', $permit->route_raw);
+        $this->assertDatabaseHas('employees', ['id' => $permit->employee_id, 'nik' => 'EMP-UPDATED-01', 'name' => 'Nama Diperbarui']);
+        $this->assertDatabaseHas('vehicles', ['id' => $permit->vehicle_id, 'plate_number' => 'DT 7002 PE']);
+        $this->assertSame([$firstParking->id, $secondParking->id], $permit->parkingLocations()
+            ->orderBy('parking_locations.id')
+            ->pluck('parking_locations.id')
+            ->map(fn ($id) => (int) $id)
+            ->all());
+        $this->assertSame([
+            [$secondSegment->id, 1],
+            [$firstSegment->id, 2],
+        ], PermitRouteSegment::query()
+            ->where('vehicle_permit_id', $permit->id)
+            ->orderBy('sequence')
+            ->get(['road_segment_id', 'sequence'])
+            ->map(fn (PermitRouteSegment $route) => [$route->road_segment_id, $route->sequence])
+            ->all());
     }
 
     private function user(string $role): User
@@ -59,6 +125,24 @@ class PermitDataEditHttpTest extends TestCase
             'approval_status' => 'approved',
             'status' => VehiclePermit::STATUS_ACTIVE,
             'source' => 'import',
+        ]);
+    }
+
+    private function parkingLocation(string $code): ParkingLocation
+    {
+        return ParkingLocation::create([
+            'code' => $code,
+            'name' => 'Parkir ' . $code,
+            'status' => 'active',
+        ]);
+    }
+
+    private function roadSegment(string $code): RoadSegment
+    {
+        return RoadSegment::create([
+            'code' => $code,
+            'name' => 'Jalan ' . $code,
+            'status' => RoadSegment::STATUS_ACTIVE,
         ]);
     }
 }

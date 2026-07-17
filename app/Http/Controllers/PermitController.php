@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\UpdatePermitDataRequest;
 use App\Models\ParkingLocation;
 use App\Models\PermitToken;
 use App\Models\VehiclePermit;
+use App\Services\Permits\PermitDataEditService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -52,6 +54,18 @@ class PermitController extends Controller
         return view('permits.show', [
             'permit' => $permit,
         ]);
+    }
+
+    public function update(
+        UpdatePermitDataRequest $request,
+        VehiclePermit $permit,
+        PermitDataEditService $permitDataEditService
+    ) {
+        $permitDataEditService->update($permit, $request->validated());
+
+        return redirect()
+            ->route('permits.show', $permit)
+            ->with('success', 'Data izin kendaraan berhasil diperbarui.');
     }
 
     private function applyFilters($query, array $filters): void
