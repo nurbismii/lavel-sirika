@@ -78,6 +78,14 @@ Route::middleware('auth')->group(function () {
         ->middleware('role:' . implode(',', User::rolesForRoute('permits.show')))
         ->name('permits.show');
 
+    Route::get('/permits/{permit}/edit', [PermitController::class, 'edit'])
+        ->middleware('role:' . implode(',', User::rolesForRoute('permits.edit')))
+        ->name('permits.edit');
+
+    Route::put('/permits/{permit}', [PermitController::class, 'update'])
+        ->middleware('role:' . implode(',', User::rolesForRoute('permits.update')))
+        ->name('permits.update');
+
     Route::get('/permits/{permit}/review', [PermitReviewController::class, 'edit'])
         ->middleware('role:' . implode(',', User::rolesForRoute('permits.review.edit')))
         ->name('permits.review.edit');
