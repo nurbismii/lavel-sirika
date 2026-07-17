@@ -3,7 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\Employee;
+use App\Models\ParkingLocation;
 use App\Models\PermitToken;
+use App\Models\RoadSegment;
 use App\Models\ScanLog;
 use App\Models\User;
 use App\Models\Vehicle;
@@ -32,6 +34,66 @@ class PermitLifecycleHttpTest extends TestCase
         $this->assertSame(PermitToken::STATUS_REVOKED, $activeToken->fresh()->status);
         $this->assertNotNull($activeToken->fresh()->revoked_at);
         $this->assertSame(PermitToken::STATUS_REVOKED, $alreadyRevokedToken->fresh()->status);
+    }
+
+    /** @test */
+    public function admin_hr_can_reactivate_a_revoked_permit_with_its_saved_active_parking_and_route()
+    {
+        $admin = $this->user(User::ROLE_ADMIN_HR);
+        $permit = $this->permit(VehiclePermit::STATUS_REVOKED);
+        $parking = ParkingLocation::create([
+            'code' => 'PARK-' . uniqid(),
+            'name' => 'Parking Reactivation',
+            'status' => 'active',
+        ]);
+        $segment = RoadSegment::create([
+            'code' => 'R-' . uniqid(),
+            'name' => 'Route Reactivation',
+            'status' => RoadSegment::STATUS_ACTIVE,
+        ]);
+        $permit->update(['parking_location_id' => $parking->id]);
+        $permit->parkingLocations()->sync([$parking->id]);
+        $permit->routeSegments()->attach($segment->id, ['sequence' => 1]);
+        $oldToken = $this->token($permit, PermitToken::STATUS_REVOKED, now()->subDay());
+
+        $this->actingAs($admin)
+            ->post(route('permits.reactivate', $permit))
+            ->assertRedirect(route('permits.show', $permit))
+            ->assertSessionHas('status', 'Izin kendaraan berhasil diaktifkan kembali dan QR baru telah dibuat.');
+
+        $this->assertSame(VehiclePermit::STATUS_ACTIVE, $permit->fresh()->status);
+        $this->assertSame(PermitToken::STATUS_REVOKED, $oldToken->fresh()->status);
+        $this->assertNotNull($permit->fresh()->activeToken);
+        $this->assertSame(2, PermitToken::where('vehicle_permit_id', $permit->id)->count());
+    }
+
+    /** @test */
+    public function reactivation_is_rejected_when_a_saved_route_segment_is_inactive()
+    {
+        $admin = $this->user(User::ROLE_ADMIN_HR);
+        $permit = $this->permit(VehiclePermit::STATUS_REVOKED);
+        $parking = ParkingLocation::create([
+            'code' => 'PARK-' . uniqid(),
+            'name' => 'Parking Reactivation',
+            'status' => 'active',
+        ]);
+        $segment = RoadSegment::create([
+            'code' => 'R-' . uniqid(),
+            'name' => 'Inactive Route',
+            'status' => RoadSegment::STATUS_INACTIVE,
+        ]);
+        $permit->update(['parking_location_id' => $parking->id]);
+        $permit->parkingLocations()->sync([$parking->id]);
+        $permit->routeSegments()->attach($segment->id, ['sequence' => 1]);
+
+        $this->from(route('permits.show', $permit))
+            ->actingAs($admin)
+            ->post(route('permits.reactivate', $permit))
+            ->assertRedirect(route('permits.show', $permit))
+            ->assertSessionHas('error', 'Reaktivasi gagal karena terdapat segmen rute tersimpan yang tidak aktif.');
+
+        $this->assertSame(VehiclePermit::STATUS_REVOKED, $permit->fresh()->status);
+        $this->assertNull($permit->fresh()->activeToken);
     }
 
     /** @test */
@@ -89,6 +151,10 @@ class PermitLifecycleHttpTest extends TestCase
                 ->assertForbidden();
 
             $this->actingAs($user)
+                ->post(route('permits.reactivate', $permit))
+                ->assertForbidden();
+
+            $this->actingAs($user)
                 ->delete(route('permits.destroy', $permit))
                 ->assertForbidden();
         }
@@ -108,6 +174,7 @@ class PermitLifecycleHttpTest extends TestCase
         $response->assertSee('Hapus Permanen');
         $response->assertSee('<form method="POST" action="' . route('permits.deactivate', $activePermit) . '"', false);
         $response->assertSee('<form method="POST" action="' . route('permits.destroy', $revokedPermit) . '"', false);
+        $response->assertSee('<form method="POST" action="' . route('permits.reactivate', $revokedPermit) . '"', false);
         $response->assertDontSee('<form method="POST" action="' . route('permits.destroy', $activePermit) . '"', false);
         $response->assertDontSee('<form method="POST" action="' . route('permits.deactivate', $revokedPermit) . '"', false);
     }
