@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\UpdatePermitDataRequest;
 use App\Models\ParkingLocation;
 use App\Models\PermitToken;
+use App\Models\RoadSegment;
 use App\Models\VehiclePermit;
 use App\Services\Permits\PermitDataEditService;
 use Illuminate\Http\Request;
@@ -53,6 +54,28 @@ class PermitController extends Controller
 
         return view('permits.show', [
             'permit' => $permit,
+        ]);
+    }
+
+    public function edit(VehiclePermit $permit)
+    {
+        $permit->loadMissing([
+            'employee',
+            'vehicle',
+            'parkingLocations',
+            'routeSegments',
+        ]);
+
+        return view('permits.edit', [
+            'permit' => $permit,
+            'parkingLocations' => ParkingLocation::query()
+                ->where('status', 'active')
+                ->orderBy('code')
+                ->get(),
+            'roadSegments' => RoadSegment::query()
+                ->where('status', RoadSegment::STATUS_ACTIVE)
+                ->orderBy('code')
+                ->get(),
         ]);
     }
 

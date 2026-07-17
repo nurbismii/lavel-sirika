@@ -140,6 +140,10 @@
                                     <div class="table-actions">
                                         <a class="button" href="{{ route('permits.show', $permit) }}">Detail</a>
 
+                                        @if (auth()->user()->canAccessRoute('permits.edit'))
+                                            <a class="button" href="{{ route('permits.edit', $permit) }}">Edit</a>
+                                        @endif
+
                                         @if (auth()->user()->canAccessRoute('permits.review.edit') && $permit->status === \App\Models\VehiclePermit::STATUS_NEEDS_REVIEW)
                                             <a class="button button-primary" href="{{ route('permits.review.edit', $permit) }}">Review</a>
                                         @endif

@@ -23,10 +23,36 @@ class PermitDataEditHttpTest extends TestCase
         $permit = $this->permit();
         $admin = $this->user(User::ROLE_ADMIN_HR);
         $auditor = $this->user(User::ROLE_AUDITOR);
+        $activeParking = $this->parkingLocation('P-AKTIF');
+        $inactiveParking = ParkingLocation::create([
+            'code' => 'P-NONAKTIF',
+            'name' => 'Parkir Nonaktif',
+            'status' => 'inactive',
+        ]);
+        $activeSegment = $this->roadSegment('JLN-AKTIF');
+        $inactiveSegment = RoadSegment::create([
+            'code' => 'JLN-NONAKTIF',
+            'name' => 'Jalan Nonaktif',
+            'status' => RoadSegment::STATUS_INACTIVE,
+        ]);
+
+        $permit->parkingLocations()->attach($activeParking);
+        $permit->permitRouteSegments()->create([
+            'road_segment_id' => $activeSegment->id,
+            'sequence' => 1,
+        ]);
 
         $this->assertNotEmpty(route('permits.edit', $permit));
         $this->assertTrue($admin->canAccessRoute('permits.edit'));
         $this->assertTrue($admin->canAccessRoute('permits.update'));
+
+        $this->actingAs($admin)
+            ->get(route('permits.edit', $permit))
+            ->assertOk()
+            ->assertViewIs('permits.edit')
+            ->assertViewHas('permit', fn (VehiclePermit $viewPermit) => $viewPermit->is($permit))
+            ->assertViewHas('parkingLocations', fn ($locations) => $locations->pluck('id')->all() === [$activeParking->id])
+            ->assertViewHas('roadSegments', fn ($segments) => $segments->pluck('id')->all() === [$activeSegment->id]);
 
         $this->actingAs($auditor)
             ->get(route('permits.edit', $permit))
