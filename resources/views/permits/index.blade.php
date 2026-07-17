@@ -87,8 +87,8 @@
                 </div>
             </form>
 
-            <div class="table-wrap layout-gap">
-                <table>
+            <div class="table-wrap permit-list-wrap layout-gap">
+                <table class="permit-list-table">
                     <thead>
                         <tr>
                             <th>NIK</th>
@@ -119,24 +119,24 @@
                                 }
                             @endphp
                             <tr>
-                                <td>{{ optional($permit->employee)->nik ?? '-' }}</td>
-                                <td>{{ optional($permit->employee)->name ?? '-' }}</td>
-                                <td>{{ optional($permit->vehicle)->plate_number ?? '-' }}</td>
-                                <td>{{ $permit->parkingLocationCodes() ?: '-' }}</td>
-                                <td>{{ $permit->permit_color ?? '-' }}</td>
-                                <td><span class="status-pill">{{ $permit->status ?? '-' }}</span></td>
-                                <td>
+                                <td data-label="NIK">{{ optional($permit->employee)->nik ?? '-' }}</td>
+                                <td data-label="Nama">{{ optional($permit->employee)->name ?? '-' }}</td>
+                                <td data-label="Plat">{{ optional($permit->vehicle)->plate_number ?? '-' }}</td>
+                                <td data-label="Parkir">{{ $permit->parkingLocationCodes() ?: '-' }}</td>
+                                <td data-label="Warna">{{ $permit->permit_color ?? '-' }}</td>
+                                <td data-label="Status"><span class="status-pill">{{ $permit->status ?? '-' }}</span></td>
+                                <td data-label="Status QR">
                                     <span class="status-pill">{{ $qrLabel }}</span>
                                     @if ($activeToken)
                                         <div class="muted-text">{{ optional($activeToken->expires_at)->format('d M Y') }}</div>
                                     @endif
                                 </td>
-                                <td>{{ $permit->source ?? '-' }}</td>
-                                <td>
+                                <td data-label="Sumber">{{ $permit->source ?? '-' }}</td>
+                                <td data-label="Rute">
                                     <div>{{ $permit->route_raw ?? '-' }}</div>
                                     <div class="muted-text">{{ $permit->routeSegments->count() }} segmen</div>
                                 </td>
-                                <td>
+                                <td data-label="Aksi">
                                     <div class="table-actions">
                                         <a class="button" href="{{ route('permits.show', $permit) }}">Detail</a>
 
@@ -201,7 +201,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="10">Belum ada data izin kendaraan. Gunakan modul Import Excel untuk membuat data awal.</td>
+                                <td class="permit-list-table__empty" colspan="10">Belum ada data izin kendaraan. Gunakan modul Import Excel untuk membuat data awal.</td>
                             </tr>
                         @endforelse
                     </tbody>

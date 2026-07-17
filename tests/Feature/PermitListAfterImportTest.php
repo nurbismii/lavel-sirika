@@ -70,6 +70,48 @@ class PermitListAfterImportTest extends TestCase
     }
 
     /** @test */
+    public function permit_list_renders_responsive_table_markup_without_changing_available_actions()
+    {
+        $admin = User::factory()->create([
+            'role' => User::ROLE_ADMIN_HR,
+            'status' => User::STATUS_ACTIVE,
+        ]);
+
+        $employee = Employee::create([
+            'nik' => '200115679',
+            'name' => 'RESPONSIVE TABLE USER',
+            'status' => 'active',
+        ]);
+
+        $vehicle = Vehicle::create([
+            'employee_id' => $employee->id,
+            'plate_number' => 'DT 4425 CI',
+            'vehicle_type' => 'motorcycle',
+            'status' => 'active',
+        ]);
+
+        $permit = VehiclePermit::create([
+            'employee_id' => $employee->id,
+            'vehicle_id' => $vehicle->id,
+            'permit_color' => 'biru',
+            'approval_status' => 'approved',
+            'status' => VehiclePermit::STATUS_ACTIVE,
+            'source' => 'import',
+            'route_raw' => 'Y1-D2',
+        ]);
+
+        $this->actingAs($admin)->get(route('permits.index'))
+            ->assertOk()
+            ->assertSee('class="table-wrap permit-list-wrap layout-gap"', false)
+            ->assertSee('class="permit-list-table"', false)
+            ->assertSee('data-label="NIK"', false)
+            ->assertSee('data-label="Aksi"', false)
+            ->assertSee(route('permits.show', $permit), false)
+            ->assertSee(route('permits.route-map.show', $permit), false)
+            ->assertSee(route('permits.qr.generate', $permit), false);
+    }
+
+    /** @test */
     public function admin_sees_qr_active_status_and_actions_when_permit_has_token()
     {
         $admin = User::factory()->create([
