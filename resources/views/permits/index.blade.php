@@ -182,6 +182,13 @@
                                             </form>
                                         @endif
 
+                                        @if (auth()->user()->canAccessRoute('permits.reactivate') && $permit->status === \App\Models\VehiclePermit::STATUS_REVOKED)
+                                            <form method="POST" action="{{ route('permits.reactivate', $permit) }}" onsubmit="return confirm('Aktifkan kembali izin ini? Sistem akan memvalidasi data tersimpan dan membuat QR baru.');">
+                                                @csrf
+                                                <button class="button button-primary" type="submit">Aktifkan Kembali</button>
+                                            </form>
+                                        @endif
+
                                         @if (auth()->user()->canAccessRoute('permits.destroy') && $permit->status !== \App\Models\VehiclePermit::STATUS_ACTIVE)
                                             <form method="POST" action="{{ route('permits.destroy', $permit) }}" onsubmit="return confirm('Hapus izin ini secara permanen? Riwayat scan tetap disimpan tanpa referensi izin.');">
                                                 @csrf

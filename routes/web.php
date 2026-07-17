@@ -90,6 +90,10 @@ Route::middleware('auth')->group(function () {
         ->middleware('role:' . implode(',', User::rolesForRoute('permits.deactivate')))
         ->name('permits.deactivate');
 
+    Route::post('/permits/{permit}/reactivate', [PermitController::class, 'reactivate'])
+        ->middleware('role:' . implode(',', User::rolesForRoute('permits.reactivate')))
+        ->name('permits.reactivate');
+
     Route::delete('/permits/{permit}', [PermitController::class, 'destroy'])
         ->middleware('role:' . implode(',', User::rolesForRoute('permits.destroy')))
         ->name('permits.destroy');

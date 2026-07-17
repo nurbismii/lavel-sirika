@@ -108,6 +108,21 @@ class PermitController extends Controller
             ->with('status', 'Izin kendaraan dan QR aktif berhasil dicabut.');
     }
 
+    public function reactivate(VehiclePermit $permit, PermitLifecycleService $lifecycle)
+    {
+        try {
+            $lifecycle->reactivate($permit);
+        } catch (InvalidArgumentException $exception) {
+            return redirect()
+                ->route('permits.show', $permit)
+                ->with('error', $exception->getMessage());
+        }
+
+        return redirect()
+            ->route('permits.show', $permit)
+            ->with('status', 'Izin kendaraan berhasil diaktifkan kembali dan QR baru telah dibuat.');
+    }
+
     public function destroy(VehiclePermit $permit, PermitLifecycleService $lifecycle)
     {
         try {
