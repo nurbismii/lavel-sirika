@@ -157,6 +157,12 @@ class User extends Authenticatable
             'permits.update' => [
                 self::ROLE_ADMIN_HR,
             ],
+            'permits.deactivate' => [
+                self::ROLE_ADMIN_HR,
+            ],
+            'permits.destroy' => [
+                self::ROLE_ADMIN_HR,
+            ],
             'permits.review.edit' => [
                 self::ROLE_ADMIN_HR,
             ],

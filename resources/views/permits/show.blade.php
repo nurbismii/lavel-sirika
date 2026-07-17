@@ -23,6 +23,19 @@
                     @if (auth()->user()->canAccessRoute('permits.review.edit') && $permit->status === \App\Models\VehiclePermit::STATUS_NEEDS_REVIEW)
                         <a class="button button-primary" href="{{ route('permits.review.edit', $permit) }}">Review</a>
                     @endif
+                    @if (auth()->user()->canAccessRoute('permits.deactivate') && $permit->status === \App\Models\VehiclePermit::STATUS_ACTIVE)
+                        <form method="POST" action="{{ route('permits.deactivate', $permit) }}" onsubmit="return confirm('Cabut izin ini? Semua QR aktif untuk izin ini akan dinonaktifkan.');">
+                            @csrf
+                            <button class="button" type="submit">Cabut Izin</button>
+                        </form>
+                    @endif
+                    @if (auth()->user()->canAccessRoute('permits.destroy') && $permit->status !== \App\Models\VehiclePermit::STATUS_ACTIVE)
+                        <form method="POST" action="{{ route('permits.destroy', $permit) }}" onsubmit="return confirm('Hapus izin ini secara permanen? Riwayat scan tetap disimpan tanpa referensi izin.');">
+                            @csrf
+                            @method('DELETE')
+                            <button class="button" type="submit">Hapus Permanen</button>
+                        </form>
+                    @endif
                 </div>
             </div>
 

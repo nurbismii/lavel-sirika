@@ -8,8 +8,10 @@ use App\Models\PermitToken;
 use App\Models\RoadSegment;
 use App\Models\VehiclePermit;
 use App\Services\Permits\PermitDataEditService;
+use App\Services\Permits\PermitLifecycleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
 
 class PermitController extends Controller
 {
@@ -89,6 +91,36 @@ class PermitController extends Controller
         return redirect()
             ->route('permits.show', $permit)
             ->with('success', 'Data izin kendaraan berhasil diperbarui.');
+    }
+
+    public function deactivate(VehiclePermit $permit, PermitLifecycleService $lifecycle)
+    {
+        try {
+            $lifecycle->revoke($permit);
+        } catch (InvalidArgumentException $exception) {
+            return redirect()
+                ->route('permits.index')
+                ->with('error', $exception->getMessage());
+        }
+
+        return redirect()
+            ->route('permits.index')
+            ->with('status', 'Izin kendaraan dan QR aktif berhasil dicabut.');
+    }
+
+    public function destroy(VehiclePermit $permit, PermitLifecycleService $lifecycle)
+    {
+        try {
+            $lifecycle->destroy($permit);
+        } catch (InvalidArgumentException $exception) {
+            return redirect()
+                ->route('permits.index')
+                ->with('error', $exception->getMessage());
+        }
+
+        return redirect()
+            ->route('permits.index')
+            ->with('status', 'Izin kendaraan berhasil dihapus permanen.');
     }
 
     private function applyFilters($query, array $filters): void
