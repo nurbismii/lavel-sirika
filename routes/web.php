@@ -86,6 +86,14 @@ Route::middleware('auth')->group(function () {
         ->middleware('role:' . implode(',', User::rolesForRoute('permits.update')))
         ->name('permits.update');
 
+    Route::post('/permits/{permit}/deactivate', [PermitController::class, 'deactivate'])
+        ->middleware('role:' . implode(',', User::rolesForRoute('permits.deactivate')))
+        ->name('permits.deactivate');
+
+    Route::delete('/permits/{permit}', [PermitController::class, 'destroy'])
+        ->middleware('role:' . implode(',', User::rolesForRoute('permits.destroy')))
+        ->name('permits.destroy');
+
     Route::get('/permits/{permit}/review', [PermitReviewController::class, 'edit'])
         ->middleware('role:' . implode(',', User::rolesForRoute('permits.review.edit')))
         ->name('permits.review.edit');
