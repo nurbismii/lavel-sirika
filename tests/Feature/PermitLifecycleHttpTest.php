@@ -262,6 +262,7 @@ class PermitLifecycleHttpTest extends TestCase
         $response = $this->actingAs($admin)->get(route('permits.index'));
 
         $response->assertOk();
+        $response->assertSee('<div class="permit-actions">', false);
         $response->assertSee('<form method="POST" action="' . route('permits.clear-all') . '"', false);
         $response->assertSee('Kosongkan Semua Izin');
         $response->assertSee('Cabut Izin');

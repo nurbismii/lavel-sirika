@@ -656,6 +656,12 @@ th {
     gap: 16px;
 }
 
+.permit-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
 .sr-only {
     width: 1px;
     height: 1px;
