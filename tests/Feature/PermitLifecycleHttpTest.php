@@ -275,12 +275,13 @@ class PermitLifecycleHttpTest extends TestCase
     }
 
     /** @test */
-    public function read_only_users_do_not_see_the_clear_all_action()
+    public function read_only_users_do_not_see_permit_actions()
     {
         $response = $this->actingAs($this->user(User::ROLE_AUDITOR))
             ->get(route('permits.index'));
 
         $response->assertOk();
+        $response->assertDontSee('<div class="permit-actions">', false);
         $response->assertDontSee('Kosongkan Semua Izin');
     }
 
