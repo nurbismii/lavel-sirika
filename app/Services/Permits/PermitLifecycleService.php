@@ -27,20 +27,7 @@ class PermitLifecycleService
         DB::transaction(function () use ($permit) {
             $lockedPermit = $this->lockPermit($permit);
 
-            if ($lockedPermit->status !== VehiclePermit::STATUS_ACTIVE) {
-                throw new InvalidArgumentException('Hanya izin aktif yang dapat dicabut.');
-            }
-
-            PermitToken::where('vehicle_permit_id', $lockedPermit->id)
-                ->where('status', PermitToken::STATUS_ACTIVE)
-                ->update([
-                    'status' => PermitToken::STATUS_REVOKED,
-                    'revoked_at' => now(),
-                ]);
-
-            $lockedPermit->update([
-                'status' => VehiclePermit::STATUS_REVOKED,
-            ]);
+            $this->revokeLockedPermit($lockedPermit);
         });
     }
 
@@ -49,14 +36,26 @@ class PermitLifecycleService
         DB::transaction(function () use ($permit) {
             $lockedPermit = $this->lockPermit($permit);
 
-            if ($lockedPermit->status === VehiclePermit::STATUS_ACTIVE) {
-                throw new InvalidArgumentException('Izin aktif harus dicabut terlebih dahulu sebelum dihapus permanen.');
+            $this->destroyLockedPermit($lockedPermit);
+        });
+    }
+
+    public function clearAll(): int
+    {
+        return DB::transaction(function () {
+            $permits = VehiclePermit::query()
+                ->lockForUpdate()
+                ->get();
+
+            foreach ($permits as $permit) {
+                if ($permit->status === VehiclePermit::STATUS_ACTIVE) {
+                    $this->revokeLockedPermit($permit);
+                }
+
+                $this->destroyLockedPermit($permit);
             }
 
-            ScanLog::where('permit_id', $lockedPermit->id)
-                ->update(['permit_id' => null]);
-
-            $lockedPermit->delete();
+            return $permits->count();
         });
     }
 
@@ -144,5 +143,35 @@ class PermitLifecycleService
         return VehiclePermit::whereKey($permit->id)
             ->lockForUpdate()
             ->firstOrFail();
+    }
+
+    private function revokeLockedPermit(VehiclePermit $permit): void
+    {
+        if ($permit->status !== VehiclePermit::STATUS_ACTIVE) {
+            throw new InvalidArgumentException('Hanya izin aktif yang dapat dicabut.');
+        }
+
+        PermitToken::where('vehicle_permit_id', $permit->id)
+            ->where('status', PermitToken::STATUS_ACTIVE)
+            ->update([
+                'status' => PermitToken::STATUS_REVOKED,
+                'revoked_at' => now(),
+            ]);
+
+        $permit->update([
+            'status' => VehiclePermit::STATUS_REVOKED,
+        ]);
+    }
+
+    private function destroyLockedPermit(VehiclePermit $permit): void
+    {
+        if ($permit->status === VehiclePermit::STATUS_ACTIVE) {
+            throw new InvalidArgumentException('Izin aktif harus dicabut terlebih dahulu sebelum dihapus permanen.');
+        }
+
+        ScanLog::where('permit_id', $permit->id)
+            ->update(['permit_id' => null]);
+
+        $permit->delete();
     }
 }

@@ -138,6 +138,15 @@ class PermitController extends Controller
             ->with('status', 'Izin kendaraan berhasil dihapus permanen.');
     }
 
+    public function clearAll(PermitLifecycleService $lifecycle)
+    {
+        $total = $lifecycle->clearAll();
+
+        return redirect()
+            ->route('permits.index')
+            ->with('status', $total . ' izin kendaraan berhasil dikosongkan.');
+    }
+
     private function applyFilters($query, array $filters): void
     {
         if ($filters['status'] && array_key_exists($filters['status'], $this->statusOptions())) {

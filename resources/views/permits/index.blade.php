@@ -20,6 +20,13 @@
                         <button class="button button-primary" type="submit">Bulk Generate QR Aktif</button>
                     </form>
                 @endif
+
+                @if (auth()->user()->canAccessRoute('permits.clear-all'))
+                    <form method="POST" action="{{ route('permits.clear-all') }}" onsubmit="return confirm('Kosongkan seluruh izin kendaraan? Izin aktif akan dicabut terlebih dahulu, seluruh izin lalu dihapus permanen, dan riwayat scan tetap disimpan tanpa referensi izin.');">
+                        @csrf
+                        <button class="button button-danger" type="submit">Kosongkan Semua Izin</button>
+                    </form>
+                @endif
             </div>
 
             <div class="status-summary layout-gap">

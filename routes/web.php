@@ -74,6 +74,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/permits', [PermitController::class, 'index'])->name('permits.index');
     });
 
+    Route::post('/permits/clear-all', [PermitController::class, 'clearAll'])
+        ->middleware('role:' . implode(',', User::rolesForRoute('permits.clear-all')))
+        ->name('permits.clear-all');
+
     Route::get('/permits/{permit}', [PermitController::class, 'show'])
         ->middleware('role:' . implode(',', User::rolesForRoute('permits.show')))
         ->name('permits.show');
