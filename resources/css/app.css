@@ -1210,6 +1210,24 @@ th {
     width: 13%;
 }
 
+@media (min-width: 641px) {
+    .permit-list-wrap {
+        overflow-x: visible;
+    }
+
+    .permit-list-table {
+        min-width: 0;
+        table-layout: fixed;
+    }
+
+    .permit-list-table th,
+    .permit-list-table td {
+        overflow-wrap: anywhere;
+        white-space: normal;
+        word-break: break-word;
+    }
+}
+
 .route-warning {
     border-left: 4px solid var(--sirika-warning);
     background: #fff7ed;

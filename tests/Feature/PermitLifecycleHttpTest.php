@@ -298,6 +298,10 @@ class PermitLifecycleHttpTest extends TestCase
             ".permit-list-table {\n    min-width: 1040px;",
             $stylesheet
         );
+        $this->assertStringContainsString(
+            "@media (min-width: 641px) {\n    .permit-list-wrap {\n        overflow-x: visible;",
+            $stylesheet
+        );
     }
 
     private function user(string $role): User
