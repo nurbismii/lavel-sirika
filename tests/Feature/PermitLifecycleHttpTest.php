@@ -285,6 +285,21 @@ class PermitLifecycleHttpTest extends TestCase
         $response->assertDontSee('Kosongkan Semua Izin');
     }
 
+    /** @test */
+    public function permit_list_uses_horizontal_scrolling_on_mobile_screens()
+    {
+        $stylesheet = str_replace("\r\n", "\n", file_get_contents(resource_path('css/app.css')));
+
+        $this->assertStringContainsString(
+            ".permit-list-wrap {\n    overflow-x: auto;",
+            $stylesheet
+        );
+        $this->assertStringContainsString(
+            ".permit-list-table {\n    min-width: 1040px;",
+            $stylesheet
+        );
+    }
+
     private function user(string $role): User
     {
         return User::factory()->create([

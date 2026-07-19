@@ -1148,18 +1148,16 @@ th {
 }
 
 .permit-list-wrap {
-    overflow-x: visible;
+    overflow-x: auto;
 }
 
 .permit-list-table {
-    min-width: 0;
-    table-layout: fixed;
+    min-width: 1040px;
 }
 
 .permit-list-table th,
 .permit-list-table td {
-    overflow-wrap: anywhere;
-    word-break: break-word;
+    white-space: nowrap;
 }
 
 .permit-list-table th:nth-child(1),
@@ -1210,70 +1208,6 @@ th {
 .permit-list-table th:nth-child(10),
 .permit-list-table td:nth-child(10) {
     width: 13%;
-}
-
-@media (max-width: 640px) {
-    .permit-list-wrap {
-        border: 0;
-        background: transparent;
-    }
-
-    .permit-list-table,
-    .permit-list-table tbody,
-    .permit-list-table tr,
-    .permit-list-table td {
-        display: block;
-        width: 100%;
-    }
-
-    .permit-list-table thead {
-        display: none;
-    }
-
-    .permit-list-table tr {
-        margin-bottom: 14px;
-        border: 1px solid var(--sirika-border);
-        border-radius: 8px;
-        background: var(--sirika-surface);
-        overflow: hidden;
-    }
-
-    .permit-list-table td {
-        display: grid;
-        grid-template-columns: minmax(92px, 0.7fr) minmax(0, 1.3fr);
-        gap: 10px;
-        padding: 10px 12px;
-    }
-
-    .permit-list-table td::before {
-        content: attr(data-label);
-        color: var(--sirika-muted);
-        font-size: 12px;
-        font-weight: 700;
-    }
-
-    .permit-list-table td[data-label="Aksi"] {
-        display: block;
-    }
-
-    .permit-list-table td[data-label="Aksi"]::before {
-        display: block;
-        margin-bottom: 10px;
-    }
-
-    .permit-list-table .table-actions {
-        display: grid;
-        grid-template-columns: 1fr;
-    }
-
-    .permit-list-table__empty {
-        display: block !important;
-        padding: 16px !important;
-    }
-
-    .permit-list-table__empty::before {
-        content: none !important;
-    }
 }
 
 .route-warning {
