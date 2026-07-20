@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import {
     cameraErrorMessage,
+    cameraPreflightError,
     cameraConstraints,
     cameraDirectionLabel,
     fallbackCameraId,
@@ -69,6 +70,30 @@ test('retries each fallback camera ID before surfacing a camera startup error', 
     assert.match(appSource, /for \(const cameraId of fallbackCameraIds\(await Html5Qrcode\.getCameras\(\)\)\)/);
     assert.match(appSource, /console\.error\(error\)/);
     assert.match(appSource, /message: cameraErrorMessage\(error\)/);
+});
+
+test('requires HTTPS or localhost before attempting camera access', () => {
+    assert.deepEqual(
+        cameraPreflightError({ isSecureContext: false, hasMediaDevices: true }),
+        {
+            name: 'SecurityError',
+            message: 'Kamera hanya dapat digunakan melalui HTTPS atau localhost.',
+        }
+    );
+    assert.equal(
+        cameraPreflightError({ isSecureContext: true, hasMediaDevices: true }),
+        null
+    );
+});
+
+test('explains when the browser does not support camera access', () => {
+    assert.deepEqual(
+        cameraPreflightError({ isSecureContext: true, hasMediaDevices: false }),
+        {
+            name: 'NotSupportedError',
+            message: 'Browser ini tidak mendukung akses kamera.',
+        }
+    );
 });
 
 test('locks duplicate camera starts until the active start completes', async () => {

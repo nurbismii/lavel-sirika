@@ -7,6 +7,7 @@ import {
     cameraConstraints,
     cameraDirectionLabel,
     cameraErrorMessage,
+    cameraPreflightError,
     fallbackCameraIds,
     oppositeCameraDirection,
 } from './scan-camera';
@@ -31,6 +32,15 @@ window.sirikaScan = function ({ verifyUrl, csrfToken }) {
             this.cameraStarting = true;
 
             try {
+                const preflightError = cameraPreflightError({
+                    isSecureContext: window.isSecureContext,
+                    hasMediaDevices: Boolean(window.navigator.mediaDevices?.getUserMedia),
+                });
+
+                if (preflightError) {
+                    throw preflightError;
+                }
+
                 this.qrReader = new Html5Qrcode('sirika-qr-reader');
                 const config = { fps: 10, qrbox: { width: 240, height: 240 } };
                 const onSuccess = (decodedText) => this.handleDecodedText(decodedText);
