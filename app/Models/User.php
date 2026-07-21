@@ -188,6 +188,9 @@ class User extends Authenticatable
             'permits.qr.bulk-generate' => [
                 self::ROLE_ADMIN_HR,
             ],
+            'permits.qr.batch-print' => [
+                self::ROLE_ADMIN_HR,
+            ],
             'permits.qr.show' => [
                 self::ROLE_ADMIN_HR,
             ],

@@ -145,6 +145,7 @@ class PermitQrHttpTest extends TestCase
         $this->actingAs($security)->get(route('permits.qr.show', $permit))->assertForbidden();
         $this->actingAs($security)->post(route('permits.qr.print', $permit))->assertForbidden();
         $this->actingAs($security)->post(route('permits.qr.renew', $permit))->assertForbidden();
+        $this->actingAs($security)->get(route('permits.qr.batch-print'))->assertForbidden();
     }
 
     /** @test */
@@ -164,6 +165,64 @@ class PermitQrHttpTest extends TestCase
         $this->assertNotNull($first->fresh()->activeToken);
         $this->assertNotNull($second->fresh()->activeToken);
         $this->assertNull($review->fresh()->activeToken);
+    }
+
+    /** @test */
+    public function admin_can_batch_print_only_currently_active_qr_codes_with_employee_identity()
+    {
+        $admin = $this->userWithRole(User::ROLE_ADMIN_HR);
+        $active = $this->permit(VehiclePermit::STATUS_ACTIVE, 'DT 7001 BP');
+        $inactive = $this->permit(VehiclePermit::STATUS_NEEDS_REVIEW, 'DT 7002 BP');
+
+        app(PermitTokenService::class)->generateForPermit($active);
+
+        $this->actingAs($admin)->get(route('permits.qr.batch-print'))
+            ->assertOk()
+            ->assertSee('Cetak Batch QR Aktif')
+            ->assertSee('QR HTTP USER')
+            ->assertSee($active->employee->nik)
+            ->assertSee('<svg', false)
+            ->assertDontSee('DT 7002 BP');
+
+        $this->assertNull($inactive->fresh()->activeToken);
+    }
+
+    /** @test */
+    public function admin_can_filter_batch_print_qr_codes_by_department_division_and_card_color()
+    {
+        $admin = $this->userWithRole(User::ROLE_ADMIN_HR);
+        $matching = $this->permit(VehiclePermit::STATUS_ACTIVE, 'DT 7001 BF');
+        $other = $this->permit(VehiclePermit::STATUS_ACTIVE, 'DT 7002 BF');
+
+        $matching->employee->update([
+            'name' => 'FILTER MATCH',
+            'department' => 'GA',
+            'division' => 'OPERASIONAL',
+        ]);
+        $other->employee->update([
+            'name' => 'FILTER OTHER',
+            'department' => 'HR',
+            'division' => 'PEOPLE',
+        ]);
+        $other->update(['permit_color' => 'merah']);
+
+        app(PermitTokenService::class)->generateForPermit($matching);
+        app(PermitTokenService::class)->generateForPermit($other);
+
+        $response = $this->actingAs($admin)->get(route('permits.qr.batch-print', [
+            'department' => 'GA',
+            'division' => 'OPERASIONAL',
+            'permit_color' => 'biru',
+        ]));
+
+        $response->assertOk()
+            ->assertSee('FILTER MATCH')
+            ->assertDontSee('FILTER OTHER')
+            ->assertSee('GA')
+            ->assertSee('OPERASIONAL')
+            ->assertSee('biru');
+
+        $this->assertSame(1, substr_count($response->getContent(), '<svg'));
     }
 
     /** @test */

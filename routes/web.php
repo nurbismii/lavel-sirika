@@ -122,6 +122,10 @@ Route::middleware('auth')->group(function () {
         ->middleware('role:' . implode(',', User::rolesForRoute('permits.qr.bulk-generate')))
         ->name('permits.qr.bulk-generate');
 
+    Route::get('/permits/qr/batch-print', [PermitQrController::class, 'batchPrint'])
+        ->middleware('role:' . implode(',', User::rolesForRoute('permits.qr.batch-print')))
+        ->name('permits.qr.batch-print');
+
     Route::post('/permits/{permit}/qr/generate', [PermitQrController::class, 'generate'])
         ->middleware('role:' . implode(',', User::rolesForRoute('permits.qr.generate')))
         ->name('permits.qr.generate');

@@ -14,13 +14,17 @@
                     <p class="panel-subtitle">Kelola izin kendaraan, status review, rute, dan QR.</p>
                 </div>
 
-                @if (auth()->user()->canAccessRoute('permits.qr.bulk-generate') || auth()->user()->canAccessRoute('permits.clear-all'))
+                @if (auth()->user()->canAccessRoute('permits.qr.bulk-generate') || auth()->user()->canAccessRoute('permits.qr.batch-print') || auth()->user()->canAccessRoute('permits.clear-all'))
                     <div class="permit-actions">
                         @if (auth()->user()->canAccessRoute('permits.qr.bulk-generate'))
                             <form method="POST" action="{{ route('permits.qr.bulk-generate') }}">
                                 @csrf
                                 <button class="button button-primary" type="submit">Bulk Generate QR Aktif</button>
                             </form>
+                        @endif
+
+                        @if (auth()->user()->canAccessRoute('permits.qr.batch-print'))
+                            <a class="button button-primary" href="{{ route('permits.qr.batch-print') }}">Cetak Batch QR Aktif</a>
                         @endif
 
                         @if (auth()->user()->canAccessRoute('permits.clear-all'))
