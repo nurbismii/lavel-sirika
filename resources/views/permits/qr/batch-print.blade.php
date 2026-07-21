@@ -68,7 +68,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="quick-actions">
+                <div class="quick-actions" style="margin-top: 12px;">
                     <button class="button button-primary" type="submit">Terapkan Filter</button>
                     <a class="button" href="{{ route('permits.qr.batch-print') }}">Reset</a>
                 </div>
