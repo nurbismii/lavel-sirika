@@ -3,6 +3,13 @@
 @php
     $pageTitle = 'QR Digital';
     $pageDescription = 'Status QR izin kendaraan.';
+    $currentValidity = collect([$token->expires_at, $permit->valid_until])
+        ->filter()
+        ->sortBy(fn ($date) => $date->timestamp)
+        ->last();
+    $suggestedValidity = $currentValidity
+        ? $currentValidity->copy()->addYear()->toDateString()
+        : now()->addYear()->toDateString();
 @endphp
 
 @section('content')
@@ -42,6 +49,33 @@
                 </div>
             </dl>
 
+            @if (auth()->user()->canAccessRoute('permits.qr.extend') && $permit->status === \App\Models\VehiclePermit::STATUS_ACTIVE && $token->expires_at)
+                <form class="form-stack layout-gap no-print" method="POST" action="{{ route('permits.qr.extend', $permit) }}">
+                    @csrf
+
+                    <div class="form-field">
+                        <label for="valid_until">Perpanjang Masa Berlaku Sampai</label>
+                        <input
+                            class="form-control"
+                            id="valid_until"
+                            name="valid_until"
+                            type="date"
+                            min="{{ now()->addDay()->toDateString() }}"
+                            value="{{ old('valid_until', $suggestedValidity) }}"
+                            required
+                        >
+                        <p class="muted-text">Perpanjangan mempertahankan kode QR saat ini. Gunakan Renew hanya untuk mengganti kode.</p>
+                        @error('valid_until')
+                            <span class="field-error">{{ $message }}</span>
+                        @enderror
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="button button-primary" type="submit">Perpanjang Masa Berlaku</button>
+                    </div>
+                </form>
+            @endif
+
             <div class="quick-actions layout-gap no-print">
                 <a class="button" href="{{ route('permits.index') }}">Kembali</a>
 
@@ -52,7 +86,7 @@
 
                 <form method="POST" action="{{ route('permits.qr.print', $permit) }}">
                     @csrf
-                    <button class="button" type="submit">Renew &amp; Print Kartu</button>
+                    <button class="button" type="submit">Print Kartu</button>
                 </form>
             </div>
         </div>

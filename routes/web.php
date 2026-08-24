@@ -142,6 +142,10 @@ Route::middleware('auth')->group(function () {
         ->middleware('role:' . implode(',', User::rolesForRoute('permits.qr.renew')))
         ->name('permits.qr.renew');
 
+    Route::post('/permits/{permit}/qr/extend', [PermitQrController::class, 'extend'])
+        ->middleware('role:' . implode(',', User::rolesForRoute('permits.qr.extend')))
+        ->name('permits.qr.extend');
+
     Route::middleware('role:' . implode(',', User::rolesForRoute('scan.index')))->group(function () {
         Route::get('/scan', [ScanController::class, 'index'])->name('scan.index');
     });

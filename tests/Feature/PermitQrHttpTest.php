@@ -9,7 +9,9 @@ use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\VehiclePermit;
 use App\Services\Permits\PermitTokenService;
+use App\Services\Permits\PermitScanService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Crypt;
 use Tests\TestCase;
 
 class PermitQrHttpTest extends TestCase
@@ -57,7 +59,7 @@ class PermitQrHttpTest extends TestCase
     }
 
     /** @test */
-    public function admin_can_generate_show_print_and_renew_qr_for_active_permit()
+    public function admin_can_generate_show_print_without_changing_code_and_renew_qr_for_active_permit()
     {
         $admin = $this->userWithRole(User::ROLE_ADMIN_HR);
         $permit = $this->permit();
@@ -89,8 +91,9 @@ class PermitQrHttpTest extends TestCase
 
         $printedTokenId = $permit->fresh()->activeToken->id;
 
-        $this->assertSame(PermitToken::STATUS_REVOKED, PermitToken::find($generatedTokenId)->status);
-        $this->assertNotSame($generatedTokenId, $printedTokenId);
+        $this->assertSame(PermitToken::STATUS_ACTIVE, PermitToken::find($generatedTokenId)->status);
+        $this->assertSame($generatedTokenId, $printedTokenId);
+        $this->assertSame(1, PermitToken::where('vehicle_permit_id', $permit->id)->count());
 
         $this->actingAs($admin)->post(route('permits.qr.renew', $permit))
             ->assertOk()
@@ -99,6 +102,89 @@ class PermitQrHttpTest extends TestCase
 
         $this->assertSame(PermitToken::STATUS_REVOKED, PermitToken::find($printedTokenId)->status);
         $this->assertNotSame($printedTokenId, $permit->fresh()->activeToken->id);
+    }
+
+    /** @test */
+    public function extending_validity_and_printing_keeps_the_existing_qr_code()
+    {
+        $admin = $this->userWithRole(User::ROLE_ADMIN_HR);
+        $permit = $this->permit();
+        $result = app(PermitTokenService::class)->generateForPermit($permit);
+        $token = $result['permit_token'];
+        $extendedUntil = now()->addYears(2);
+
+        $permit->update(['valid_until' => $extendedUntil->toDateString()]);
+        $token->update(['expires_at' => $extendedUntil]);
+
+        $this->actingAs($admin)->post(route('permits.qr.print', $permit))
+            ->assertOk()
+            ->assertSee('<svg', false);
+
+        $token->refresh();
+
+        $this->assertSame($token->id, $permit->fresh()->activeToken->id);
+        $this->assertSame(hash('sha256', $result['plain_token']), $token->token_hash);
+        $this->assertTrue($token->expires_at->isSameDay($extendedUntil));
+        $this->assertSame(1, PermitToken::where('vehicle_permit_id', $permit->id)->count());
+    }
+
+    /** @test */
+    public function admin_can_extend_expired_qr_validity_without_changing_the_code()
+    {
+        $admin = $this->userWithRole(User::ROLE_ADMIN_HR);
+        $permit = $this->permit();
+        $result = app(PermitTokenService::class)->generateForPermit($permit);
+        $token = $result['permit_token'];
+        $originalHash = $token->token_hash;
+        $originalEncryptedToken = $token->token_encrypted;
+        $newExpiry = now()->addYears(2)->toDateString();
+
+        $permit->update(['valid_until' => now()->subDay()->toDateString()]);
+        $token->update(['expires_at' => now()->subMinute()]);
+
+        $this->actingAs($admin)
+            ->post(route('permits.qr.extend', $permit), ['valid_until' => $newExpiry])
+            ->assertRedirect(route('permits.qr.show', $permit))
+            ->assertSessionHas('status', 'Masa berlaku QR berhasil diperpanjang tanpa mengubah kode QR.');
+
+        $permit->refresh();
+        $token->refresh();
+
+        $this->assertSame($newExpiry, $permit->valid_until->toDateString());
+        $this->assertSame($newExpiry, $token->expires_at->toDateString());
+        $this->assertSame($token->id, $permit->activeToken->id);
+        $this->assertSame($originalHash, $token->token_hash);
+        $this->assertSame($originalEncryptedToken, $token->token_encrypted);
+        $this->assertSame($result['plain_token'], Crypt::decryptString($token->token_encrypted));
+        $this->assertSame(1, PermitToken::where('vehicle_permit_id', $permit->id)->count());
+
+        $scanResult = app(PermitScanService::class)->scan(
+            $result['plain_token'],
+            $this->userWithRole(User::ROLE_SECURITY)
+        );
+
+        $this->assertSame('valid', $scanResult['result']);
+    }
+
+    /** @test */
+    public function qr_validity_extension_rejects_a_date_that_does_not_extend_current_validity()
+    {
+        $admin = $this->userWithRole(User::ROLE_ADMIN_HR);
+        $permit = $this->permit();
+        $result = app(PermitTokenService::class)->generateForPermit($permit);
+        $token = $result['permit_token'];
+        $originalExpiry = $token->expires_at->copy();
+
+        $this->from(route('permits.qr.show', $permit))
+            ->actingAs($admin)
+            ->post(route('permits.qr.extend', $permit), [
+                'valid_until' => $originalExpiry->toDateString(),
+            ])
+            ->assertRedirect(route('permits.qr.show', $permit))
+            ->assertSessionHas('error');
+
+        $this->assertSame($originalExpiry->toDateTimeString(), $token->fresh()->expires_at->toDateTimeString());
+        $this->assertSame(1, PermitToken::where('vehicle_permit_id', $permit->id)->count());
     }
 
     /** @test */
@@ -145,6 +231,9 @@ class PermitQrHttpTest extends TestCase
         $this->actingAs($security)->get(route('permits.qr.show', $permit))->assertForbidden();
         $this->actingAs($security)->post(route('permits.qr.print', $permit))->assertForbidden();
         $this->actingAs($security)->post(route('permits.qr.renew', $permit))->assertForbidden();
+        $this->actingAs($security)->post(route('permits.qr.extend', $permit), [
+            'valid_until' => now()->addYears(2)->toDateString(),
+        ])->assertForbidden();
         $this->actingAs($security)->get(route('permits.qr.batch-print'))->assertForbidden();
     }
 

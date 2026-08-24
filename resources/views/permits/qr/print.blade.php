@@ -8,7 +8,7 @@
 @section('content')
     <section class="page-section panel">
         <div class="panel-body permit-card-print">
-            <p class="panel-subtitle">Cetak ulang selalu membuat token QR baru. Simpan kartu terbaru dan abaikan kartu lama.</p>
+            <p class="panel-subtitle">Cetak ulang menggunakan QR aktif yang sama. Kode hanya berubah jika Anda melakukan renew.</p>
 
             <div class="layout-gap permit-card">
                 <div>

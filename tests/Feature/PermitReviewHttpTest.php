@@ -47,6 +47,7 @@ class PermitReviewHttpTest extends TestCase
         $this->assertSame([User::ROLE_ADMIN_HR], User::rolesForRoute('permits.review.edit'));
         $this->assertSame([User::ROLE_ADMIN_HR], User::rolesForRoute('permits.review.update'));
         $this->assertSame([User::ROLE_ADMIN_HR], User::rolesForRoute('permits.review.activate'));
+        $this->assertSame([User::ROLE_ADMIN_HR], User::rolesForRoute('permits.qr.extend'));
     }
 
     /** @test */

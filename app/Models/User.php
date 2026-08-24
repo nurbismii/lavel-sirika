@@ -200,6 +200,9 @@ class User extends Authenticatable
             'permits.qr.renew' => [
                 self::ROLE_ADMIN_HR,
             ],
+            'permits.qr.extend' => [
+                self::ROLE_ADMIN_HR,
+            ],
             'scan.index' => [
                 self::ROLE_ADMIN_HR,
                 self::ROLE_SECURITY,

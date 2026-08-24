@@ -8,6 +8,7 @@ use BaconQrCode\Renderer\Image\SvgImageBackEnd;
 use BaconQrCode\Renderer\ImageRenderer;
 use BaconQrCode\Renderer\RendererStyle\RendererStyle;
 use BaconQrCode\Writer;
+use Carbon\Carbon;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
@@ -18,6 +19,8 @@ use InvalidArgumentException;
 class PermitTokenService
 {
     private const DUPLICATE_ACTIVE_TOKEN_MESSAGE = 'QR aktif sudah tersedia. Gunakan renew untuk membuat QR baru.';
+
+    private const MISSING_ACTIVE_TOKEN_MESSAGE = 'QR aktif belum tersedia. Buat QR terlebih dahulu.';
 
     public function generateForPermit(VehiclePermit $permit): array
     {
@@ -49,6 +52,93 @@ class PermitTokenService
                 ]);
 
             return $this->createTokenForPermit($lockedPermit);
+        });
+    }
+
+    public function activeForPermit(VehiclePermit $permit): array
+    {
+        return DB::transaction(function () use ($permit) {
+            $lockedPermit = $this->lockPermit($permit);
+
+            $this->ensurePermitCanHaveQr($lockedPermit);
+
+            $token = $lockedPermit->activeToken;
+
+            if (! $token) {
+                throw new InvalidArgumentException(self::MISSING_ACTIVE_TOKEN_MESSAGE);
+            }
+
+            $plainToken = $this->plainTokenForDisplay($token);
+
+            if ($plainToken === null) {
+                throw new InvalidArgumentException('QR aktif tidak dapat dibaca. Lakukan renew untuk membuat QR baru.');
+            }
+
+            return [
+                'plain_token' => $plainToken,
+                'permit_token' => $token,
+                'qr_svg' => $this->renderSvg($plainToken),
+            ];
+        });
+    }
+
+    public function extendValidityForPermit(VehiclePermit $permit, string $validUntil): array
+    {
+        return DB::transaction(function () use ($permit, $validUntil) {
+            $lockedPermit = VehiclePermit::query()
+                ->whereKey($permit->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $this->ensurePermitCanHaveQr($lockedPermit);
+
+            $token = PermitToken::query()
+                ->where('vehicle_permit_id', $lockedPermit->id)
+                ->where('status', PermitToken::STATUS_ACTIVE)
+                ->latest('id')
+                ->lockForUpdate()
+                ->first();
+
+            if (! $token) {
+                throw new InvalidArgumentException(self::MISSING_ACTIVE_TOKEN_MESSAGE);
+            }
+
+            if ($token->expires_at === null) {
+                throw new InvalidArgumentException('QR aktif tidak memiliki batas masa berlaku sehingga tidak perlu diperpanjang.');
+            }
+
+            $newExpiry = Carbon::createFromFormat('Y-m-d', $validUntil, config('app.timezone'))
+                ->endOfDay();
+            $currentLatestExpiry = collect([
+                $token->expires_at,
+                $lockedPermit->valid_until,
+            ])->filter()->sortBy(function ($date) {
+                return $date->timestamp;
+            })->last();
+
+            if ($currentLatestExpiry && ! $newExpiry->copy()->startOfDay()->gt($currentLatestExpiry->copy()->startOfDay())) {
+                throw new InvalidArgumentException(
+                    'Tanggal masa berlaku baru harus setelah ' . $currentLatestExpiry->format('d M Y') . '.'
+                );
+            }
+
+            $oldTokenExpiry = $token->expires_at->copy();
+            $oldPermitExpiry = $lockedPermit->valid_until ? $lockedPermit->valid_until->copy() : null;
+
+            $lockedPermit->update([
+                'valid_until' => $newExpiry->toDateString(),
+            ]);
+            $token->update([
+                'expires_at' => $newExpiry,
+            ]);
+
+            return [
+                'permit' => $lockedPermit->fresh(),
+                'permit_token' => $token->fresh(),
+                'old_permit_expiry' => $oldPermitExpiry,
+                'old_token_expiry' => $oldTokenExpiry,
+                'new_expiry' => $newExpiry,
+            ];
         });
     }
 

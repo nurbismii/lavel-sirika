@@ -179,7 +179,7 @@
                                         @if (auth()->user()->canAccessRoute('permits.qr.print') && $activeToken)
                                             <form method="POST" action="{{ route('permits.qr.print', $permit) }}">
                                                 @csrf
-                                                <button class="button" type="submit">Renew &amp; Print</button>
+                                                <button class="button" type="submit">Print</button>
                                             </form>
                                         @endif
 

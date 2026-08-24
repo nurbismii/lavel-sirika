@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ExtendPermitQrValidityRequest;
 use App\Models\Employee;
 use App\Models\VehiclePermit;
 use App\Services\Permits\PermitTokenService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
 
 class PermitQrController extends Controller
@@ -110,7 +112,7 @@ class PermitQrController extends Controller
     public function print(VehiclePermit $permit)
     {
         try {
-            $result = $this->tokens->renewForPermit($permit);
+            $result = $this->tokens->activeForPermit($permit);
         } catch (InvalidArgumentException $exception) {
             return $this->redirectWithError($exception->getMessage());
         }
@@ -139,6 +141,31 @@ class PermitQrController extends Controller
             'token' => $result['permit_token'],
             'qrSvg' => $result['qr_svg'],
         ]);
+    }
+
+    public function extend(ExtendPermitQrValidityRequest $request, VehiclePermit $permit)
+    {
+        try {
+            $result = $this->tokens->extendValidityForPermit(
+                $permit,
+                $request->validated()['valid_until']
+            );
+        } catch (InvalidArgumentException $exception) {
+            return $this->redirectWithError($exception->getMessage());
+        }
+
+        Log::info('Permit QR validity extended.', [
+            'vehicle_permit_id' => $permit->id,
+            'permit_token_id' => $result['permit_token']->id,
+            'extended_by' => $request->user()->id,
+            'old_permit_expiry' => optional($result['old_permit_expiry'])->toDateString(),
+            'old_token_expiry' => $result['old_token_expiry']->toDateTimeString(),
+            'new_expiry' => $result['new_expiry']->toDateTimeString(),
+        ]);
+
+        return redirect()
+            ->route('permits.qr.show', $permit)
+            ->with('status', 'Masa berlaku QR berhasil diperpanjang tanpa mengubah kode QR.');
     }
 
     private function redirectWithError(string $message)
