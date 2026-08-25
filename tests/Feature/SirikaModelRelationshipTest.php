@@ -17,8 +17,7 @@ class SirikaModelRelationshipTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
-    public function employee_vehicle_vehicle_permit_and_token_relationships_work()
+    public function test_employee_vehicle_vehicle_permit_and_token_relationships_work()
     {
         $employee = Employee::create([
             'nik' => '200115677',
@@ -70,8 +69,7 @@ class SirikaModelRelationshipTest extends TestCase
         $this->assertTrue($token->permit->is($permit));
     }
 
-    /** @test */
-    public function permit_and_parking_location_support_multiple_parking_relationships()
+    public function test_permit_and_parking_location_support_multiple_parking_relationships()
     {
         $employee = Employee::create([
             'nik' => '200115679',
@@ -115,8 +113,7 @@ class SirikaModelRelationshipTest extends TestCase
         $this->assertTrue($secondLocation->vehiclePermits->first()->is($permit));
     }
 
-    /** @test */
-    public function road_segment_import_batch_and_scan_log_relationships_work()
+    public function test_road_segment_import_batch_and_scan_log_relationships_work()
     {
         $uploader = User::factory()->create();
         $scanner = User::factory()->create();
@@ -174,8 +171,7 @@ class SirikaModelRelationshipTest extends TestCase
         $this->assertSame($scanner->id, $scanLog->scanner->id);
     }
 
-    /** @test */
-    public function import_batch_row_counters_are_cast_to_integers()
+    public function test_import_batch_row_counters_are_cast_to_integers()
     {
         $batch = ImportBatch::create([
             'filename' => 'permit-import.csv',

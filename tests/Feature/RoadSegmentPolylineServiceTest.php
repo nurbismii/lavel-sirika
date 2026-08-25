@@ -27,8 +27,7 @@ class RoadSegmentPolylineServiceTest extends TestCase
         ]);
     }
 
-    /** @test */
-    public function it_builds_complete_polyline_payload_from_valid_points()
+    public function test_it_builds_complete_polyline_payload_from_valid_points()
     {
         $user = User::factory()->create();
         $service = app(RoadSegmentPolylineService::class);
@@ -47,8 +46,7 @@ class RoadSegmentPolylineServiceTest extends TestCase
         $this->assertSame(20.99, $payload['points'][0]['y']);
     }
 
-    /** @test */
-    public function it_allows_draft_with_one_valid_point()
+    public function test_it_allows_draft_with_one_valid_point()
     {
         $service = app(RoadSegmentPolylineService::class);
 
@@ -60,8 +58,7 @@ class RoadSegmentPolylineServiceTest extends TestCase
         $this->assertCount(1, $payload['points']);
     }
 
-    /** @test */
-    public function it_rejects_complete_payload_with_less_than_two_points()
+    public function test_it_rejects_complete_payload_with_less_than_two_points()
     {
         $this->expectException(ValidationException::class);
 
@@ -70,16 +67,14 @@ class RoadSegmentPolylineServiceTest extends TestCase
         ], 'complete', null);
     }
 
-    /** @test */
-    public function it_rejects_empty_draft_payload()
+    public function test_it_rejects_empty_draft_payload()
     {
         $this->expectException(ValidationException::class);
 
         app(RoadSegmentPolylineService::class)->buildPayload([], 'draft', null);
     }
 
-    /** @test */
-    public function it_rejects_points_outside_map_bounds()
+    public function test_it_rejects_points_outside_map_bounds()
     {
         $this->expectException(ValidationException::class);
 
@@ -89,8 +84,7 @@ class RoadSegmentPolylineServiceTest extends TestCase
         ], 'complete', null);
     }
 
-    /** @test */
-    public function it_rejects_fractional_points_outside_map_bounds_before_rounding()
+    public function test_it_rejects_fractional_points_outside_map_bounds_before_rounding()
     {
         $this->expectException(ValidationException::class);
 
@@ -100,8 +94,7 @@ class RoadSegmentPolylineServiceTest extends TestCase
         ], 'complete', null);
     }
 
-    /** @test */
-    public function it_converts_stored_points_to_leaflet_lat_lng_pairs()
+    public function test_it_converts_stored_points_to_leaflet_lat_lng_pairs()
     {
         $service = app(RoadSegmentPolylineService::class);
 
@@ -115,8 +108,7 @@ class RoadSegmentPolylineServiceTest extends TestCase
         $this->assertSame([[20.25, 10.5], [40.5, 30.75]], $latLngs);
     }
 
-    /** @test */
-    public function it_summarizes_segment_coordinate_statuses()
+    public function test_it_summarizes_segment_coordinate_statuses()
     {
         $complete = RoadSegment::create([
             'code' => 'Y1',

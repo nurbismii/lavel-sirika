@@ -13,8 +13,7 @@ class PermitReviewMetadataTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
-    public function vehicle_permit_stores_review_metadata_and_reviewer_relation()
+    public function test_vehicle_permit_stores_review_metadata_and_reviewer_relation()
     {
         $reviewer = User::factory()->create([
             'role' => User::ROLE_ADMIN_HR,

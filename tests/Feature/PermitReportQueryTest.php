@@ -24,8 +24,7 @@ class PermitReportQueryTest extends TestCase
         parent::tearDown();
     }
 
-    /** @test */
-    public function it_filters_permits_by_status_review_status_source_color_parking_and_search()
+    public function test_it_filters_permits_by_status_review_status_source_color_parking_and_search()
     {
         Carbon::setTestNow('2026-07-08 10:00:00');
 
@@ -69,8 +68,7 @@ class PermitReportQueryTest extends TestCase
         $this->assertSame(0, (int) $results->first()->route_segments_count);
     }
 
-    /** @test */
-    public function it_filters_and_displays_permits_by_any_selected_parking_location()
+    public function test_it_filters_and_displays_permits_by_any_selected_parking_location()
     {
         $firstParking = $this->parking('P1');
         $secondParking = $this->parking('P2');
@@ -85,8 +83,7 @@ class PermitReportQueryTest extends TestCase
         $this->assertSame('P1, P2', $results->first()->parkingLocationCodes());
     }
 
-    /** @test */
-    public function it_filters_permits_by_qr_status()
+    public function test_it_filters_permits_by_qr_status()
     {
         Carbon::setTestNow('2026-07-08 10:00:00');
 
@@ -107,8 +104,7 @@ class PermitReportQueryTest extends TestCase
         $this->assertSame([$missing->id], $this->idsForQrStatus($reports, 'missing'));
     }
 
-    /** @test */
-    public function it_resolves_qr_status_labels_from_loaded_tokens()
+    public function test_it_resolves_qr_status_labels_from_loaded_tokens()
     {
         Carbon::setTestNow('2026-07-08 10:00:00');
 
@@ -122,8 +118,7 @@ class PermitReportQueryTest extends TestCase
         $this->assertSame('QR Aktif', $reports->qrStatusLabel($permit));
     }
 
-    /** @test */
-    public function it_does_not_hydrate_token_hash_when_loading_report_tokens()
+    public function test_it_does_not_hydrate_token_hash_when_loading_report_tokens()
     {
         Carbon::setTestNow('2026-07-08 10:00:00');
 
@@ -141,8 +136,7 @@ class PermitReportQueryTest extends TestCase
         $this->assertArrayNotHasKey('token_hash', $results[$revokedPermit->id]->latestToken->getAttributes());
     }
 
-    /** @test */
-    public function it_resolves_revoked_and_missing_qr_status_labels_from_loaded_tokens()
+    public function test_it_resolves_revoked_and_missing_qr_status_labels_from_loaded_tokens()
     {
         Carbon::setTestNow('2026-07-08 10:00:00');
 

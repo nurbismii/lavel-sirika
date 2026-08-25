@@ -18,8 +18,7 @@ class DashboardUiTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
-    public function super_admin_sees_operational_dashboard_metrics_and_report_links()
+    public function test_super_admin_sees_operational_dashboard_metrics_and_report_links()
     {
         Carbon::setTestNow('2026-07-08 10:00:00');
         $this->seed(RoadSegmentSeeder::class);
@@ -86,8 +85,7 @@ class DashboardUiTest extends TestCase
         ], []);
     }
 
-    /** @test */
-    public function dashboard_links_are_filtered_by_user_role()
+    public function test_dashboard_links_are_filtered_by_user_role()
     {
         $cases = [
             [

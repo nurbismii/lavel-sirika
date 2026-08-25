@@ -18,8 +18,7 @@ class PermitLifecycleHttpTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
-    public function admin_hr_can_revoke_an_active_permit_and_all_of_its_active_qr_tokens()
+    public function test_admin_hr_can_revoke_an_active_permit_and_all_of_its_active_qr_tokens()
     {
         $admin = $this->user(User::ROLE_ADMIN_HR);
         $permit = $this->permit(VehiclePermit::STATUS_ACTIVE);
@@ -37,8 +36,7 @@ class PermitLifecycleHttpTest extends TestCase
         $this->assertSame(PermitToken::STATUS_REVOKED, $alreadyRevokedToken->fresh()->status);
     }
 
-    /** @test */
-    public function admin_hr_can_reactivate_a_revoked_permit_with_its_saved_active_parking_and_route()
+    public function test_admin_hr_can_reactivate_a_revoked_permit_with_its_saved_active_parking_and_route()
     {
         $admin = $this->user(User::ROLE_ADMIN_HR);
         $permit = $this->permit(VehiclePermit::STATUS_REVOKED);
@@ -68,8 +66,7 @@ class PermitLifecycleHttpTest extends TestCase
         $this->assertSame(2, PermitToken::where('vehicle_permit_id', $permit->id)->count());
     }
 
-    /** @test */
-    public function reactivation_is_rejected_when_a_saved_route_segment_is_inactive()
+    public function test_reactivation_is_rejected_when_a_saved_route_segment_is_inactive()
     {
         $admin = $this->user(User::ROLE_ADMIN_HR);
         $permit = $this->permit(VehiclePermit::STATUS_REVOKED);
@@ -97,8 +94,7 @@ class PermitLifecycleHttpTest extends TestCase
         $this->assertNull($permit->fresh()->activeToken);
     }
 
-    /** @test */
-    public function active_permit_cannot_be_permanently_deleted()
+    public function test_active_permit_cannot_be_permanently_deleted()
     {
         $admin = $this->user(User::ROLE_ADMIN_HR);
         $permit = $this->permit(VehiclePermit::STATUS_ACTIVE);
@@ -112,8 +108,7 @@ class PermitLifecycleHttpTest extends TestCase
         $this->assertDatabaseHas('vehicle_permits', ['id' => $permit->id]);
     }
 
-    /** @test */
-    public function admin_hr_can_permanently_delete_a_non_active_permit_and_keep_scan_logs_without_permit_reference()
+    public function test_admin_hr_can_permanently_delete_a_non_active_permit_and_keep_scan_logs_without_permit_reference()
     {
         $admin = $this->user(User::ROLE_ADMIN_HR);
         $permit = $this->permit(VehiclePermit::STATUS_REVOKED);
@@ -139,8 +134,7 @@ class PermitLifecycleHttpTest extends TestCase
         ]);
     }
 
-    /** @test */
-    public function admin_hr_can_clear_all_permits_after_revoking_active_permits()
+    public function test_admin_hr_can_clear_all_permits_after_revoking_active_permits()
     {
         $admin = $this->user(User::ROLE_ADMIN_HR);
         $activePermit = $this->permit(VehiclePermit::STATUS_ACTIVE, 'DT 7201 LC');
@@ -170,8 +164,7 @@ class PermitLifecycleHttpTest extends TestCase
         ]);
     }
 
-    /** @test */
-    public function read_only_roles_cannot_clear_all_permits()
+    public function test_read_only_roles_cannot_clear_all_permits()
     {
         foreach ([User::ROLE_AUDITOR, User::ROLE_SECURITY] as $role) {
             $this->actingAs($this->user($role))
@@ -180,8 +173,7 @@ class PermitLifecycleHttpTest extends TestCase
         }
     }
 
-    /** @test */
-    public function super_admin_can_clear_all_permits_and_see_the_action()
+    public function test_super_admin_can_clear_all_permits_and_see_the_action()
     {
         $superAdmin = $this->user(User::ROLE_SUPER_ADMIN);
         $permit = $this->permit(VehiclePermit::STATUS_REVOKED, 'DT 7203 LC');
@@ -199,8 +191,7 @@ class PermitLifecycleHttpTest extends TestCase
         $this->assertDatabaseMissing('vehicle_permits', ['id' => $permit->id]);
     }
 
-    /** @test */
-    public function clear_all_revokes_active_qr_tokens_before_deleting_their_permits()
+    public function test_clear_all_revokes_active_qr_tokens_before_deleting_their_permits()
     {
         $admin = $this->user(User::ROLE_ADMIN_HR);
         $permit = $this->permit(VehiclePermit::STATUS_ACTIVE, 'DT 7204 LC');
@@ -230,8 +221,7 @@ class PermitLifecycleHttpTest extends TestCase
         $this->assertTrue($tokenWasRevokedBeforePermitDelete);
     }
 
-    /** @test */
-    public function read_only_roles_cannot_manage_permit_lifecycle()
+    public function test_read_only_roles_cannot_manage_permit_lifecycle()
     {
         $permit = $this->permit(VehiclePermit::STATUS_ACTIVE);
 
@@ -252,8 +242,7 @@ class PermitLifecycleHttpTest extends TestCase
         }
     }
 
-    /** @test */
-    public function permit_list_only_shows_lifecycle_actions_allowed_for_the_permit_state()
+    public function test_permit_list_only_shows_lifecycle_actions_allowed_for_the_permit_state()
     {
         $admin = $this->user(User::ROLE_ADMIN_HR);
         $activePermit = $this->permit(VehiclePermit::STATUS_ACTIVE, 'DT 7101 LC');
@@ -274,8 +263,7 @@ class PermitLifecycleHttpTest extends TestCase
         $response->assertDontSee('<form method="POST" action="' . route('permits.deactivate', $revokedPermit) . '"', false);
     }
 
-    /** @test */
-    public function read_only_users_do_not_see_permit_actions()
+    public function test_read_only_users_do_not_see_permit_actions()
     {
         $response = $this->actingAs($this->user(User::ROLE_AUDITOR))
             ->get(route('permits.index'));
@@ -285,8 +273,7 @@ class PermitLifecycleHttpTest extends TestCase
         $response->assertDontSee('Kosongkan Semua Izin');
     }
 
-    /** @test */
-    public function permit_list_uses_horizontal_scrolling_on_mobile_screens()
+    public function test_permit_list_uses_horizontal_scrolling_on_mobile_screens()
     {
         $stylesheet = str_replace("\r\n", "\n", file_get_contents(resource_path('css/app.css')));
 

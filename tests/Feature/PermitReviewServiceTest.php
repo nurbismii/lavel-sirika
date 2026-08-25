@@ -19,8 +19,7 @@ class PermitReviewServiceTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
-    public function it_activates_a_permit_with_all_selected_active_parking_locations_and_uses_the_first_for_legacy_compatibility()
+    public function test_it_activates_a_permit_with_all_selected_active_parking_locations_and_uses_the_first_for_legacy_compatibility()
     {
         $reviewer = $this->user(User::ROLE_ADMIN_HR);
         $permit = $this->permit(VehiclePermit::STATUS_NEEDS_REVIEW);
@@ -43,8 +42,7 @@ class PermitReviewServiceTest extends TestCase
         );
     }
 
-    /** @test */
-    public function it_saves_review_draft_without_activating_the_permit()
+    public function test_it_saves_review_draft_without_activating_the_permit()
     {
         $permit = $this->permit(VehiclePermit::STATUS_NEEDS_REVIEW);
         $parking = $this->parking('P1');
@@ -63,8 +61,7 @@ class PermitReviewServiceTest extends TestCase
         $this->assertNull($updated->reviewed_at);
     }
 
-    /** @test */
-    public function it_activates_needs_review_permit_and_replaces_route_segments()
+    public function test_it_activates_needs_review_permit_and_replaces_route_segments()
     {
         $reviewer = $this->user(User::ROLE_ADMIN_HR);
         $permit = $this->permit(VehiclePermit::STATUS_NEEDS_REVIEW);
@@ -102,8 +99,7 @@ class PermitReviewServiceTest extends TestCase
         );
     }
 
-    /** @test */
-    public function it_blocks_activation_when_permit_is_not_needs_review()
+    public function test_it_blocks_activation_when_permit_is_not_needs_review()
     {
         $reviewer = $this->user(User::ROLE_ADMIN_HR);
         $permit = $this->permit(VehiclePermit::STATUS_ACTIVE);
@@ -120,8 +116,7 @@ class PermitReviewServiceTest extends TestCase
         ], $reviewer);
     }
 
-    /** @test */
-    public function it_blocks_activation_when_parking_location_is_empty()
+    public function test_it_blocks_activation_when_parking_location_is_empty()
     {
         $reviewer = $this->user(User::ROLE_ADMIN_HR);
         $permit = $this->permit(VehiclePermit::STATUS_NEEDS_REVIEW);
@@ -137,8 +132,7 @@ class PermitReviewServiceTest extends TestCase
         ], $reviewer);
     }
 
-    /** @test */
-    public function it_blocks_activation_when_route_is_empty()
+    public function test_it_blocks_activation_when_route_is_empty()
     {
         $reviewer = $this->user(User::ROLE_ADMIN_HR);
         $permit = $this->permit(VehiclePermit::STATUS_NEEDS_REVIEW);
@@ -154,8 +148,7 @@ class PermitReviewServiceTest extends TestCase
         ], $reviewer);
     }
 
-    /** @test */
-    public function it_blocks_activation_when_route_has_unknown_token()
+    public function test_it_blocks_activation_when_route_has_unknown_token()
     {
         $reviewer = $this->user(User::ROLE_ADMIN_HR);
         $permit = $this->permit(VehiclePermit::STATUS_NEEDS_REVIEW);
@@ -172,8 +165,7 @@ class PermitReviewServiceTest extends TestCase
         ], $reviewer);
     }
 
-    /** @test */
-    public function it_reports_unknown_token_when_route_has_no_known_segments()
+    public function test_it_reports_unknown_token_when_route_has_no_known_segments()
     {
         $reviewer = $this->user(User::ROLE_ADMIN_HR);
         $permit = $this->permit(VehiclePermit::STATUS_NEEDS_REVIEW);
@@ -190,8 +182,7 @@ class PermitReviewServiceTest extends TestCase
         ], $reviewer);
     }
 
-    /** @test */
-    public function it_activates_needs_review_permit_for_second_vehicle_when_first_vehicle_has_active_permit()
+    public function test_it_activates_needs_review_permit_for_second_vehicle_when_first_vehicle_has_active_permit()
     {
         $reviewer = $this->user(User::ROLE_ADMIN_HR);
         $permit = $this->permit(VehiclePermit::STATUS_NEEDS_REVIEW);
@@ -231,8 +222,7 @@ class PermitReviewServiceTest extends TestCase
         $this->assertSame($secondVehicle->id, $activated->vehicle_id);
     }
 
-    /** @test */
-    public function it_activates_a_second_employees_permit_for_a_shared_vehicle()
+    public function test_it_activates_a_second_employees_permit_for_a_shared_vehicle()
     {
         $reviewer = $this->user(User::ROLE_ADMIN_HR);
         $permit = $this->permit(VehiclePermit::STATUS_NEEDS_REVIEW);
@@ -267,8 +257,7 @@ class PermitReviewServiceTest extends TestCase
             ->count());
     }
 
-    /** @test */
-    public function it_locks_the_vehicle_row_before_checking_active_duplicate_permits()
+    public function test_it_locks_the_vehicle_row_before_checking_active_duplicate_permits()
     {
         $reviewer = $this->user(User::ROLE_ADMIN_HR);
         $permit = $this->permit(VehiclePermit::STATUS_NEEDS_REVIEW);
@@ -294,8 +283,7 @@ class PermitReviewServiceTest extends TestCase
         $this->assertLessThan($activePermitQueryIndex, $vehicleQueryIndex);
     }
 
-    /** @test */
-    public function it_blocks_activation_when_review_note_is_empty()
+    public function test_it_blocks_activation_when_review_note_is_empty()
     {
         $reviewer = $this->user(User::ROLE_ADMIN_HR);
         $permit = $this->permit(VehiclePermit::STATUS_NEEDS_REVIEW);

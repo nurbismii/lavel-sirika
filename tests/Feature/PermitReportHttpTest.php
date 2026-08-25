@@ -24,8 +24,7 @@ class PermitReportHttpTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
-    public function admin_and_auditor_can_open_permit_report_but_security_cannot()
+    public function test_admin_and_auditor_can_open_permit_report_but_security_cannot()
     {
         $permit = $this->permit([
             'name' => 'PERMIT REPORT ACCESS',
@@ -51,8 +50,7 @@ class PermitReportHttpTest extends TestCase
         $this->assertNotNull($permit->id);
     }
 
-    /** @test */
-    public function permit_report_uses_filters_from_query_string()
+    public function test_permit_report_uses_filters_from_query_string()
     {
         Carbon::setTestNow('2026-07-08 10:00:00');
 
@@ -85,8 +83,7 @@ class PermitReportHttpTest extends TestCase
         $this->assertNotNull($blocked->id);
     }
 
-    /** @test */
-    public function permit_report_export_uses_filters_and_does_not_expose_token_hash()
+    public function test_permit_report_export_uses_filters_and_does_not_expose_token_hash()
     {
         Carbon::setTestNow('2026-07-08 10:00:00');
         Excel::fake();
@@ -126,8 +123,7 @@ class PermitReportHttpTest extends TestCase
         });
     }
 
-    /** @test */
-    public function permit_exports_write_formula_like_values_as_plain_text()
+    public function test_permit_exports_write_formula_like_values_as_plain_text()
     {
         $permit = $this->permit([
             'plate' => '=VLOOKUP(C457,[2]设备部!$D:$G,4,FALSE())',
@@ -155,8 +151,7 @@ class PermitReportHttpTest extends TestCase
         }
     }
 
-    /** @test */
-    public function needs_review_export_only_includes_needs_review_permits_and_flags_unavailable_routes()
+    public function test_needs_review_export_only_includes_needs_review_permits_and_flags_unavailable_routes()
     {
         Carbon::setTestNow('2026-07-14 10:00:00');
         Excel::fake();
@@ -191,8 +186,7 @@ class PermitReportHttpTest extends TestCase
             ->assertSee('Export Perlu Review');
     }
 
-    /** @test */
-    public function needs_review_export_marks_route_as_available_when_all_route_tokens_are_active()
+    public function test_needs_review_export_marks_route_as_available_when_all_route_tokens_are_active()
     {
         Carbon::setTestNow('2026-07-14 10:00:00');
 

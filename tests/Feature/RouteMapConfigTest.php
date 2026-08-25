@@ -7,8 +7,7 @@ use Tests\TestCase;
 
 class RouteMapConfigTest extends TestCase
 {
-    /** @test */
-    public function route_map_config_matches_static_image_dimensions()
+    public function test_route_map_config_matches_static_image_dimensions()
     {
         $path = public_path(ltrim(RouteMapConfig::imageUrl(), '/'));
 

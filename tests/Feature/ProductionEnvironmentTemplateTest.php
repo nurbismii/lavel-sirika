@@ -6,8 +6,7 @@ use Tests\TestCase;
 
 class ProductionEnvironmentTemplateTest extends TestCase
 {
-    /** @test */
-    public function production_environment_template_contains_required_safe_defaults()
+    public function test_production_environment_template_contains_required_safe_defaults()
     {
         $path = base_path('.env.production.example');
 
@@ -59,8 +58,7 @@ class ProductionEnvironmentTemplateTest extends TestCase
         $this->assertSame('', $values['DB_PASSWORD']);
     }
 
-    /** @test */
-    public function local_environment_example_is_not_presented_as_production_ready()
+    public function test_local_environment_example_is_not_presented_as_production_ready()
     {
         $path = base_path('.env.example');
 

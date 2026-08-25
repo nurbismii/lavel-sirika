@@ -65,8 +65,7 @@ class PermitScanServiceTest extends TestCase
         ]);
     }
 
-    /** @test */
-    public function scan_service_accepts_valid_token_and_logs_valid_result()
+    public function test_scan_service_accepts_valid_token_and_logs_valid_result()
     {
         $permit = $this->createPermit();
         $permit->routeSegments()->attach($this->completeSegment('Y1')->id, ['sequence' => 1]);
@@ -90,8 +89,7 @@ class PermitScanServiceTest extends TestCase
         ]);
     }
 
-    /** @test */
-    public function scan_service_returns_all_selected_parking_codes()
+    public function test_scan_service_returns_all_selected_parking_codes()
     {
         $permit = $this->createPermit();
         $secondParking = ParkingLocation::create([
@@ -110,8 +108,7 @@ class PermitScanServiceTest extends TestCase
         );
     }
 
-    /** @test */
-    public function scan_service_keeps_valid_result_when_route_map_build_fails()
+    public function test_scan_service_keeps_valid_result_when_route_map_build_fails()
     {
         $permit = $this->createPermit();
         $permit->routeSegments()->attach($this->completeSegment('Y1')->id, ['sequence' => 1]);
@@ -140,8 +137,7 @@ class PermitScanServiceTest extends TestCase
             ]);
     }
 
-    /** @test */
-    public function scan_service_returns_expired_with_limited_detail_and_logs_it()
+    public function test_scan_service_returns_expired_with_limited_detail_and_logs_it()
     {
         $permit = $this->createPermit();
         $tokenResult = app(PermitTokenService::class)->generateForPermit($permit);
@@ -162,8 +158,7 @@ class PermitScanServiceTest extends TestCase
         ]);
     }
 
-    /** @test */
-    public function scan_service_returns_revoked_for_revoked_token()
+    public function test_scan_service_returns_revoked_for_revoked_token()
     {
         $permit = $this->createPermit();
         $tokenResult = app(PermitTokenService::class)->generateForPermit($permit);
@@ -181,8 +176,7 @@ class PermitScanServiceTest extends TestCase
         ]);
     }
 
-    /** @test */
-    public function scan_service_returns_inactive_when_permit_is_not_active()
+    public function test_scan_service_returns_inactive_when_permit_is_not_active()
     {
         $permit = $this->createPermit();
         $tokenResult = app(PermitTokenService::class)->generateForPermit($permit);
@@ -197,8 +191,7 @@ class PermitScanServiceTest extends TestCase
         ]);
     }
 
-    /** @test */
-    public function scan_service_logs_invalid_token_without_permit_id()
+    public function test_scan_service_logs_invalid_token_without_permit_id()
     {
         $result = app(PermitScanService::class)->scan('not-a-known-token', $this->securityUser());
 

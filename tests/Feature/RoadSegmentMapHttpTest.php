@@ -25,8 +25,7 @@ class RoadSegmentMapHttpTest extends TestCase
         ]);
     }
 
-    /** @test */
-    public function admin_hr_can_open_road_segment_map_editor()
+    public function test_admin_hr_can_open_road_segment_map_editor()
     {
         $admin = User::factory()->create([
             'role' => User::ROLE_ADMIN_HR,
@@ -41,8 +40,7 @@ class RoadSegmentMapHttpTest extends TestCase
         $response->assertSee($segment->code);
     }
 
-    /** @test */
-    public function auditor_can_open_but_cannot_save_or_reset_road_segment_map()
+    public function test_auditor_can_open_but_cannot_save_or_reset_road_segment_map()
     {
         $auditor = User::factory()->create([
             'role' => User::ROLE_AUDITOR,
@@ -69,8 +67,7 @@ class RoadSegmentMapHttpTest extends TestCase
             ->assertForbidden();
     }
 
-    /** @test */
-    public function security_cannot_open_road_segment_map_editor()
+    public function test_security_cannot_open_road_segment_map_editor()
     {
         $security = User::factory()->create([
             'role' => User::ROLE_SECURITY,
@@ -82,8 +79,7 @@ class RoadSegmentMapHttpTest extends TestCase
             ->assertForbidden();
     }
 
-    /** @test */
-    public function admin_hr_can_save_complete_polyline()
+    public function test_admin_hr_can_save_complete_polyline()
     {
         $admin = User::factory()->create([
             'role' => User::ROLE_ADMIN_HR,
@@ -105,8 +101,7 @@ class RoadSegmentMapHttpTest extends TestCase
         $this->assertSame($admin->id, $segment->fresh()->polyline_json['updated_by']);
     }
 
-    /** @test */
-    public function admin_hr_can_save_draft_polyline_with_one_valid_point()
+    public function test_admin_hr_can_save_draft_polyline_with_one_valid_point()
     {
         $admin = User::factory()->create([
             'role' => User::ROLE_ADMIN_HR,
@@ -128,8 +123,7 @@ class RoadSegmentMapHttpTest extends TestCase
         $this->assertSame($admin->id, $segment->fresh()->polyline_json['updated_by']);
     }
 
-    /** @test */
-    public function complete_polyline_requires_two_points()
+    public function test_complete_polyline_requires_two_points()
     {
         $admin = User::factory()->create([
             'role' => User::ROLE_ADMIN_HR,
@@ -149,8 +143,7 @@ class RoadSegmentMapHttpTest extends TestCase
             ->assertSessionHasErrors('points');
     }
 
-    /** @test */
-    public function out_of_bounds_points_are_rejected()
+    public function test_out_of_bounds_points_are_rejected()
     {
         $admin = User::factory()->create([
             'role' => User::ROLE_ADMIN_HR,
@@ -171,8 +164,7 @@ class RoadSegmentMapHttpTest extends TestCase
             ->assertSessionHasErrors('points.0.x');
     }
 
-    /** @test */
-    public function payload_with_more_than_two_hundred_points_is_rejected()
+    public function test_payload_with_more_than_two_hundred_points_is_rejected()
     {
         $admin = User::factory()->create([
             'role' => User::ROLE_ADMIN_HR,
@@ -190,8 +182,7 @@ class RoadSegmentMapHttpTest extends TestCase
             ->assertSessionHasErrors('points');
     }
 
-    /** @test */
-    public function admin_hr_can_reset_polyline()
+    public function test_admin_hr_can_reset_polyline()
     {
         $admin = User::factory()->create([
             'role' => User::ROLE_ADMIN_HR,
@@ -214,8 +205,7 @@ class RoadSegmentMapHttpTest extends TestCase
         $this->assertNull($segment->fresh()->polyline_json);
     }
 
-    /** @test */
-    public function super_admin_can_save_and_reset_polyline()
+    public function test_super_admin_can_save_and_reset_polyline()
     {
         $superAdmin = User::factory()->create([
             'role' => User::ROLE_SUPER_ADMIN,
@@ -243,8 +233,7 @@ class RoadSegmentMapHttpTest extends TestCase
         $this->assertNull($segment->fresh()->polyline_json);
     }
 
-    /** @test */
-    public function road_segment_index_shows_coordinate_summary_and_edit_action()
+    public function test_road_segment_index_shows_coordinate_summary_and_edit_action()
     {
         $admin = User::factory()->create([
             'role' => User::ROLE_ADMIN_HR,
@@ -268,8 +257,7 @@ class RoadSegmentMapHttpTest extends TestCase
         $response->assertSee('Edit Peta');
     }
 
-    /** @test */
-    public function auditor_sees_view_map_action_and_no_reset_action_on_index()
+    public function test_auditor_sees_view_map_action_and_no_reset_action_on_index()
     {
         $auditor = User::factory()->create([
             'role' => User::ROLE_AUDITOR,
@@ -297,8 +285,7 @@ class RoadSegmentMapHttpTest extends TestCase
         );
     }
 
-    /** @test */
-    public function admin_index_shows_reset_action_only_for_segments_with_points()
+    public function test_admin_index_shows_reset_action_only_for_segments_with_points()
     {
         $admin = User::factory()->create([
             'role' => User::ROLE_ADMIN_HR,
@@ -332,8 +319,7 @@ class RoadSegmentMapHttpTest extends TestCase
         );
     }
 
-    /** @test */
-    public function road_segment_index_renders_coordinate_columns_and_status_values()
+    public function test_road_segment_index_renders_coordinate_columns_and_status_values()
     {
         $admin = User::factory()->create([
             'role' => User::ROLE_ADMIN_HR,
@@ -384,8 +370,7 @@ class RoadSegmentMapHttpTest extends TestCase
         ]);
     }
 
-    /** @test */
-    public function admin_hr_can_create_a_draft_segment_but_cannot_activate_it_without_a_complete_polyline()
+    public function test_admin_hr_can_create_a_draft_segment_but_cannot_activate_it_without_a_complete_polyline()
     {
         $admin = User::factory()->create([
             'role' => User::ROLE_ADMIN_HR,
@@ -413,8 +398,7 @@ class RoadSegmentMapHttpTest extends TestCase
         $this->assertSame('draft', $segment->fresh()->status);
     }
 
-    /** @test */
-    public function admin_hr_can_update_route_segment_metadata()
+    public function test_admin_hr_can_update_route_segment_metadata()
     {
         $admin = User::factory()->create([
             'role' => User::ROLE_ADMIN_HR,
@@ -440,8 +424,7 @@ class RoadSegmentMapHttpTest extends TestCase
         ]);
     }
 
-    /** @test */
-    public function route_segment_update_rejects_a_code_used_by_another_segment()
+    public function test_route_segment_update_rejects_a_code_used_by_another_segment()
     {
         $admin = User::factory()->create([
             'role' => User::ROLE_ADMIN_HR,
@@ -462,8 +445,7 @@ class RoadSegmentMapHttpTest extends TestCase
             ->assertSessionHasErrors('code');
     }
 
-    /** @test */
-    public function admin_hr_can_activate_a_segment_with_a_complete_polyline()
+    public function test_admin_hr_can_activate_a_segment_with_a_complete_polyline()
     {
         $admin = User::factory()->create([
             'role' => User::ROLE_ADMIN_HR,
@@ -487,8 +469,7 @@ class RoadSegmentMapHttpTest extends TestCase
         $this->assertSame(RoadSegment::STATUS_ACTIVE, $segment->fresh()->status);
     }
 
-    /** @test */
-    public function admin_hr_can_inactivate_a_route_segment_without_deleting_it()
+    public function test_admin_hr_can_inactivate_a_route_segment_without_deleting_it()
     {
         $admin = User::factory()->create([
             'role' => User::ROLE_ADMIN_HR,
@@ -506,8 +487,7 @@ class RoadSegmentMapHttpTest extends TestCase
         ]);
     }
 
-    /** @test */
-    public function auditor_and_security_cannot_manage_route_segment_lifecycle()
+    public function test_auditor_and_security_cannot_manage_route_segment_lifecycle()
     {
         $segment = $this->segment(['status' => RoadSegment::STATUS_ACTIVE]);
 
@@ -523,8 +503,7 @@ class RoadSegmentMapHttpTest extends TestCase
         }
     }
 
-    /** @test */
-    public function route_segment_index_shows_management_actions_only_to_admin_hr()
+    public function test_route_segment_index_shows_management_actions_only_to_admin_hr()
     {
         $admin = User::factory()->create([
             'role' => User::ROLE_ADMIN_HR,

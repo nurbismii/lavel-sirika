@@ -8,8 +8,7 @@ use PHPUnit\Framework\TestCase;
 
 class PermitImportHeaderMapperTest extends TestCase
 {
-    /** @test */
-    public function it_finds_bilingual_header_row_and_column_indexes()
+    public function test_it_finds_bilingual_header_row_and_column_indexes()
     {
         $rows = [
             ['', '', ''],
@@ -26,8 +25,7 @@ class PermitImportHeaderMapperTest extends TestCase
         $this->assertSame(12, $result['columns']['approval_status']);
     }
 
-    /** @test */
-    public function it_rejects_rows_without_required_headers()
+    public function test_it_rejects_rows_without_required_headers()
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Header Excel tidak valid');

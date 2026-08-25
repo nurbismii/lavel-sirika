@@ -58,8 +58,7 @@ class PermitQrHttpTest extends TestCase
         ]);
     }
 
-    /** @test */
-    public function admin_can_generate_show_print_without_changing_code_and_renew_qr_for_active_permit()
+    public function test_admin_can_generate_show_print_without_changing_code_and_renew_qr_for_active_permit()
     {
         $admin = $this->userWithRole(User::ROLE_ADMIN_HR);
         $permit = $this->permit();
@@ -104,8 +103,7 @@ class PermitQrHttpTest extends TestCase
         $this->assertNotSame($printedTokenId, $permit->fresh()->activeToken->id);
     }
 
-    /** @test */
-    public function extending_validity_and_printing_keeps_the_existing_qr_code()
+    public function test_extending_validity_and_printing_keeps_the_existing_qr_code()
     {
         $admin = $this->userWithRole(User::ROLE_ADMIN_HR);
         $permit = $this->permit();
@@ -128,8 +126,7 @@ class PermitQrHttpTest extends TestCase
         $this->assertSame(1, PermitToken::where('vehicle_permit_id', $permit->id)->count());
     }
 
-    /** @test */
-    public function admin_can_extend_expired_qr_validity_without_changing_the_code()
+    public function test_admin_can_extend_expired_qr_validity_without_changing_the_code()
     {
         $admin = $this->userWithRole(User::ROLE_ADMIN_HR);
         $permit = $this->permit();
@@ -166,8 +163,7 @@ class PermitQrHttpTest extends TestCase
         $this->assertSame('valid', $scanResult['result']);
     }
 
-    /** @test */
-    public function qr_validity_extension_rejects_a_date_that_does_not_extend_current_validity()
+    public function test_qr_validity_extension_rejects_a_date_that_does_not_extend_current_validity()
     {
         $admin = $this->userWithRole(User::ROLE_ADMIN_HR);
         $permit = $this->permit();
@@ -187,8 +183,7 @@ class PermitQrHttpTest extends TestCase
         $this->assertSame(1, PermitToken::where('vehicle_permit_id', $permit->id)->count());
     }
 
-    /** @test */
-    public function admin_can_display_an_active_qr_without_renewing_it()
+    public function test_admin_can_display_an_active_qr_without_renewing_it()
     {
         $admin = $this->userWithRole(User::ROLE_ADMIN_HR);
         $permit = $this->permit();
@@ -204,8 +199,7 @@ class PermitQrHttpTest extends TestCase
         $this->assertSame($activeTokenId, $permit->fresh()->activeToken->id);
     }
 
-    /** @test */
-    public function qr_views_render_all_selected_parking_locations()
+    public function test_qr_views_render_all_selected_parking_locations()
     {
         $admin = $this->userWithRole(User::ROLE_ADMIN_HR);
         $permit = $this->permit();
@@ -221,8 +215,7 @@ class PermitQrHttpTest extends TestCase
             ->assertSee($secondParking->code . ', ' . $permit->parkingLocation->code);
     }
 
-    /** @test */
-    public function security_cannot_access_admin_qr_routes()
+    public function test_security_cannot_access_admin_qr_routes()
     {
         $security = $this->userWithRole(User::ROLE_SECURITY);
         $permit = $this->permit();
@@ -237,8 +230,7 @@ class PermitQrHttpTest extends TestCase
         $this->actingAs($security)->get(route('permits.qr.batch-print'))->assertForbidden();
     }
 
-    /** @test */
-    public function bulk_generate_creates_tokens_for_active_permits_without_existing_active_token()
+    public function test_bulk_generate_creates_tokens_for_active_permits_without_existing_active_token()
     {
         $admin = $this->userWithRole(User::ROLE_ADMIN_HR);
         $first = $this->permit(VehiclePermit::STATUS_ACTIVE, 'DT 7001 Q1');
@@ -256,8 +248,7 @@ class PermitQrHttpTest extends TestCase
         $this->assertNull($review->fresh()->activeToken);
     }
 
-    /** @test */
-    public function admin_can_batch_print_only_currently_active_qr_codes_with_employee_identity()
+    public function test_admin_can_batch_print_only_currently_active_qr_codes_with_employee_identity()
     {
         $admin = $this->userWithRole(User::ROLE_ADMIN_HR);
         $active = $this->permit(VehiclePermit::STATUS_ACTIVE, 'DT 7001 BP');
@@ -276,8 +267,7 @@ class PermitQrHttpTest extends TestCase
         $this->assertNull($inactive->fresh()->activeToken);
     }
 
-    /** @test */
-    public function admin_can_filter_batch_print_qr_codes_by_department_division_and_card_color()
+    public function test_admin_can_filter_batch_print_qr_codes_by_department_division_and_card_color()
     {
         $admin = $this->userWithRole(User::ROLE_ADMIN_HR);
         $matching = $this->permit(VehiclePermit::STATUS_ACTIVE, 'DT 7001 BF');
@@ -314,8 +304,7 @@ class PermitQrHttpTest extends TestCase
         $this->assertSame(1, substr_count($response->getContent(), '<svg'));
     }
 
-    /** @test */
-    public function generate_redirects_with_flash_error_when_active_qr_already_exists()
+    public function test_generate_redirects_with_flash_error_when_active_qr_already_exists()
     {
         $admin = $this->userWithRole(User::ROLE_ADMIN_HR);
         $permit = $this->permit();
@@ -332,8 +321,7 @@ class PermitQrHttpTest extends TestCase
         $this->assertSame(PermitToken::STATUS_ACTIVE, $permit->fresh()->activeToken->status);
     }
 
-    /** @test */
-    public function qr_admin_flash_errors_are_visible_after_redirect()
+    public function test_qr_admin_flash_errors_are_visible_after_redirect()
     {
         $admin = $this->userWithRole(User::ROLE_ADMIN_HR);
         $permit = $this->permit();
@@ -348,8 +336,7 @@ class PermitQrHttpTest extends TestCase
             ->assertSee('QR aktif sudah tersedia. Gunakan renew untuk membuat QR baru.');
     }
 
-    /** @test */
-    public function renew_and_print_redirect_with_flash_error_for_non_active_permit()
+    public function test_renew_and_print_redirect_with_flash_error_for_non_active_permit()
     {
         $admin = $this->userWithRole(User::ROLE_ADMIN_HR);
         $permit = $this->permit(VehiclePermit::STATUS_NEEDS_REVIEW);

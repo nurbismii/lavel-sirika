@@ -50,8 +50,7 @@ class ScanQrHttpTest extends TestCase
         ]);
     }
 
-    /** @test */
-    public function security_can_verify_valid_token_via_http_and_scan_is_logged()
+    public function test_security_can_verify_valid_token_via_http_and_scan_is_logged()
     {
         $permit = $this->permit();
         $permit->routeSegments()->attach($this->completeSegment('Y1')->id, ['sequence' => 1]);
@@ -76,8 +75,7 @@ class ScanQrHttpTest extends TestCase
         ]);
     }
 
-    /** @test */
-    public function scan_page_wraps_permit_result_in_a_single_alpine_root()
+    public function test_scan_page_wraps_permit_result_in_a_single_alpine_root()
     {
         $html = $this->actingAs($this->security())
             ->get(route('scan.index'))
@@ -92,8 +90,7 @@ class ScanQrHttpTest extends TestCase
         $this->assertStringContainsString('x-if="result.permit.route_map_warning"', $html);
     }
 
-    /** @test */
-    public function scan_page_exposes_rear_camera_default_and_switch_control()
+    public function test_scan_page_exposes_rear_camera_default_and_switch_control()
     {
         $html = $this->actingAs($this->security())
             ->get(route('scan.index'))
@@ -105,8 +102,7 @@ class ScanQrHttpTest extends TestCase
         $this->assertStringContainsString('x-text="cameraDirectionLabel"', $html);
     }
 
-    /** @test */
-    public function security_can_verify_invalid_token_and_it_is_logged()
+    public function test_security_can_verify_invalid_token_and_it_is_logged()
     {
         $this->actingAs($this->security())
             ->postJson(route('scan.verify'), [
@@ -122,8 +118,7 @@ class ScanQrHttpTest extends TestCase
         ]);
     }
 
-    /** @test */
-    public function security_can_verify_expired_token_without_route_map()
+    public function test_security_can_verify_expired_token_without_route_map()
     {
         $permit = $this->permit();
         $permit->routeSegments()->attach($this->completeSegment('Y1')->id, ['sequence' => 1]);
@@ -141,8 +136,7 @@ class ScanQrHttpTest extends TestCase
         $this->assertArrayNotHasKey('route_map', $response->json('permit'));
     }
 
-    /** @test */
-    public function auditor_cannot_verify_scan_token()
+    public function test_auditor_cannot_verify_scan_token()
     {
         $auditor = User::factory()->create([
             'role' => User::ROLE_AUDITOR,

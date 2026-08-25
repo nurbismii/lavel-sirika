@@ -9,8 +9,7 @@ use Tests\TestCase;
 
 class ProductionHardeningConfigTest extends TestCase
 {
-    /** @test */
-    public function trust_hosts_middleware_is_enabled_globally()
+    public function test_trust_hosts_middleware_is_enabled_globally()
     {
         $kernel = app(Kernel::class);
         $reflection = new ReflectionClass($kernel);
@@ -20,8 +19,7 @@ class ProductionHardeningConfigTest extends TestCase
         $this->assertContains(TrustHosts::class, $property->getValue($kernel));
     }
 
-    /** @test */
-    public function trust_hosts_are_loaded_from_sirika_config()
+    public function test_trust_hosts_are_loaded_from_sirika_config()
     {
         config(['sirika.trusted_hosts' => ['sirika.vdnisite.com', 'www.sirika.vdnisite.com']]);
 
@@ -31,8 +29,7 @@ class ProductionHardeningConfigTest extends TestCase
         $this->assertContains('^www\.sirika\.vdnisite\.com$', $hosts);
     }
 
-    /** @test */
-    public function trust_hosts_falls_back_to_the_exact_production_host_when_configuration_is_empty()
+    public function test_trust_hosts_falls_back_to_the_exact_production_host_when_configuration_is_empty()
     {
         config(['sirika.trusted_hosts' => []]);
 
@@ -41,8 +38,7 @@ class ProductionHardeningConfigTest extends TestCase
         $this->assertSame(['^sirika\\.vdnisite\\.com$'], $hosts);
     }
 
-    /** @test */
-    public function session_same_site_is_configurable_for_production()
+    public function test_session_same_site_is_configurable_for_production()
     {
         $config = file_get_contents(config_path('session.php'));
 
@@ -50,11 +46,17 @@ class ProductionHardeningConfigTest extends TestCase
         $this->assertSame('lax', config('session.same_site'));
     }
 
-    /** @test */
-    public function cors_defaults_are_restricted_to_configured_paths_and_origins()
+    public function test_cors_defaults_are_restricted_and_environment_overrides_are_respected()
     {
+        $configSource = file_get_contents(config_path('cors.php'));
+        $configuredOrigins = array_values(array_filter(array_map('trim', explode(',', env(
+            'CORS_ALLOWED_ORIGINS',
+            'https://sirika.vdnisite.com'
+        )))));
+
         $this->assertSame([], config('cors.paths'));
-        $this->assertSame(['https://sirika.vdnisite.com'], config('cors.allowed_origins'));
+        $this->assertStringContainsString("'https://sirika.vdnisite.com'", $configSource);
+        $this->assertSame($configuredOrigins, config('cors.allowed_origins'));
         $this->assertSame(['GET', 'POST', 'OPTIONS'], config('cors.allowed_methods'));
         $this->assertFalse(config('cors.supports_credentials'));
     }

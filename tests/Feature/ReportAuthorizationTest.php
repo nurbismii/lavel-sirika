@@ -10,8 +10,7 @@ class ReportAuthorizationTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
-    public function report_routes_are_mapped_to_admin_hr_and_auditor_roles()
+    public function test_report_routes_are_mapped_to_admin_hr_and_auditor_roles()
     {
         $expected = [
             User::ROLE_ADMIN_HR,
@@ -24,8 +23,7 @@ class ReportAuthorizationTest extends TestCase
         $this->assertSame($expected, User::rolesForRoute('reports.scans.export'));
     }
 
-    /** @test */
-    public function report_navigation_access_follows_report_roles()
+    public function test_report_navigation_access_follows_report_roles()
     {
         $admin = $this->user(User::ROLE_ADMIN_HR);
         $auditor = $this->user(User::ROLE_AUDITOR);

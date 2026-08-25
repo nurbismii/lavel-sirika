@@ -6,6 +6,7 @@ use App\Models\RoadSegment;
 use App\Models\VehiclePermit;
 use App\Services\Imports\RouteSegmentParser;
 use App\Services\Reports\PermitReportQuery;
+use Illuminate\Database\Eloquent\Builder;
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
@@ -13,8 +14,9 @@ use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Events\AfterSheet;
-use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Cell\StringValueBinder;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 
 class PermitNeedsReviewExport extends StringValueBinder implements FromQuery, WithCustomValueBinder, WithHeadings, WithMapping, WithEvents, ShouldAutoSize
 {
@@ -41,7 +43,7 @@ class PermitNeedsReviewExport extends StringValueBinder implements FromQuery, Wi
             ->all();
     }
 
-    public function query()
+    public function query(): Builder
     {
         return $this->reports->query($this->filters);
     }
@@ -93,19 +95,21 @@ class PermitNeedsReviewExport extends StringValueBinder implements FromQuery, Wi
                 $sheet = $event->sheet->getDelegate();
 
                 for ($row = 2; $row <= $sheet->getHighestRow(); $row++) {
-                    $validationStatus = $sheet->getCellByColumnAndRow(self::ROUTE_VALIDATION_STATUS_COLUMN_INDEX, $row)->getValue();
+                    $routeRawCoordinate = Coordinate::stringFromColumnIndex(self::ROUTE_RAW_COLUMN_INDEX) . $row;
+                    $validationStatusCoordinate = Coordinate::stringFromColumnIndex(self::ROUTE_VALIDATION_STATUS_COLUMN_INDEX) . $row;
+                    $validationStatus = $sheet->getCell($validationStatusCoordinate)->getValue();
 
                     if ($validationStatus !== self::ROUTE_NEEDS_REPAIR_STATUS) {
                         continue;
                     }
 
-                    $sheet->getStyleByColumnAndRow(self::ROUTE_RAW_COLUMN_INDEX, $row)
+                    $sheet->getStyle($routeRawCoordinate)
                         ->getFill()
                         ->setFillType(Fill::FILL_SOLID)
                         ->getStartColor()
                         ->setARGB('FFFDE68A');
 
-                    $sheet->getStyleByColumnAndRow(self::ROUTE_VALIDATION_STATUS_COLUMN_INDEX, $row)
+                    $sheet->getStyle($validationStatusCoordinate)
                         ->getFill()
                         ->setFillType(Fill::FILL_SOLID)
                         ->getStartColor()

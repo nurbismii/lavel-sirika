@@ -6,8 +6,7 @@ use Tests\TestCase;
 
 class RouteMapVisualConfigTest extends TestCase
 {
-    /** @test */
-    public function route_preview_uses_translucent_line_opacity_so_map_labels_remain_readable()
+    public function test_route_preview_uses_translucent_line_opacity_so_map_labels_remain_readable()
     {
         $script = file_get_contents(resource_path('js/route-map.js'));
 

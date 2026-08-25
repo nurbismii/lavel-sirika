@@ -15,8 +15,7 @@ class PermitListAfterImportTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
-    public function admin_can_view_imported_permits()
+    public function test_admin_can_view_imported_permits()
     {
         $admin = User::factory()->create([
             'role' => User::ROLE_ADMIN_HR,
@@ -69,8 +68,7 @@ class PermitListAfterImportTest extends TestCase
             ->assertSee('Bulk Generate QR Aktif');
     }
 
-    /** @test */
-    public function permit_list_renders_responsive_table_markup_without_changing_available_actions()
+    public function test_permit_list_renders_responsive_table_markup_without_changing_available_actions()
     {
         $admin = User::factory()->create([
             'role' => User::ROLE_ADMIN_HR,
@@ -111,8 +109,7 @@ class PermitListAfterImportTest extends TestCase
             ->assertSee(route('permits.qr.generate', $permit), false);
     }
 
-    /** @test */
-    public function admin_sees_qr_active_status_and_actions_when_permit_has_token()
+    public function test_admin_sees_qr_active_status_and_actions_when_permit_has_token()
     {
         $admin = User::factory()->create([
             'role' => User::ROLE_ADMIN_HR,
@@ -156,8 +153,7 @@ class PermitListAfterImportTest extends TestCase
             ->assertSee('Renew');
     }
 
-    /** @test */
-    public function dashboard_uses_real_permit_counts()
+    public function test_dashboard_uses_real_permit_counts()
     {
         $admin = User::factory()->create([
             'role' => User::ROLE_ADMIN_HR,

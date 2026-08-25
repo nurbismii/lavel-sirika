@@ -16,6 +16,7 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use RuntimeException;
@@ -25,8 +26,7 @@ class ImportExcelPreviewTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
-    public function excel_fixture_preview_and_import_keep_all_parking_locations_visible_in_list_and_qr()
+    public function test_excel_fixture_preview_and_import_keep_all_parking_locations_visible_in_list_and_qr()
     {
         $this->seedRoadSegments(['Y1', 'D2']);
         $admin = User::factory()->create([
@@ -62,8 +62,7 @@ class ImportExcelPreviewTest extends TestCase
             ->assertSee('P01, P02');
     }
 
-    /** @test */
-    public function it_creates_preview_batch_from_excel_file()
+    public function test_it_creates_preview_batch_from_excel_file()
     {
         $this->seedRoadSegments(['Y1', 'D2', 'Z1', 'D3']);
 
@@ -95,8 +94,7 @@ class ImportExcelPreviewTest extends TestCase
         $this->assertDatabaseHas('import_rows', ['row_number' => 6, 'status' => ImportRow::STATUS_NEEDS_REVIEW]);
     }
 
-    /** @test */
-    public function it_marks_batch_failed_when_header_is_missing()
+    public function test_it_marks_batch_failed_when_header_is_missing()
     {
         $admin = User::factory()->create([
             'role' => User::ROLE_ADMIN_HR,
@@ -115,8 +113,7 @@ class ImportExcelPreviewTest extends TestCase
         $this->assertStringContainsString('Header Excel tidak valid', $batch->fresh()->error_summary);
     }
 
-    /** @test */
-    public function it_rejects_preview_for_user_without_preview_access()
+    public function test_it_rejects_preview_for_user_without_preview_access()
     {
         $user = User::factory()->create([
             'role' => User::ROLE_SECURITY,
@@ -137,8 +134,7 @@ class ImportExcelPreviewTest extends TestCase
         }
     }
 
-    /** @test */
-    public function it_marks_batch_failed_when_file_storage_fails()
+    public function test_it_marks_batch_failed_when_file_storage_fails()
     {
         Log::spy();
 
@@ -178,8 +174,7 @@ class ImportExcelPreviewTest extends TestCase
         });
     }
 
-    /** @test */
-    public function service_rejects_a_disguised_non_excel_file_before_creating_a_batch()
+    public function test_service_rejects_a_disguised_non_excel_file_before_creating_a_batch()
     {
         $admin = User::factory()->create([
             'role' => User::ROLE_ADMIN_HR,
@@ -200,8 +195,7 @@ class ImportExcelPreviewTest extends TestCase
         $this->assertSame(0, ImportBatch::count());
     }
 
-    /** @test */
-    public function preview_rejects_workbooks_over_the_configured_row_limit_without_partial_rows()
+    public function test_preview_rejects_workbooks_over_the_configured_row_limit_without_partial_rows()
     {
         config(['sirika.import.max_rows' => 2]);
         $admin = User::factory()->create([
@@ -223,8 +217,7 @@ class ImportExcelPreviewTest extends TestCase
         $this->assertSame(0, $batch->rows()->count());
     }
 
-    /** @test */
-    public function it_rejects_duplicate_permit_identities_during_preview()
+    public function test_it_rejects_duplicate_permit_identities_during_preview()
     {
         $this->seedRoadSegments(['Y1']);
 
@@ -291,8 +284,7 @@ class ImportExcelPreviewTest extends TestCase
         );
     }
 
-    /** @test */
-    public function it_allows_a_plate_used_by_different_niks_in_the_same_preview()
+    public function test_it_allows_a_plate_used_by_different_niks_in_the_same_preview()
     {
         $this->seedRoadSegments(['Y1']);
 
@@ -327,8 +319,7 @@ class ImportExcelPreviewTest extends TestCase
         $this->assertSame([], $batch->rows()->where('row_number', 5)->first()->errors);
     }
 
-    /** @test */
-    public function it_allows_a_plate_owned_by_a_different_nik_in_an_existing_permit()
+    public function test_it_allows_a_plate_owned_by_a_different_nik_in_an_existing_permit()
     {
         $this->seedRoadSegments(['Y1']);
 
@@ -387,7 +378,8 @@ class ImportExcelPreviewTest extends TestCase
 
         foreach ($rows as $rowIndex => $row) {
             foreach ($row as $columnIndex => $value) {
-                $sheet->setCellValueByColumnAndRow($columnIndex + 1, $rowIndex + 1, $value);
+                $coordinate = Coordinate::stringFromColumnIndex($columnIndex + 1) . ($rowIndex + 1);
+                $sheet->setCellValue($coordinate, $value);
             }
         }
 

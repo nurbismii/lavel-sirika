@@ -17,8 +17,7 @@ class PermitQrSecurityTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
-    public function generated_qr_plaintext_is_persisted_as_a_hash_and_encrypted_ciphertext()
+    public function test_generated_qr_plaintext_is_persisted_as_a_hash_and_encrypted_ciphertext()
     {
         $permit = $this->activePermit();
         $result = app(PermitTokenService::class)->generateForPermit($permit);
@@ -34,8 +33,7 @@ class PermitQrSecurityTest extends TestCase
         $this->assertStringNotContainsString('signature=', $result['plain_token']);
     }
 
-    /** @test */
-    public function invalid_scan_does_not_reveal_permit_data()
+    public function test_invalid_scan_does_not_reveal_permit_data()
     {
         $permit = $this->activePermit();
         $validToken = app(PermitTokenService::class)->generateForPermit($permit)['plain_token'];

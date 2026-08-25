@@ -25,8 +25,7 @@ class ScanReportHttpTest extends TestCase
         parent::tearDown();
     }
 
-    /** @test */
-    public function admin_and_auditor_can_open_scan_report_but_security_cannot()
+    public function test_admin_and_auditor_can_open_scan_report_but_security_cannot()
     {
         Carbon::setTestNow('2026-07-08 10:00:00');
 
@@ -56,8 +55,7 @@ class ScanReportHttpTest extends TestCase
             ->assertForbidden();
     }
 
-    /** @test */
-    public function scan_report_uses_filters_from_query_string()
+    public function test_scan_report_uses_filters_from_query_string()
     {
         Carbon::setTestNow('2026-07-08 10:00:00');
 
@@ -84,8 +82,7 @@ class ScanReportHttpTest extends TestCase
             ->assertDontSee('DT 9802 BS');
     }
 
-    /** @test */
-    public function scan_report_export_rejects_ranges_longer_than_thirty_one_days()
+    public function test_scan_report_export_rejects_ranges_longer_than_thirty_one_days()
     {
         Carbon::setTestNow('2026-07-08 10:00:00');
 
@@ -101,8 +98,7 @@ class ScanReportHttpTest extends TestCase
             ->assertSessionHasErrors(['date_range' => 'Rentang laporan scan maksimal 31 hari.']);
     }
 
-    /** @test */
-    public function scan_report_export_requires_date_range()
+    public function test_scan_report_export_requires_date_range()
     {
         Carbon::setTestNow('2026-07-08 10:00:00');
 
@@ -118,8 +114,7 @@ class ScanReportHttpTest extends TestCase
             ]);
     }
 
-    /** @test */
-    public function scan_report_export_uses_filters_and_does_not_expose_ip_address()
+    public function test_scan_report_export_uses_filters_and_does_not_expose_ip_address()
     {
         Carbon::setTestNow('2026-07-08 10:00:00');
         Excel::fake();

@@ -29,8 +29,7 @@ class PermitImportRowNormalizerTest extends TestCase
         ];
     }
 
-    /** @test */
-    public function it_marks_complete_row_as_valid()
+    public function test_it_marks_complete_row_as_valid()
     {
         $raw = ['1', 'DT 4423 CI', 'FITRIAWATI', '200115677', 'GENERAL AFFAIR', 'GA KANTOR', 'ADMIN', 'GA-MES1-P01', 'Y1Ã¢â€ â€™D2Ã¢â€ â€™Z1Ã¢â€ â€™D3Ã¢â€ â€™GA-MES1-P01', 'OFFICE', 'BIRU Ã¨â€œÂÃ¨â€°Â²', '0812', 'Ã¢Ë†Å¡', 'JUBIR ADMIN', 'GENERAL AFFAIR'];
 
@@ -43,8 +42,7 @@ class PermitImportRowNormalizerTest extends TestCase
         $this->assertSame([], $result['errors']);
     }
 
-    /** @test */
-    public function it_normalizes_multiple_parking_locations_and_excludes_them_from_route_segments()
+    public function test_it_normalizes_multiple_parking_locations_and_excludes_them_from_route_segments()
     {
         $raw = ['1', 'DT 4423 CI', 'FITRIAWATI', '200115677', 'GENERAL AFFAIR', 'GA KANTOR', 'ADMIN', "CY-CC-P02 /\nCY-CC-P03", 'GA-MES1-P01 → Y1 → D2 → PLTU-PC-6-P10', 'OFFICE', 'BIRU', '0812', 'approved', '', 'GENERAL AFFAIR'];
 
@@ -56,8 +54,7 @@ class PermitImportRowNormalizerTest extends TestCase
         $this->assertSame([], $result['warnings']);
     }
 
-    /** @test */
-    public function it_normalizes_multiple_parking_locations_separated_by_a_bare_slash()
+    public function test_it_normalizes_multiple_parking_locations_separated_by_a_bare_slash()
     {
         $raw = ['1', 'DT 4423 CI', 'FITRIAWATI', '200115677', 'GENERAL AFFAIR', 'GA KANTOR', 'ADMIN', 'CY-CC-P02/CY-CC-P03', 'Y1 -> D2', 'OFFICE', 'BIRU', '0812', 'approved', '', 'GENERAL AFFAIR'];
 
@@ -67,8 +64,7 @@ class PermitImportRowNormalizerTest extends TestCase
         $this->assertSame('CY-CC-P02', $result['normalized_data']['parking_location_code']);
     }
 
-    /** @test */
-    public function it_suppresses_duplicate_parking_location_codes()
+    public function test_it_suppresses_duplicate_parking_location_codes()
     {
         $raw = ['1', 'DT 4423 CI', 'FITRIAWATI', '200115677', 'GENERAL AFFAIR', 'GA KANTOR', 'ADMIN', "CY-CC-P02 /\nCY-CC-P02", 'Y1 -> D2', 'OFFICE', 'BIRU', '0812', 'approved', '', 'GENERAL AFFAIR'];
 
@@ -78,8 +74,7 @@ class PermitImportRowNormalizerTest extends TestCase
         $this->assertSame('CY-CC-P02', $result['normalized_data']['parking_location_code']);
     }
 
-    /** @test */
-    public function it_marks_blank_plate_as_invalid()
+    public function test_it_marks_blank_plate_as_invalid()
     {
         $raw = ['1', '', 'FITRIAWATI', '200115677', 'GENERAL AFFAIR', 'GA KANTOR', 'ADMIN', 'GA-MES1-P01', 'Y1Ã¢â€ â€™D2', 'OFFICE', 'BIRU Ã¨â€œÂÃ¨â€°Â²', '0812', 'Ã¢Ë†Å¡', '', 'GENERAL AFFAIR'];
 
@@ -89,8 +84,7 @@ class PermitImportRowNormalizerTest extends TestCase
         $this->assertContains('Plat motor wajib diisi', $result['errors']);
     }
 
-    /** @test */
-    public function it_marks_blank_route_as_needs_review()
+    public function test_it_marks_blank_route_as_needs_review()
     {
         $raw = ['1', 'DT 4423 CI', 'FITRIAWATI', '200115677', 'GENERAL AFFAIR', 'GA KANTOR', 'ADMIN', 'GA-MES1-P01', '', 'OFFICE', 'BIRU Ã¨â€œÂÃ¨â€°Â²', '0812', 'Ã¢Ë†Å¡', '', 'GENERAL AFFAIR'];
 
@@ -100,8 +94,7 @@ class PermitImportRowNormalizerTest extends TestCase
         $this->assertContains('Rute kendaraan kosong', $result['warnings']);
     }
 
-    /** @test */
-    public function it_marks_multiple_plates_as_needs_review()
+    public function test_it_marks_multiple_plates_as_needs_review()
     {
         $raw = ['1', "DT 5224 AA/\nDT 2119 WA", 'MUH IRAWAN', '17011544', 'GENERAL AFFAIR', 'GA KANTOR', 'DRIVER', 'GA-MES1-P01', 'Y1Ã¢â€ â€™D2', 'OFFICE', 'BIRU Ã¨â€œÂÃ¨â€°Â²', '0812', 'Ã¢Ë†Å¡', '', 'GENERAL AFFAIR'];
 
@@ -111,8 +104,7 @@ class PermitImportRowNormalizerTest extends TestCase
         $this->assertContains('Plat motor berisi lebih dari satu nilai', $result['warnings']);
     }
 
-    /** @test */
-    public function it_marks_tidak_setuju_as_invalid()
+    public function test_it_marks_tidak_setuju_as_invalid()
     {
         $raw = ['1', 'DT 4423 CI', 'FITRIAWATI', '200115677', 'GENERAL AFFAIR', 'GA KANTOR', 'ADMIN', 'GA-MES1-P01', 'Y1Ã¢â€ â€™D2', 'OFFICE', 'BIRU Ã¨â€œÂÃ¨â€°Â²', '0812', 'tidak setuju', '', 'GENERAL AFFAIR'];
 
@@ -122,8 +114,7 @@ class PermitImportRowNormalizerTest extends TestCase
         $this->assertContains('Hasil persetujuan harus disetujui', $result['errors']);
     }
 
-    /** @test */
-    public function it_marks_route_free_text_as_needs_review()
+    public function test_it_marks_route_free_text_as_needs_review()
     {
         $raw = ['1', 'DT 4423 CI', 'FITRIAWATI', '200115677', 'GENERAL AFFAIR', 'GA KANTOR', 'ADMIN', 'GA-MES1-P01', 'Y1 -> jalan baru -> D2', 'OFFICE', 'BIRU Ã¨â€œÂÃ¨â€°Â²', '0812', 'Ã¢Ë†Å¡', '', 'GENERAL AFFAIR'];
 

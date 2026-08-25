@@ -13,8 +13,7 @@ class ImportExcelPreviewHttpTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
-    public function admin_can_view_import_page_with_upload_form()
+    public function test_admin_can_view_import_page_with_upload_form()
     {
         $admin = User::factory()->create([
             'role' => User::ROLE_ADMIN_HR,
@@ -28,8 +27,7 @@ class ImportExcelPreviewHttpTest extends TestCase
             ->assertSee('name="file"', false);
     }
 
-    /** @test */
-    public function security_cannot_upload_import_file()
+    public function test_security_cannot_upload_import_file()
     {
         Storage::fake('local');
 
@@ -43,8 +41,7 @@ class ImportExcelPreviewHttpTest extends TestCase
         ])->assertForbidden();
     }
 
-    /** @test */
-    public function import_store_permission_is_explicitly_mapped_to_upload_roles()
+    public function test_import_store_permission_is_explicitly_mapped_to_upload_roles()
     {
         $this->assertSame([User::ROLE_ADMIN_HR], User::rolesForRoute('imports.store'));
 
@@ -68,8 +65,7 @@ class ImportExcelPreviewHttpTest extends TestCase
         $this->assertTrue($superAdmin->canAccessRoute('imports.store'));
     }
 
-    /** @test */
-    public function non_excel_upload_is_rejected()
+    public function test_non_excel_upload_is_rejected()
     {
         $admin = User::factory()->create([
             'role' => User::ROLE_ADMIN_HR,
@@ -82,8 +78,7 @@ class ImportExcelPreviewHttpTest extends TestCase
             ->assertSessionHasErrors('file');
     }
 
-    /** @test */
-    public function oversized_excel_upload_is_rejected_before_preview()
+    public function test_oversized_excel_upload_is_rejected_before_preview()
     {
         $admin = User::factory()->create([
             'role' => User::ROLE_ADMIN_HR,
@@ -102,8 +97,7 @@ class ImportExcelPreviewHttpTest extends TestCase
         $this->assertSame(0, ImportBatch::count());
     }
 
-    /** @test */
-    public function admin_can_view_import_batch_preview()
+    public function test_admin_can_view_import_batch_preview()
     {
         $admin = User::factory()->create([
             'role' => User::ROLE_ADMIN_HR,

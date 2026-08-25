@@ -20,8 +20,7 @@ class ProductionCacheCommandTest extends TestCase
         parent::tearDown();
     }
 
-    /** @test */
-    public function production_cache_commands_complete_successfully()
+    public function test_production_cache_commands_complete_successfully()
     {
         $this->assertSame(0, Artisan::call('config:clear'));
         $this->assertSame(0, Artisan::call('route:clear'));
@@ -32,8 +31,7 @@ class ProductionCacheCommandTest extends TestCase
         $this->assertSame(0, Artisan::call('view:cache'));
     }
 
-    /** @test */
-    public function root_redirect_behavior_stays_the_same_after_replacing_route_closure()
+    public function test_root_redirect_behavior_stays_the_same_after_replacing_route_closure()
     {
         $this->get('/')
             ->assertRedirect(route('login'));

@@ -20,8 +20,7 @@ class ImportCommitTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
-    public function it_persists_all_imported_parking_location_codes_and_keeps_the_first_as_legacy_location()
+    public function test_it_persists_all_imported_parking_location_codes_and_keeps_the_first_as_legacy_location()
     {
         $admin = $this->admin();
         $batch = $this->batch($admin, [
@@ -51,8 +50,7 @@ class ImportCommitTest extends TestCase
         );
     }
 
-    /** @test */
-    public function it_marks_imported_permit_for_review_when_any_parking_location_code_is_unsafe()
+    public function test_it_marks_imported_permit_for_review_when_any_parking_location_code_is_unsafe()
     {
         $admin = $this->admin();
         $batch = $this->batch($admin, [
@@ -80,8 +78,7 @@ class ImportCommitTest extends TestCase
         $this->assertSame(['P01'], $permit->parkingLocations()->pluck('code')->all());
     }
 
-    /** @test */
-    public function it_commits_valid_and_needs_review_rows_without_touching_invalid_rows()
+    public function test_it_commits_valid_and_needs_review_rows_without_touching_invalid_rows()
     {
         $admin = $this->admin();
         $this->seedRoadSegments(['Y1', 'D2']);
@@ -188,8 +185,7 @@ class ImportCommitTest extends TestCase
         $this->assertNull($invalidRow->created_permit_id);
     }
 
-    /** @test */
-    public function it_rejects_duplicate_permit_when_committing_an_existing_employee_vehicle_pair()
+    public function test_it_rejects_duplicate_permit_when_committing_an_existing_employee_vehicle_pair()
     {
         $admin = $this->admin();
         $batch = $this->batch($admin, [
@@ -250,8 +246,7 @@ class ImportCommitTest extends TestCase
         $this->assertSame(ImportRow::STATUS_VALID, $row->status);
     }
 
-    /** @test */
-    public function it_commits_a_stale_valid_row_when_plate_is_owned_by_another_nik()
+    public function test_it_commits_a_stale_valid_row_when_plate_is_owned_by_another_nik()
     {
         $admin = $this->admin();
         $batch = $this->batch($admin, [
@@ -301,8 +296,7 @@ class ImportCommitTest extends TestCase
         $this->assertSame(ImportRow::STATUS_COMMITTED, $row->status);
     }
 
-    /** @test */
-    public function it_commits_two_niks_with_the_same_plate_as_one_vehicle_and_two_active_permits()
+    public function test_it_commits_two_niks_with_the_same_plate_as_one_vehicle_and_two_active_permits()
     {
         $admin = $this->admin();
         $batch = $this->batch($admin, [
@@ -336,8 +330,7 @@ class ImportCommitTest extends TestCase
         $this->assertSame(1, VehiclePermit::distinct()->count('vehicle_id'));
     }
 
-    /** @test */
-    public function it_commits_distinct_plates_for_the_same_nik_as_two_vehicles_and_permits()
+    public function test_it_commits_distinct_plates_for_the_same_nik_as_two_vehicles_and_permits()
     {
         $admin = $this->admin();
         $batch = $this->batch($admin, [
@@ -367,8 +360,7 @@ class ImportCommitTest extends TestCase
         $this->assertSame(2, VehiclePermit::where('source_import_id', $batch->id)->count());
     }
 
-    /** @test */
-    public function needs_review_rows_do_not_persist_partial_route_segments()
+    public function test_needs_review_rows_do_not_persist_partial_route_segments()
     {
         $admin = $this->admin();
         $this->seedRoadSegments(['Y1', 'D2']);
@@ -405,8 +397,7 @@ class ImportCommitTest extends TestCase
         $this->assertSame(0, $permit->permitRouteSegments()->count());
     }
 
-    /** @test */
-    public function it_downgrades_rows_with_unsafe_parking_code_without_creating_parking_location()
+    public function test_it_downgrades_rows_with_unsafe_parking_code_without_creating_parking_location()
     {
         $admin = $this->admin();
         $batch = $this->batch($admin, [
@@ -451,8 +442,7 @@ class ImportCommitTest extends TestCase
         );
     }
 
-    /** @test */
-    public function vehicle_identity_is_unique_per_employee_and_plate_number()
+    public function test_vehicle_identity_is_unique_per_employee_and_plate_number()
     {
         $employee = Employee::create([
             'nik' => '200115677',
@@ -477,8 +467,7 @@ class ImportCommitTest extends TestCase
         ]);
     }
 
-    /** @test */
-    public function it_rejects_commit_for_already_committed_or_not_ready_batches()
+    public function test_it_rejects_commit_for_already_committed_or_not_ready_batches()
     {
         $admin = $this->admin();
 
@@ -505,8 +494,7 @@ class ImportCommitTest extends TestCase
         }
     }
 
-    /** @test */
-    public function it_rejects_commit_when_batch_has_no_committable_rows()
+    public function test_it_rejects_commit_when_batch_has_no_committable_rows()
     {
         $admin = $this->admin();
         $batch = $this->batch($admin, [
@@ -538,8 +526,7 @@ class ImportCommitTest extends TestCase
         $this->assertSame(0, VehiclePermit::count());
     }
 
-    /** @test */
-    public function it_rejects_commit_when_committable_row_lacks_minimum_data()
+    public function test_it_rejects_commit_when_committable_row_lacks_minimum_data()
     {
         $admin = $this->admin();
         $batch = $this->batch($admin, [
@@ -580,8 +567,7 @@ class ImportCommitTest extends TestCase
         $this->assertSame(0, VehiclePermit::count());
     }
 
-    /** @test */
-    public function commit_route_is_explicitly_limited_to_admin_hr_and_super_admin_override()
+    public function test_commit_route_is_explicitly_limited_to_admin_hr_and_super_admin_override()
     {
         $this->assertSame([User::ROLE_ADMIN_HR], User::rolesForRoute('imports.commit'));
 
@@ -600,8 +586,7 @@ class ImportCommitTest extends TestCase
         $this->assertTrue($superAdmin->canAccessRoute('imports.commit'));
     }
 
-    /** @test */
-    public function admin_can_commit_batch_via_http_but_security_cannot()
+    public function test_admin_can_commit_batch_via_http_but_security_cannot()
     {
         $admin = $this->admin();
         $security = User::factory()->create([
@@ -646,8 +631,7 @@ class ImportCommitTest extends TestCase
         $this->assertSame(ImportBatch::STATUS_COMMITTED, $batch->fresh()->status);
     }
 
-    /** @test */
-    public function admin_http_commit_rejects_batch_without_committable_rows()
+    public function test_admin_http_commit_rejects_batch_without_committable_rows()
     {
         $admin = $this->admin();
         $batch = $this->batch($admin, [
@@ -670,8 +654,7 @@ class ImportCommitTest extends TestCase
         $this->assertSame(0, VehiclePermit::count());
     }
 
-    /** @test */
-    public function preview_shows_commit_button_only_for_previewed_batches_with_valid_or_review_rows()
+    public function test_preview_shows_commit_button_only_for_previewed_batches_with_valid_or_review_rows()
     {
         $admin = $this->admin();
 

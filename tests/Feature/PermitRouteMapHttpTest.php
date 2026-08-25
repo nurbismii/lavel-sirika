@@ -15,8 +15,7 @@ class PermitRouteMapHttpTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
-    public function admin_hr_can_open_permit_route_map_preview_from_permit_list()
+    public function test_admin_hr_can_open_permit_route_map_preview_from_permit_list()
     {
         $admin = $this->userWithRole(User::ROLE_ADMIN_HR);
         $permit = $this->permitWithRoute();
@@ -29,8 +28,7 @@ class PermitRouteMapHttpTest extends TestCase
         $response->assertSee(route('permits.route-map.show', $permit), false);
     }
 
-    /** @test */
-    public function admin_hr_can_open_preview_page_and_only_sees_route_map_fields()
+    public function test_admin_hr_can_open_preview_page_and_only_sees_route_map_fields()
     {
         $admin = $this->userWithRole(User::ROLE_ADMIN_HR);
         $permit = $this->permitWithRoute();
@@ -48,8 +46,7 @@ class PermitRouteMapHttpTest extends TestCase
             ->assertDontSee('manual');
     }
 
-    /** @test */
-    public function auditor_can_open_admin_permit_route_map_preview()
+    public function test_auditor_can_open_admin_permit_route_map_preview()
     {
         $auditor = $this->userWithRole(User::ROLE_AUDITOR);
         $permit = $this->permitWithRoute();
@@ -61,8 +58,7 @@ class PermitRouteMapHttpTest extends TestCase
             ->assertSee('ROUTE USER');
     }
 
-    /** @test */
-    public function security_cannot_open_admin_permit_route_map_preview()
+    public function test_security_cannot_open_admin_permit_route_map_preview()
     {
         $security = $this->userWithRole(User::ROLE_SECURITY);
         $permit = $this->permitWithRoute();

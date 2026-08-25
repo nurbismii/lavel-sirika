@@ -12,8 +12,7 @@ class SirikaModuleAccessTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
-    public function admin_can_view_road_segments_and_read_only_modules()
+    public function test_admin_can_view_road_segments_and_read_only_modules()
     {
         $this->seed(RoadSegmentSeeder::class);
         $segment = RoadSegment::query()->firstOrFail();
@@ -56,8 +55,7 @@ class SirikaModuleAccessTest extends TestCase
             ->assertSee('Input Token Manual');
     }
 
-    /** @test */
-    public function auditor_can_view_road_segments()
+    public function test_auditor_can_view_road_segments()
     {
         $this->seed(RoadSegmentSeeder::class);
         $segment = RoadSegment::query()->firstOrFail();
@@ -80,8 +78,7 @@ class SirikaModuleAccessTest extends TestCase
             ->assertDontSee('Reset Koordinat');
     }
 
-    /** @test */
-    public function security_can_access_scan_but_cannot_access_admin_import()
+    public function test_security_can_access_scan_but_cannot_access_admin_import()
     {
         $this->seed(RoadSegmentSeeder::class);
         $segment = RoadSegment::query()->firstOrFail();

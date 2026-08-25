@@ -4,6 +4,7 @@ namespace App\Exports;
 
 use App\Models\VehiclePermit;
 use App\Services\Reports\PermitReportQuery;
+use Illuminate\Database\Eloquent\Builder;
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
@@ -22,7 +23,7 @@ class PermitReportExport extends StringValueBinder implements FromQuery, WithCus
         $this->filters = $filters;
     }
 
-    public function query()
+    public function query(): Builder
     {
         return $this->reports->query($this->filters);
     }

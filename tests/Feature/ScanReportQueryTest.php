@@ -25,8 +25,7 @@ class ScanReportQueryTest extends TestCase
         parent::tearDown();
     }
 
-    /** @test */
-    public function it_defaults_scan_report_to_last_seven_days()
+    public function test_it_defaults_scan_report_to_last_seven_days()
     {
         Carbon::setTestNow('2026-07-08 10:00:00');
 
@@ -36,8 +35,7 @@ class ScanReportQueryTest extends TestCase
         $this->assertSame('2026-07-08', $filters['date_to']);
     }
 
-    /** @test */
-    public function it_filters_scans_by_date_result_scanner_and_search()
+    public function test_it_filters_scans_by_date_result_scanner_and_search()
     {
         Carbon::setTestNow('2026-07-08 10:00:00');
 
@@ -64,8 +62,7 @@ class ScanReportQueryTest extends TestCase
         $this->assertSame($matching->id, $results->first()->id);
     }
 
-    /** @test */
-    public function it_does_not_hydrate_ip_address_for_scan_report_rows()
+    public function test_it_does_not_hydrate_ip_address_for_scan_report_rows()
     {
         Carbon::setTestNow('2026-07-08 10:00:00');
 
@@ -82,8 +79,7 @@ class ScanReportQueryTest extends TestCase
         $this->assertArrayNotHasKey('ip_address', $scanLog->getAttributes());
     }
 
-    /** @test */
-    public function it_rejects_scan_export_ranges_longer_than_thirty_one_days()
+    public function test_it_rejects_scan_export_ranges_longer_than_thirty_one_days()
     {
         $this->expectException(ValidationException::class);
 
@@ -93,8 +89,7 @@ class ScanReportQueryTest extends TestCase
         ]);
     }
 
-    /** @test */
-    public function it_allows_scan_export_ranges_of_exactly_thirty_one_inclusive_days()
+    public function test_it_allows_scan_export_ranges_of_exactly_thirty_one_inclusive_days()
     {
         $this->expectNotToPerformAssertions();
 

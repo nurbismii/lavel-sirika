@@ -22,8 +22,7 @@ class SirikaSeederTest extends TestCase
         parent::tearDown();
     }
 
-    /** @test */
-    public function road_segment_seeder_creates_26_active_segments()
+    public function test_road_segment_seeder_creates_26_active_segments()
     {
         $this->seed(RoadSegmentSeeder::class);
 
@@ -38,8 +37,7 @@ class SirikaSeederTest extends TestCase
         ]);
     }
 
-    /** @test */
-    public function road_segment_seeder_adds_starter_map_coordinates_for_curated_segments()
+    public function test_road_segment_seeder_adds_starter_map_coordinates_for_curated_segments()
     {
         $this->seed(RoadSegmentSeeder::class);
 
@@ -52,8 +50,7 @@ class SirikaSeederTest extends TestCase
         }
     }
 
-    /** @test */
-    public function road_segment_seeder_preserves_existing_map_coordinates()
+    public function test_road_segment_seeder_preserves_existing_map_coordinates()
     {
         $this->seed(RoadSegmentSeeder::class);
 
@@ -79,8 +76,7 @@ class SirikaSeederTest extends TestCase
         $this->assertSame([['x' => 1, 'y' => 2], ['x' => 3, 'y' => 4]], $polyline['points']);
     }
 
-    /** @test */
-    public function user_seeder_uses_configured_password_for_starter_accounts()
+    public function test_user_seeder_uses_configured_password_for_starter_accounts()
     {
         config(['sirika.seed_user_password' => 'starter-secret']);
 
@@ -114,8 +110,7 @@ class SirikaSeederTest extends TestCase
         }
     }
 
-    /** @test */
-    public function user_seeder_falls_back_to_default_password_for_local_and_testing()
+    public function test_user_seeder_falls_back_to_default_password_for_local_and_testing()
     {
         $this->seed(UserSeeder::class);
 
@@ -126,8 +121,7 @@ class SirikaSeederTest extends TestCase
         }
     }
 
-    /** @test */
-    public function database_seeder_registers_starter_users_and_road_segments()
+    public function test_database_seeder_registers_starter_users_and_road_segments()
     {
         $this->seed(DatabaseSeeder::class);
 
@@ -135,8 +129,7 @@ class SirikaSeederTest extends TestCase
         $this->assertSame(26, RoadSegment::count());
     }
 
-    /** @test */
-    public function user_seeder_preserves_existing_password_hash_on_rerun()
+    public function test_user_seeder_preserves_existing_password_hash_on_rerun()
     {
         config(['sirika.seed_user_password' => 'starter-secret']);
 
@@ -153,8 +146,7 @@ class SirikaSeederTest extends TestCase
             ->value('password'));
     }
 
-    /** @test */
-    public function user_seeder_aborts_in_production_when_seed_password_is_missing()
+    public function test_user_seeder_aborts_in_production_when_seed_password_is_missing()
     {
         $this->app->detectEnvironment(function () {
             return 'production';

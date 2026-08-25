@@ -13,8 +13,7 @@ class SirikaDomainSchemaTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
-    public function sirika_core_tables_exist_with_required_columns()
+    public function test_sirika_core_tables_exist_with_required_columns()
     {
         $this->assertTrue(Schema::hasColumns('employees', [
             'id', 'nik', 'name', 'department', 'section', 'position', 'division', 'contact_number', 'status',
@@ -57,8 +56,7 @@ class SirikaDomainSchemaTest extends TestCase
         ]));
     }
 
-    /** @test */
-    public function permit_route_segment_sequence_must_be_unique_per_permit_even_for_different_road_segments()
+    public function test_permit_route_segment_sequence_must_be_unique_per_permit_even_for_different_road_segments()
     {
         $employeeId = DB::table('employees')->insertGetId([
             'nik' => 'EMP-001',
@@ -122,8 +120,7 @@ class SirikaDomainSchemaTest extends TestCase
         ]);
     }
 
-    /** @test */
-    public function vehicle_permit_unique_migration_reports_duplicate_existing_permit_rows()
+    public function test_vehicle_permit_unique_migration_reports_duplicate_existing_permit_rows()
     {
         $migration = new \AddUniqueEmployeeVehicleToVehiclePermitsTable();
         $migration->down();
@@ -163,8 +160,7 @@ class SirikaDomainSchemaTest extends TestCase
         $migration->up();
     }
 
-    /** @test */
-    public function vehicle_plate_unique_migration_reports_duplicate_plates_owned_by_different_employees()
+    public function test_vehicle_plate_unique_migration_reports_duplicate_plates_owned_by_different_employees()
     {
         $migration = new \AddUniqueEmployeeVehicleToVehiclePermitsTable();
         $migration->down();
@@ -194,8 +190,7 @@ class SirikaDomainSchemaTest extends TestCase
         $migration->up();
     }
 
-    /** @test */
-    public function final_schema_keeps_vehicle_plates_globally_unique_and_permit_pairs_unique()
+    public function test_final_schema_keeps_vehicle_plates_globally_unique_and_permit_pairs_unique()
     {
         $firstEmployeeId = DB::table('employees')->insertGetId([
             'nik' => 'EMP-SCHEMA-001',
@@ -264,8 +259,7 @@ class SirikaDomainSchemaTest extends TestCase
         }
     }
 
-    /** @test */
-    public function vehicle_permit_parking_location_migration_backfills_legacy_locations_without_duplicates()
+    public function test_vehicle_permit_parking_location_migration_backfills_legacy_locations_without_duplicates()
     {
         $migration = new \CreateVehiclePermitParkingLocationsTable();
         $migration->down();

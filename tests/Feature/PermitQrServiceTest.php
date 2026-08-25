@@ -40,8 +40,7 @@ class PermitQrServiceTest extends TestCase
         ]);
     }
 
-    /** @test */
-    public function permit_token_and_scan_log_constants_and_relationships_are_available()
+    public function test_permit_token_and_scan_log_constants_and_relationships_are_available()
     {
         $employee = Employee::create([
             'nik' => 'EMP-001',
@@ -91,8 +90,7 @@ class PermitQrServiceTest extends TestCase
         $this->assertSame($activeToken->id, $permit->fresh()->latestToken->id);
     }
 
-    /** @test */
-    public function token_service_generates_hash_only_token_and_qr_svg_for_active_permit()
+    public function test_token_service_generates_hash_only_token_and_qr_svg_for_active_permit()
     {
         $permit = $this->createPermit();
         $service = app(PermitTokenService::class);
@@ -108,8 +106,7 @@ class PermitQrServiceTest extends TestCase
         $this->assertTrue($result['permit_token']->expires_at->isSameDay(now()->addYear()));
     }
 
-    /** @test */
-    public function token_service_refuses_non_active_permit()
+    public function test_token_service_refuses_non_active_permit()
     {
         $permit = $this->createPermit(VehiclePermit::STATUS_NEEDS_REVIEW);
         $service = app(PermitTokenService::class);
@@ -120,8 +117,7 @@ class PermitQrServiceTest extends TestCase
         $service->generateForPermit($permit);
     }
 
-    /** @test */
-    public function token_service_does_not_create_duplicate_active_token()
+    public function test_token_service_does_not_create_duplicate_active_token()
     {
         $permit = $this->createPermit();
         $service = app(PermitTokenService::class);
@@ -142,8 +138,7 @@ class PermitQrServiceTest extends TestCase
         $this->assertSame(1, PermitToken::where('vehicle_permit_id', $permit->id)->count());
     }
 
-    /** @test */
-    public function token_service_generates_separate_qrs_for_active_permits_of_different_employees_sharing_a_vehicle()
+    public function test_token_service_generates_separate_qrs_for_active_permits_of_different_employees_sharing_a_vehicle()
     {
         $firstPermit = $this->createPermit();
         $secondEmployee = Employee::create([
@@ -173,8 +168,7 @@ class PermitQrServiceTest extends TestCase
             ->count());
     }
 
-    /** @test */
-    public function token_service_renew_revokes_old_token_and_creates_new_one_year_token()
+    public function test_token_service_renew_revokes_old_token_and_creates_new_one_year_token()
     {
         $permit = $this->createPermit();
         $service = app(PermitTokenService::class);
@@ -189,8 +183,7 @@ class PermitQrServiceTest extends TestCase
         $this->assertTrue($new['permit_token']->expires_at->isSameDay(now()->addYear()));
     }
 
-    /** @test */
-    public function token_service_bulk_generates_only_active_permits_without_active_token()
+    public function test_token_service_bulk_generates_only_active_permits_without_active_token()
     {
         $firstActive = $this->createPermit();
         $secondActive = $this->createPermit();

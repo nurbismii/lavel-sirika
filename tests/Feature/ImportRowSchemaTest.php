@@ -13,8 +13,7 @@ class ImportRowSchemaTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
-    public function import_rows_table_has_required_columns()
+    public function test_import_rows_table_has_required_columns()
     {
         $this->assertTrue(Schema::hasColumns('import_rows', [
             'id',
@@ -33,8 +32,7 @@ class ImportRowSchemaTest extends TestCase
         ]));
     }
 
-    /** @test */
-    public function import_batch_has_rows_relationship_and_status_constants()
+    public function test_import_batch_has_rows_relationship_and_status_constants()
     {
         $user = User::factory()->create([
             'role' => User::ROLE_ADMIN_HR,

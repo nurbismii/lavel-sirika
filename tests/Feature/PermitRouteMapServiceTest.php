@@ -29,8 +29,7 @@ class PermitRouteMapServiceTest extends TestCase
         ]);
     }
 
-    /** @test */
-    public function it_builds_route_map_data_in_permit_route_sequence()
+    public function test_it_builds_route_map_data_in_permit_route_sequence()
     {
         $permit = $this->permit();
         $first = $this->segment('Y1', [
@@ -59,8 +58,7 @@ class PermitRouteMapServiceTest extends TestCase
         $this->assertSame([[20.0, 10.0], [40.0, 30.0]], $dto['segments'][0]['lat_lngs']);
     }
 
-    /** @test */
-    public function it_marks_segments_without_complete_coordinates_as_missing()
+    public function test_it_marks_segments_without_complete_coordinates_as_missing()
     {
         $permit = $this->permit();
         $complete = $this->segment('Y1', [

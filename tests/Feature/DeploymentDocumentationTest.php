@@ -6,8 +6,7 @@ use Tests\TestCase;
 
 class DeploymentDocumentationTest extends TestCase
 {
-    /** @test */
-    public function cpanel_deployment_guide_documents_sirika_production_structure()
+    public function test_cpanel_deployment_guide_documents_sirika_production_structure()
     {
         $path = base_path('docs/deployment/CPANEL-PRODUCTION.md');
 
@@ -54,8 +53,7 @@ class DeploymentDocumentationTest extends TestCase
         $this->assertStringContainsString('`640` hanya jika model group hosting membutuhkannya', $contents);
     }
 
-    /** @test */
-    public function readme_documents_sirika_instead_of_default_laravel_copy()
+    public function test_readme_documents_sirika_instead_of_default_laravel_copy()
     {
         $contents = file_get_contents(base_path('README.md'));
 

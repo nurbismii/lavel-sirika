@@ -11,8 +11,7 @@ class UserRoleFoundationTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
-    public function users_table_has_sirika_role_columns()
+    public function test_users_table_has_sirika_role_columns()
     {
         $this->assertTrue(Schema::hasColumns('users', [
             'role',
@@ -21,8 +20,7 @@ class UserRoleFoundationTest extends TestCase
         ]));
     }
 
-    /** @test */
-    public function user_role_helpers_are_available()
+    public function test_user_role_helpers_are_available()
     {
         $user = User::factory()->create([
             'role' => User::ROLE_SECURITY,

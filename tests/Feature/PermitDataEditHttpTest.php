@@ -17,8 +17,7 @@ class PermitDataEditHttpTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
-    public function permit_edit_routes_are_available_only_to_admin_hr()
+    public function test_permit_edit_routes_are_available_only_to_admin_hr()
     {
         $permit = $this->permit();
         $admin = $this->user(User::ROLE_ADMIN_HR);
@@ -59,8 +58,7 @@ class PermitDataEditHttpTest extends TestCase
             ->assertForbidden();
     }
 
-    /** @test */
-    public function admin_can_update_permit_identity_parking_and_ordered_route_without_changing_status()
+    public function test_admin_can_update_permit_identity_parking_and_ordered_route_without_changing_status()
     {
         $permit = $this->permit();
         $reviewer = $this->user(User::ROLE_ADMIN_HR);

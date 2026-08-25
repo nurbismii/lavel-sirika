@@ -12,8 +12,7 @@ class VehicleUniqueMigrationTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
-    public function vehicle_unique_migration_reports_duplicate_existing_vehicle_rows()
+    public function test_vehicle_unique_migration_reports_duplicate_existing_vehicle_rows()
     {
         $employee = Employee::create([
             'nik' => '200115677',

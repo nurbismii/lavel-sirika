@@ -14,15 +14,13 @@ class AuthAndRoleAccessTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
-    public function guest_is_redirected_from_dashboard_to_login()
+    public function test_guest_is_redirected_from_dashboard_to_login()
     {
         $this->get('/dashboard')
             ->assertRedirect('/login');
     }
 
-    /** @test */
-    public function active_user_can_login_and_reaches_dashboard()
+    public function test_active_user_can_login_and_reaches_dashboard()
     {
         $this->seed(UserSeeder::class);
 
@@ -35,8 +33,7 @@ class AuthAndRoleAccessTest extends TestCase
         $this->assertNotNull(User::where('email', 'superadmin@sirika.local')->first()->last_login_at);
     }
 
-    /** @test */
-    public function authenticated_user_visiting_login_is_redirected_to_dashboard()
+    public function test_authenticated_user_visiting_login_is_redirected_to_dashboard()
     {
         $user = User::factory()->create([
             'role' => User::ROLE_SUPER_ADMIN,
@@ -48,8 +45,7 @@ class AuthAndRoleAccessTest extends TestCase
             ->assertRedirect('/dashboard');
     }
 
-    /** @test */
-    public function inactive_user_cannot_login()
+    public function test_inactive_user_cannot_login()
     {
         User::create([
             'name' => 'Inactive User',
@@ -67,14 +63,12 @@ class AuthAndRoleAccessTest extends TestCase
         $this->assertGuest();
     }
 
-    /** @test */
-    public function home_route_is_not_exposed_anymore()
+    public function test_home_route_is_not_exposed_anymore()
     {
         $this->get('/home')->assertNotFound();
     }
 
-    /** @test */
-    public function role_middleware_allows_matching_roles_and_blocks_others()
+    public function test_role_middleware_allows_matching_roles_and_blocks_others()
     {
         Route::middleware(['web', 'auth', 'role:admin_hr,security'])->get('/role-protected-test', function () {
             return 'ok';
@@ -106,8 +100,7 @@ class AuthAndRoleAccessTest extends TestCase
             ->assertForbidden();
     }
 
-    /** @test */
-    public function super_admin_bypasses_role_middleware()
+    public function test_super_admin_bypasses_role_middleware()
     {
         Route::middleware(['web', 'auth', 'role:admin_hr'])->get('/role-protected-super-admin-test', function () {
             return 'ok';
@@ -124,8 +117,7 @@ class AuthAndRoleAccessTest extends TestCase
             ->assertSee('ok');
     }
 
-    /** @test */
-    public function dashboard_requires_allowed_active_roles()
+    public function test_dashboard_requires_allowed_active_roles()
     {
         $cases = [
             [
@@ -175,8 +167,7 @@ class AuthAndRoleAccessTest extends TestCase
         }
     }
 
-    /** @test */
-    public function login_attempts_are_rate_limited()
+    public function test_login_attempts_are_rate_limited()
     {
         $server = ['REMOTE_ADDR' => '203.0.113.77'];
 

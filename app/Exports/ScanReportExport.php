@@ -4,6 +4,7 @@ namespace App\Exports;
 
 use App\Models\ScanLog;
 use App\Services\Reports\ScanReportQuery;
+use Illuminate\Database\Eloquent\Builder;
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -20,7 +21,7 @@ class ScanReportExport implements FromQuery, WithHeadings, WithMapping, ShouldAu
         $this->filters = $filters;
     }
 
-    public function query()
+    public function query(): Builder
     {
         return $this->reports->query($this->filters);
     }

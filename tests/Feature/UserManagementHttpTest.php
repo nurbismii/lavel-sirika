@@ -11,8 +11,7 @@ class UserManagementHttpTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
-    public function login_page_uses_sirika_admin_design_and_accessible_controls()
+    public function test_login_page_uses_sirika_admin_design_and_accessible_controls()
     {
         $this->get('/login')
             ->assertOk()
@@ -24,8 +23,7 @@ class UserManagementHttpTest extends TestCase
             ->assertSee('autocomplete="current-password"', false);
     }
 
-    /** @test */
-    public function super_admin_can_create_update_view_and_delete_users()
+    public function test_super_admin_can_create_update_view_and_delete_users()
     {
         $admin = User::factory()->create([
             'role' => User::ROLE_SUPER_ADMIN,
@@ -92,8 +90,7 @@ class UserManagementHttpTest extends TestCase
         ]);
     }
 
-    /** @test */
-    public function user_email_rejects_control_characters_on_create_and_update()
+    public function test_user_email_rejects_control_characters_on_create_and_update()
     {
         $admin = User::factory()->create([
             'role' => User::ROLE_SUPER_ADMIN,
@@ -142,8 +139,7 @@ class UserManagementHttpTest extends TestCase
         $this->assertNotSame("unsafe@example.com\nInjected: value", $managedUser->fresh()->email);
     }
 
-    /** @test */
-    public function non_super_admin_users_cannot_access_user_management()
+    public function test_non_super_admin_users_cannot_access_user_management()
     {
         $adminHr = User::factory()->create([
             'role' => User::ROLE_ADMIN_HR,
@@ -161,8 +157,7 @@ class UserManagementHttpTest extends TestCase
         ])->assertForbidden();
     }
 
-    /** @test */
-    public function super_admin_cannot_delete_or_demote_own_account()
+    public function test_super_admin_cannot_delete_or_demote_own_account()
     {
         $admin = User::factory()->create([
             'role' => User::ROLE_SUPER_ADMIN,
@@ -194,8 +189,7 @@ class UserManagementHttpTest extends TestCase
         ]);
     }
 
-    /** @test */
-    public function paginated_admin_tables_use_compact_sirika_pagination()
+    public function test_paginated_admin_tables_use_compact_sirika_pagination()
     {
         $admin = User::factory()->create([
             'role' => User::ROLE_SUPER_ADMIN,

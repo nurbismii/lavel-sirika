@@ -15,8 +15,7 @@ class PermitReviewHttpTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
-    public function activation_rejects_an_inactive_parking_location_in_the_selected_locations()
+    public function test_activation_rejects_an_inactive_parking_location_in_the_selected_locations()
     {
         $admin = $this->user(User::ROLE_ADMIN_HR);
         $permit = $this->permit(VehiclePermit::STATUS_NEEDS_REVIEW, 'INACTIVE PARKING USER', 'DT 5399 IP');
@@ -39,8 +38,7 @@ class PermitReviewHttpTest extends TestCase
             ->assertSessionHasErrors('parking_location_ids.1');
     }
 
-    /** @test */
-    public function permit_review_routes_are_mapped_to_the_expected_roles()
+    public function test_permit_review_routes_are_mapped_to_the_expected_roles()
     {
         $this->assertSame([User::ROLE_ADMIN_HR, User::ROLE_AUDITOR], User::rolesForRoute('permits.index'));
         $this->assertSame([User::ROLE_ADMIN_HR, User::ROLE_AUDITOR], User::rolesForRoute('permits.show'));
@@ -50,8 +48,7 @@ class PermitReviewHttpTest extends TestCase
         $this->assertSame([User::ROLE_ADMIN_HR], User::rolesForRoute('permits.qr.extend'));
     }
 
-    /** @test */
-    public function admin_can_filter_needs_review_permits_from_list()
+    public function test_admin_can_filter_needs_review_permits_from_list()
     {
         $admin = $this->user(User::ROLE_ADMIN_HR);
         $reviewPermit = $this->permit(VehiclePermit::STATUS_NEEDS_REVIEW, 'REVIEW FILTER USER', 'DT 5101 RF');
@@ -67,8 +64,7 @@ class PermitReviewHttpTest extends TestCase
             ->assertSee(route('permits.review.edit', $reviewPermit), false);
     }
 
-    /** @test */
-    public function auditor_can_view_list_and_detail_but_cannot_open_review_form()
+    public function test_auditor_can_view_list_and_detail_but_cannot_open_review_form()
     {
         $auditor = $this->user(User::ROLE_AUDITOR);
         $permit = $this->permit(VehiclePermit::STATUS_NEEDS_REVIEW, 'AUDITOR DETAIL USER', 'DT 5201 AD');
@@ -91,8 +87,7 @@ class PermitReviewHttpTest extends TestCase
             ->assertForbidden();
     }
 
-    /** @test */
-    public function security_cannot_view_permit_admin_pages()
+    public function test_security_cannot_view_permit_admin_pages()
     {
         $security = $this->user(User::ROLE_SECURITY);
         $permit = $this->permit(VehiclePermit::STATUS_NEEDS_REVIEW, 'SECURITY BLOCKED USER', 'DT 5301 SB');
@@ -102,8 +97,7 @@ class PermitReviewHttpTest extends TestCase
         $this->actingAs($security)->get(route('permits.review.edit', $permit))->assertForbidden();
     }
 
-    /** @test */
-    public function admin_is_redirected_when_opening_review_form_for_non_review_permit()
+    public function test_admin_is_redirected_when_opening_review_form_for_non_review_permit()
     {
         $admin = $this->user(User::ROLE_ADMIN_HR);
         $permit = $this->permit(VehiclePermit::STATUS_ACTIVE, 'ACTIVE DIRECT REVIEW USER', 'DT 5351 AR');
@@ -114,8 +108,7 @@ class PermitReviewHttpTest extends TestCase
             ->assertSessionHas('error', 'Izin ini tidak berada dalam status needs_review.');
     }
 
-    /** @test */
-    public function admin_can_save_review_draft()
+    public function test_admin_can_save_review_draft()
     {
         $admin = $this->user(User::ROLE_ADMIN_HR);
         $permit = $this->permit(VehiclePermit::STATUS_NEEDS_REVIEW, 'DRAFT REVIEW USER', 'DT 5401 DR');
@@ -138,8 +131,7 @@ class PermitReviewHttpTest extends TestCase
         $this->assertSame('Menunggu aktivasi.', $permit->review_note);
     }
 
-    /** @test */
-    public function admin_can_activate_reviewed_permit_and_then_generate_qr_action_is_visible()
+    public function test_admin_can_activate_reviewed_permit_and_then_generate_qr_action_is_visible()
     {
         $admin = $this->user(User::ROLE_ADMIN_HR);
         $permit = $this->permit(VehiclePermit::STATUS_NEEDS_REVIEW, 'ACTIVATE HTTP USER', 'DT 5501 AH');
@@ -170,8 +162,7 @@ class PermitReviewHttpTest extends TestCase
             ->assertSee(route('permits.qr.generate', $permit), false);
     }
 
-    /** @test */
-    public function activation_redirects_back_with_validation_error_when_domain_rule_fails()
+    public function test_activation_redirects_back_with_validation_error_when_domain_rule_fails()
     {
         $admin = $this->user(User::ROLE_ADMIN_HR);
         $permit = $this->permit(VehiclePermit::STATUS_NEEDS_REVIEW, 'INVALID ROUTE USER', 'DT 5601 IR');

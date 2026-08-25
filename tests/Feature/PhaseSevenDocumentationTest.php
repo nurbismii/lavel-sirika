@@ -6,8 +6,7 @@ use Tests\TestCase;
 
 class PhaseSevenDocumentationTest extends TestCase
 {
-    /** @test */
-    public function phase_seven_security_documents_define_residual_risk_and_upgrade_exit_condition()
+    public function test_phase_seven_security_documents_define_residual_risk_and_upgrade_exit_condition()
     {
         $inventory = file_get_contents(base_path('docs/security/SECURITY-EXPOSURE-INVENTORY.md'));
         $riskRegister = file_get_contents(base_path('docs/security/DEPENDENCY-RISK-REGISTER.md'));
@@ -25,8 +24,7 @@ class PhaseSevenDocumentationTest extends TestCase
         $this->assertStringContainsString('sirika.vdnisite.com', $readiness);
     }
 
-    /** @test */
-    public function production_runbook_requires_explicit_dependency_risk_decision()
+    public function test_production_runbook_requires_explicit_dependency_risk_decision()
     {
         $runbook = file_get_contents(base_path('docs/deployment/CPANEL-PRODUCTION.md'));
 
