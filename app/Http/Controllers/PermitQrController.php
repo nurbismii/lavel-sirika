@@ -9,6 +9,7 @@ use App\Services\Permits\PermitTokenService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
 
 class PermitQrController extends Controller
@@ -66,6 +67,12 @@ class PermitQrController extends Controller
 
         $this->applyActiveQrConstraint($query);
 
+        if ($filters['niks']) {
+            $query->whereHas('employee', function ($employeeQuery) use ($filters) {
+                $employeeQuery->whereIn('nik', $filters['niks']);
+            });
+        }
+
         if ($filters['department']) {
             $query->whereHas('employee', function ($employeeQuery) use ($filters) {
                 $employeeQuery->where('department', $filters['department']);
@@ -83,9 +90,21 @@ class PermitQrController extends Controller
         }
 
         $permits = $query->orderBy('id')->get();
+        $cards = $this->cardsForBatchPrint($permits);
+        $missingNiks = [];
+        $unavailableNiks = [];
+
+        if ($filters['niks']) {
+            $existingNiks = Employee::whereIn('nik', $filters['niks'])->pluck('nik')->all();
+            $printedNiks = $cards->pluck('nik')->all();
+            $missingNiks = array_values(array_diff($filters['niks'], $existingNiks));
+            $unavailableNiks = array_values(array_diff($filters['niks'], $missingNiks, $printedNiks));
+        }
 
         return view('permits.qr.batch-print', [
-            'cards' => $this->cardsForBatchPrint($permits),
+            'cards' => $cards,
+            'missingNiks' => $missingNiks,
+            'unavailableNiks' => $unavailableNiks,
             'filters' => $filters,
             'departments' => $this->batchPrintEmployeeOptions('department'),
             'divisions' => $this->batchPrintEmployeeOptions('division'),
@@ -192,10 +211,33 @@ class PermitQrController extends Controller
 
     private function batchPrintFilters(Request $request): array
     {
+        $validated = $request->validate([
+            'department' => ['nullable', 'string', 'max:255'],
+            'division' => ['nullable', 'string', 'max:255'],
+            'permit_color' => ['nullable', 'string', 'max:255'],
+            'nik_list' => ['nullable', 'string', 'max:51000'],
+        ]);
+        $nikList = trim($validated['nik_list'] ?? '');
+        $niks = array_values(array_unique(preg_split('/[\s,;]+/u', $nikList, -1, PREG_SPLIT_NO_EMPTY) ?: []));
+
+        if ($nikList !== '' && $niks === []) {
+            throw ValidationException::withMessages(['nik_list' => 'Masukkan setidaknya satu NIK yang valid.']);
+        }
+        if (count($niks) > 500) {
+            throw ValidationException::withMessages(['nik_list' => 'Maksimal 500 NIK unik per proses cetak.']);
+        }
+        foreach ($niks as $nik) {
+            if (mb_strlen($nik) > 100) {
+                throw ValidationException::withMessages(['nik_list' => 'Setiap NIK maksimal 100 karakter.']);
+            }
+        }
+
         return [
-            'department' => $this->nullableString($request->query('department')),
-            'division' => $this->nullableString($request->query('division')),
-            'permit_color' => $this->nullableString($request->query('permit_color')),
+            'department' => $this->nullableString($validated['department'] ?? null),
+            'division' => $this->nullableString($validated['division'] ?? null),
+            'permit_color' => $this->nullableString($validated['permit_color'] ?? null),
+            'nik_list' => $nikList,
+            'niks' => $niks,
         ];
     }
 

@@ -33,19 +33,32 @@
                     <p class="panel-subtitle">{{ $cards->count() }} QR aktif siap dicetak. Nama dan NIK tercetak di bawah QR.</p>
                 </div>
                 <div class="quick-actions">
-                    <button class="button button-primary" type="button" onclick="window.print()">Print</button>
+                    <button class="button button-primary" type="button" onclick="window.print()" @disabled($cards->isEmpty() || $errors->any())>Print</button>
                     <a class="button" href="{{ route('permits.index') }}">Kembali</a>
                 </div>
             </div>
 
-            <form class="filter-panel layout-gap no-print batch-qr-print__filters" method="GET" action="{{ route('permits.qr.batch-print') }}">
+            <form class="filter-panel layout-gap no-print batch-qr-print__filters" method="POST" action="{{ route('permits.qr.batch-print') }}" onsubmit="this.querySelector('button[type=submit]').disabled = true; this.querySelector('button[type=submit]').textContent = 'Memproses QR…'; this.setAttribute('aria-busy', 'true');">
+                @csrf
+                @if ($errors->any())
+                    <div role="alert">
+                        @foreach ($errors->all() as $message)
+                            <p>{{ $message }}</p>
+                        @endforeach
+                    </div>
+                @endif
+                <div class="form-field" style="margin-bottom: 16px;">
+                    <label for="nik_list">Daftar NIK</label>
+                    <textarea class="form-control" id="nik_list" name="nik_list" rows="5" maxlength="51000" aria-describedby="nik_list_help">{{ is_string(old('nik_list', $filters['nik_list'])) ? old('nik_list', $filters['nik_list']) : '' }}</textarea>
+                    <small id="nik_list_help">Tempel NIK per baris atau pisahkan dengan koma, titik koma, atau spasi. Maksimal 500 NIK unik; duplikat diabaikan. Kosongkan untuk semua NIK. Semua QR yang memenuhi filter untuk setiap NIK akan ditampilkan.</small>
+                </div>
                 <div class="form-grid">
                     <div class="form-field">
                         <label for="department">Departemen</label>
                         <select class="form-control" id="department" name="department">
                             <option value="">Semua departemen</option>
                             @foreach ($departments as $value => $label)
-                                <option value="{{ $value }}" {{ $filters['department'] === $value ? 'selected' : '' }}>{{ $label }}</option>
+                                <option value="{{ $value }}" {{ old('department', $filters['department']) === $value ? 'selected' : '' }}>{{ $label }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -54,7 +67,7 @@
                         <select class="form-control" id="division" name="division">
                             <option value="">Semua divisi</option>
                             @foreach ($divisions as $value => $label)
-                                <option value="{{ $value }}" {{ $filters['division'] === $value ? 'selected' : '' }}>{{ $label }}</option>
+                                <option value="{{ $value }}" {{ old('division', $filters['division']) === $value ? 'selected' : '' }}>{{ $label }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -63,7 +76,7 @@
                         <select class="form-control" id="permit_color" name="permit_color">
                             <option value="">Semua warna</option>
                             @foreach ($permitColors as $value => $label)
-                                <option value="{{ $value }}" {{ $filters['permit_color'] === $value ? 'selected' : '' }}>{{ $label }}</option>
+                                <option value="{{ $value }}" {{ old('permit_color', $filters['permit_color']) === $value ? 'selected' : '' }}>{{ $label }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -74,7 +87,21 @@
                 </div>
             </form>
 
-            @if ($cards->isEmpty())
+            @if ($missingNiks || $unavailableNiks)
+                <div class="no-print layout-gap" role="status" style="margin-bottom: 20px; overflow-wrap: anywhere;">
+                    @if ($missingNiks)
+                        <p><strong>NIK tidak ditemukan ({{ count($missingNiks) }}):</strong> {{ implode(', ', $missingNiks) }}</p>
+                    @endif
+                    @if ($unavailableNiks)
+                        <p><strong>NIK tanpa QR siap cetak ({{ count($unavailableNiks) }}):</strong> {{ implode(', ', $unavailableNiks) }}</p>
+                        <p>Periksa status izin, ketersediaan dan masa berlaku QR, serta filter departemen, divisi, dan warna kartu. QR yang tidak dapat dibaca juga tidak ditampilkan.</p>
+                    @endif
+                </div>
+            @endif
+
+            @if ($errors->any())
+                <p class="empty-state">Perbaiki filter lalu tekan Terapkan Filter untuk menampilkan QR.</p>
+            @elseif ($cards->isEmpty())
                 <p class="empty-state">Tidak ada QR aktif yang dapat dicetak.</p>
             @else
                 <div class="batch-qr-print__grid">

@@ -304,6 +304,79 @@ class PermitQrHttpTest extends TestCase
         $this->assertSame(1, substr_count($response->getContent(), '<svg'));
     }
 
+    public function test_batch_print_accepts_nik_lists_without_changing_tokens()
+    {
+        $admin = $this->userWithRole(User::ROLE_ADMIN_HR);
+        $first = $this->permit();
+        $second = $this->permit(VehiclePermit::STATUS_ACTIVE, 'DT 7002 NL');
+        $other = $this->permit(VehiclePermit::STATUS_ACTIVE, 'DT 7003 NL');
+        $first->employee->update(['nik' => '00123']);
+        $second->employee->update(['nik' => 'EMP-002']);
+        foreach ([$first, $second, $other] as $permit) {
+            app(PermitTokenService::class)->generateForPermit($permit);
+        }
+        $before = PermitToken::orderBy('id')->get()->toArray();
+
+        $this->actingAs($admin)->post(route('permits.qr.batch-print'), [
+            'nik_list' => "00123\r\nEMP-002,00123; EMP-002\t00123",
+        ])->assertOk()
+            ->assertViewHas('cards', fn ($cards) => $cards->pluck('nik')->all() === ['00123', 'EMP-002'])
+            ->assertViewHas('missingNiks', [])
+            ->assertViewHas('unavailableNiks', []);
+
+        $this->assertSame($before, PermitToken::orderBy('id')->get()->toArray());
+    }
+
+    public function test_batch_print_reports_missing_and_unavailable_niks_and_combines_filters()
+    {
+        $admin = $this->userWithRole(User::ROLE_ADMIN_HR);
+        $niks = [];
+        foreach (['READY', 'NO-TOKEN', 'EXPIRED', 'UNREADABLE', 'OTHER-COLOR', 'INACTIVE'] as $index => $nik) {
+            $permit = $this->permit(VehiclePermit::STATUS_ACTIVE, 'DT 80' . $index . ' NL');
+            $permit->employee->update(['nik' => $nik, 'department' => 'GA', 'division' => 'OPS']);
+            $niks[] = $nik;
+            if ($nik !== 'NO-TOKEN') {
+                $token = app(PermitTokenService::class)->generateForPermit($permit)['permit_token'];
+                if ($nik === 'EXPIRED') {
+                    $token->update(['expires_at' => now()->subDay()]);
+                }
+                if ($nik === 'UNREADABLE') {
+                    $token->update(['token_encrypted' => null]);
+                }
+            }
+            if ($nik === 'OTHER-COLOR') {
+                $permit->update(['permit_color' => 'merah']);
+            }
+            if ($nik === 'INACTIVE') {
+                $permit->update(['status' => VehiclePermit::STATUS_REVOKED]);
+            }
+        }
+
+        $this->actingAs($admin)->post(route('permits.qr.batch-print'), [
+            'nik_list' => implode(',', $niks) . ',MISSING',
+            'department' => 'GA', 'division' => 'OPS', 'permit_color' => 'biru',
+        ])->assertOk()
+            ->assertViewHas('cards', fn ($cards) => $cards->pluck('nik')->all() === ['READY'])
+            ->assertViewHas('missingNiks', ['MISSING'])
+            ->assertViewHas('unavailableNiks', array_slice($niks, 1))
+            ->assertSee('NIK tidak ditemukan')
+            ->assertSee('NIK tanpa QR siap cetak');
+    }
+
+    public function test_batch_print_validates_nik_input_and_preserves_authorization()
+    {
+        $this->actingAs($this->userWithRole(User::ROLE_ADMIN_HR));
+        foreach ([['invalid'], ', ;', str_repeat('X', 101), implode(',', range(1, 501))] as $input) {
+            $this->from(route('permits.qr.batch-print'))
+                ->post(route('permits.qr.batch-print'), ['nik_list' => $input])
+                ->assertRedirect(route('permits.qr.batch-print'))
+                ->assertSessionHasErrors('nik_list');
+        }
+        $this->actingAs($this->userWithRole(User::ROLE_SECURITY))
+            ->post(route('permits.qr.batch-print'), ['nik_list' => '00123'])
+            ->assertForbidden();
+    }
+
     public function test_generate_redirects_with_flash_error_when_active_qr_already_exists()
     {
         $admin = $this->userWithRole(User::ROLE_ADMIN_HR);
