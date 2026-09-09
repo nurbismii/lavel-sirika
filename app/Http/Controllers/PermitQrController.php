@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ExtendPermitQrValidityRequest;
 use App\Models\Employee;
+use App\Models\Vehicle;
 use App\Models\VehiclePermit;
 use App\Services\Permits\PermitTokenService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
 
@@ -54,6 +56,7 @@ class PermitQrController extends Controller
         $query = VehiclePermit::query()
             ->with([
                 'employee:id,nik,name',
+                'vehicle:id,plate_number',
                 'activeToken' => function ($query) {
                     $query->select([
                         'permit_tokens.id',
@@ -67,9 +70,9 @@ class PermitQrController extends Controller
 
         $this->applyActiveQrConstraint($query);
 
-        if ($filters['niks']) {
-            $query->whereHas('employee', function ($employeeQuery) use ($filters) {
-                $employeeQuery->whereIn('nik', $filters['niks']);
+        if ($filters['plates']) {
+            $query->whereHas('vehicle', function ($vehicleQuery) use ($filters) {
+                $this->applyPlateFilter($vehicleQuery, $filters['plates']);
             });
         }
 
@@ -91,20 +94,22 @@ class PermitQrController extends Controller
 
         $permits = $query->orderBy('id')->get();
         $cards = $this->cardsForBatchPrint($permits);
-        $missingNiks = [];
-        $unavailableNiks = [];
+        $missingPlates = [];
+        $unavailablePlates = [];
 
-        if ($filters['niks']) {
-            $existingNiks = Employee::whereIn('nik', $filters['niks'])->pluck('nik')->all();
-            $printedNiks = $cards->pluck('nik')->all();
-            $missingNiks = array_values(array_diff($filters['niks'], $existingNiks));
-            $unavailableNiks = array_values(array_diff($filters['niks'], $missingNiks, $printedNiks));
+        if ($filters['plates']) {
+            $vehicleQuery = Vehicle::query();
+            $this->applyPlateFilter($vehicleQuery, $filters['plates']);
+            $existingPlates = $vehicleQuery->pluck('plate_number')->map(fn ($plate) => $this->normalizePlate($plate))->all();
+            $printedPlates = $cards->pluck('plate_number')->map(fn ($plate) => $this->normalizePlate($plate))->all();
+            $missingPlates = array_values(array_diff($filters['plates'], $existingPlates));
+            $unavailablePlates = array_values(array_diff($filters['plates'], $missingPlates, $printedPlates));
         }
 
         return view('permits.qr.batch-print', [
             'cards' => $cards,
-            'missingNiks' => $missingNiks,
-            'unavailableNiks' => $unavailableNiks,
+            'missingPlates' => $missingPlates,
+            'unavailablePlates' => $unavailablePlates,
             'filters' => $filters,
             'departments' => $this->batchPrintEmployeeOptions('department'),
             'divisions' => $this->batchPrintEmployeeOptions('division'),
@@ -202,6 +207,7 @@ class PermitQrController extends Controller
             return [
                 'name' => optional($permit->employee)->name ?: '-',
                 'nik' => optional($permit->employee)->nik ?: '-',
+                'plate_number' => optional($permit->vehicle)->plate_number ?: '-',
                 'qrSvg' => $plainToken ? $this->tokens->renderSvg($plainToken) : null,
             ];
         })->filter(function (array $card) {
@@ -215,20 +221,23 @@ class PermitQrController extends Controller
             'department' => ['nullable', 'string', 'max:255'],
             'division' => ['nullable', 'string', 'max:255'],
             'permit_color' => ['nullable', 'string', 'max:255'],
-            'nik_list' => ['nullable', 'string', 'max:51000'],
+            'plate_list' => ['nullable', 'string', 'max:51000'],
         ]);
-        $nikList = trim($validated['nik_list'] ?? '');
-        $niks = array_values(array_unique(preg_split('/[\s,;]+/u', $nikList, -1, PREG_SPLIT_NO_EMPTY) ?: []));
+        $plateList = trim($validated['plate_list'] ?? '');
+        $plates = collect(preg_split('/[\r\n\t,;]+/u', $plateList, -1, PREG_SPLIT_NO_EMPTY) ?: [])
+            ->map(fn ($plate) => $this->normalizePlate($plate))
+            ->filter(fn ($plate) => $plate !== '')
+            ->unique()->values()->all();
 
-        if ($nikList !== '' && $niks === []) {
-            throw ValidationException::withMessages(['nik_list' => 'Masukkan setidaknya satu NIK yang valid.']);
+        if ($plateList !== '' && $plates === []) {
+            throw ValidationException::withMessages(['plate_list' => 'Masukkan setidaknya satu plat nomor yang valid.']);
         }
-        if (count($niks) > 500) {
-            throw ValidationException::withMessages(['nik_list' => 'Maksimal 500 NIK unik per proses cetak.']);
+        if (count($plates) > 500) {
+            throw ValidationException::withMessages(['plate_list' => 'Maksimal 500 plat nomor unik per proses cetak.']);
         }
-        foreach ($niks as $nik) {
-            if (mb_strlen($nik) > 100) {
-                throw ValidationException::withMessages(['nik_list' => 'Setiap NIK maksimal 100 karakter.']);
+        foreach ($plates as $plate) {
+            if (mb_strlen($plate) > 100) {
+                throw ValidationException::withMessages(['plate_list' => 'Setiap plat nomor maksimal 100 karakter.']);
             }
         }
 
@@ -236,9 +245,19 @@ class PermitQrController extends Controller
             'department' => $this->nullableString($validated['department'] ?? null),
             'division' => $this->nullableString($validated['division'] ?? null),
             'permit_color' => $this->nullableString($validated['permit_color'] ?? null),
-            'nik_list' => $nikList,
-            'niks' => $niks,
+            'plate_list' => $plateList,
+            'plates' => $plates,
         ];
+    }
+
+    private function normalizePlate(string $plate): string
+    {
+        return strtoupper(str_replace(' ', '', trim($plate)));
+    }
+
+    private function applyPlateFilter($query, array $plates): void
+    {
+        $query->whereIn(DB::raw("UPPER(REPLACE(plate_number, ' ', ''))"), $plates);
     }
 
     private function batchPrintEmployeeOptions(string $column): array

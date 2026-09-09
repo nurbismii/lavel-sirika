@@ -48,9 +48,9 @@
                     </div>
                 @endif
                 <div class="form-field" style="margin-bottom: 16px;">
-                    <label for="nik_list">Daftar NIK</label>
-                    <textarea class="form-control" id="nik_list" name="nik_list" rows="5" maxlength="51000" aria-describedby="nik_list_help">{{ is_string(old('nik_list', $filters['nik_list'])) ? old('nik_list', $filters['nik_list']) : '' }}</textarea>
-                    <small id="nik_list_help">Tempel NIK per baris atau pisahkan dengan koma, titik koma, atau spasi. Maksimal 500 NIK unik; duplikat diabaikan. Kosongkan untuk semua NIK. Semua QR yang memenuhi filter untuk setiap NIK akan ditampilkan.</small>
+                    <label for="plate_list">Daftar Plat Motor</label>
+                    <textarea class="form-control" id="plate_list" name="plate_list" rows="5" maxlength="51000" aria-describedby="plate_list_help">{{ is_string(old('plate_list', $filters['plate_list'])) ? old('plate_list', $filters['plate_list']) : '' }}</textarea>
+                    <small id="plate_list_help">Tempel satu plat per baris atau pisahkan dengan koma, titik koma, atau tab. Contoh: DT 1234 AB. Maksimal 500 plat unik; pengulangan plat pada input diabaikan. Huruf besar/kecil dan spasi pada plat tidak memengaruhi pencocokan. Kosongkan untuk semua plat. Jika satu plat digunakan beberapa NIK, QR setiap izin yang memenuhi filter tetap dicetak dengan nama dan NIK masing-masing. Contoh: satu plat dengan dua NIK dan masing-masing satu QR aktif menghasilkan dua QR, cukup masukkan plat sekali.</small>
                 </div>
                 <div class="form-grid">
                     <div class="form-field">
@@ -87,13 +87,13 @@
                 </div>
             </form>
 
-            @if ($missingNiks || $unavailableNiks)
+            @if ($missingPlates || $unavailablePlates)
                 <div class="no-print layout-gap" role="status" style="margin-bottom: 20px; overflow-wrap: anywhere;">
-                    @if ($missingNiks)
-                        <p><strong>NIK tidak ditemukan ({{ count($missingNiks) }}):</strong> {{ implode(', ', $missingNiks) }}</p>
+                    @if ($missingPlates)
+                        <p><strong>Plat tidak ditemukan ({{ count($missingPlates) }}):</strong> {{ implode(', ', $missingPlates) }}</p>
                     @endif
-                    @if ($unavailableNiks)
-                        <p><strong>NIK tanpa QR siap cetak ({{ count($unavailableNiks) }}):</strong> {{ implode(', ', $unavailableNiks) }}</p>
+                    @if ($unavailablePlates)
+                        <p><strong>Plat tanpa QR siap cetak ({{ count($unavailablePlates) }}):</strong> {{ implode(', ', $unavailablePlates) }}</p>
                         <p>Periksa status izin, ketersediaan dan masa berlaku QR, serta filter departemen, divisi, dan warna kartu. QR yang tidak dapat dibaca juga tidak ditampilkan.</p>
                     @endif
                 </div>

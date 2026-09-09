@@ -304,76 +304,113 @@ class PermitQrHttpTest extends TestCase
         $this->assertSame(1, substr_count($response->getContent(), '<svg'));
     }
 
-    public function test_batch_print_accepts_nik_lists_without_changing_tokens()
+    public function test_batch_print_accepts_plate_lists_without_changing_tokens()
     {
         $admin = $this->userWithRole(User::ROLE_ADMIN_HR);
         $first = $this->permit();
         $second = $this->permit(VehiclePermit::STATUS_ACTIVE, 'DT 7002 NL');
         $other = $this->permit(VehiclePermit::STATUS_ACTIVE, 'DT 7003 NL');
-        $first->employee->update(['nik' => '00123']);
-        $second->employee->update(['nik' => 'EMP-002']);
+        $first->vehicle->update(['plate_number' => 'DT 0123 AB']);
+        $second->vehicle->update(['plate_number' => 'dt 7002 xy']);
+        $other->update(['employee_id' => $first->employee_id]);
         foreach ([$first, $second, $other] as $permit) {
             app(PermitTokenService::class)->generateForPermit($permit);
         }
         $before = PermitToken::orderBy('id')->get()->toArray();
 
         $this->actingAs($admin)->post(route('permits.qr.batch-print'), [
-            'nik_list' => "00123\r\nEMP-002,00123; EMP-002\t00123",
+            'plate_list' => "dt0123ab\r\nDT 7002 XY,DT  0123 AB; dt7002xy\tDT0123AB",
         ])->assertOk()
-            ->assertViewHas('cards', fn ($cards) => $cards->pluck('nik')->all() === ['00123', 'EMP-002'])
-            ->assertViewHas('missingNiks', [])
-            ->assertViewHas('unavailableNiks', []);
+            ->assertViewHas('cards', fn ($cards) => $cards->pluck('plate_number')->all() === ['DT 0123 AB', 'dt 7002 xy'])
+            ->assertViewHas('missingPlates', [])
+            ->assertViewHas('unavailablePlates', []);
 
         $this->assertSame($before, PermitToken::orderBy('id')->get()->toArray());
     }
 
-    public function test_batch_print_reports_missing_and_unavailable_niks_and_combines_filters()
+    public function test_batch_print_shared_plate_prints_each_employee_qr_once_even_with_duplicate_input()
     {
         $admin = $this->userWithRole(User::ROLE_ADMIN_HR);
-        $niks = [];
-        foreach (['READY', 'NO-TOKEN', 'EXPIRED', 'UNREADABLE', 'OTHER-COLOR', 'INACTIVE'] as $index => $nik) {
+        $first = $this->permit(VehiclePermit::STATUS_ACTIVE, 'DT 1234 AB');
+        $second = $this->permit(VehiclePermit::STATUS_ACTIVE, 'DT 9999 XY');
+        $second->update(['vehicle_id' => $first->vehicle_id]);
+        $first->employee->update(['nik' => 'NIK-001', 'name' => 'PEMAKAI PERTAMA']);
+        $second->employee->update(['nik' => 'NIK-002', 'name' => 'PEMAKAI KEDUA']);
+
+        foreach ([$first, $second] as $permit) {
+            app(PermitTokenService::class)->generateForPermit($permit);
+        }
+        $before = PermitToken::orderBy('id')->get()->toArray();
+
+        foreach (['DT 1234 AB', "DT 1234 AB\ndt1234ab"] as $input) {
+            $response = $this->actingAs($admin)->post(route('permits.qr.batch-print'), [
+                'plate_list' => $input,
+            ])->assertOk()
+                ->assertViewHas('cards', function ($cards) {
+                    return $cards->count() === 2
+                        && $cards->pluck('nik')->all() === ['NIK-001', 'NIK-002']
+                        && $cards->pluck('plate_number')->all() === ['DT 1234 AB', 'DT 1234 AB']
+                        && $cards[0]['qrSvg'] !== $cards[1]['qrSvg'];
+                })
+                ->assertSee('PEMAKAI PERTAMA')
+                ->assertSee('PEMAKAI KEDUA')
+                ->assertViewHas('missingPlates', [])
+                ->assertViewHas('unavailablePlates', []);
+
+            $this->assertSame(2, substr_count($response->getContent(), '<svg'));
+        }
+
+        $this->assertSame($before, PermitToken::orderBy('id')->get()->toArray());
+    }
+
+    public function test_batch_print_reports_missing_and_unavailable_plates_and_combines_filters()
+    {
+        $admin = $this->userWithRole(User::ROLE_ADMIN_HR);
+        $plates = [];
+        foreach (['READY', 'NO-TOKEN', 'EXPIRED', 'UNREADABLE', 'OTHER-COLOR', 'INACTIVE'] as $index => $plate) {
             $permit = $this->permit(VehiclePermit::STATUS_ACTIVE, 'DT 80' . $index . ' NL');
-            $permit->employee->update(['nik' => $nik, 'department' => 'GA', 'division' => 'OPS']);
-            $niks[] = $nik;
-            if ($nik !== 'NO-TOKEN') {
+            $permit->vehicle->update(['plate_number' => $plate]);
+            $permit->employee->update(['department' => 'GA', 'division' => 'OPS']);
+            $plates[] = $plate;
+            if ($plate !== 'NO-TOKEN') {
                 $token = app(PermitTokenService::class)->generateForPermit($permit)['permit_token'];
-                if ($nik === 'EXPIRED') {
+                if ($plate === 'EXPIRED') {
                     $token->update(['expires_at' => now()->subDay()]);
                 }
-                if ($nik === 'UNREADABLE') {
+                if ($plate === 'UNREADABLE') {
                     $token->update(['token_encrypted' => null]);
                 }
             }
-            if ($nik === 'OTHER-COLOR') {
+            if ($plate === 'OTHER-COLOR') {
                 $permit->update(['permit_color' => 'merah']);
             }
-            if ($nik === 'INACTIVE') {
+            if ($plate === 'INACTIVE') {
                 $permit->update(['status' => VehiclePermit::STATUS_REVOKED]);
             }
         }
 
         $this->actingAs($admin)->post(route('permits.qr.batch-print'), [
-            'nik_list' => implode(',', $niks) . ',MISSING',
+            'plate_list' => implode(',', $plates) . ',MISSING',
             'department' => 'GA', 'division' => 'OPS', 'permit_color' => 'biru',
         ])->assertOk()
-            ->assertViewHas('cards', fn ($cards) => $cards->pluck('nik')->all() === ['READY'])
-            ->assertViewHas('missingNiks', ['MISSING'])
-            ->assertViewHas('unavailableNiks', array_slice($niks, 1))
-            ->assertSee('NIK tidak ditemukan')
-            ->assertSee('NIK tanpa QR siap cetak');
+            ->assertViewHas('cards', fn ($cards) => $cards->pluck('plate_number')->all() === ['READY'])
+            ->assertViewHas('missingPlates', ['MISSING'])
+            ->assertViewHas('unavailablePlates', array_slice($plates, 1))
+            ->assertSee('Plat tidak ditemukan')
+            ->assertSee('Plat tanpa QR siap cetak');
     }
 
-    public function test_batch_print_validates_nik_input_and_preserves_authorization()
+    public function test_batch_print_validates_plate_input_and_preserves_authorization()
     {
         $this->actingAs($this->userWithRole(User::ROLE_ADMIN_HR));
         foreach ([['invalid'], ', ;', str_repeat('X', 101), implode(',', range(1, 501))] as $input) {
             $this->from(route('permits.qr.batch-print'))
-                ->post(route('permits.qr.batch-print'), ['nik_list' => $input])
+                ->post(route('permits.qr.batch-print'), ['plate_list' => $input])
                 ->assertRedirect(route('permits.qr.batch-print'))
-                ->assertSessionHasErrors('nik_list');
+                ->assertSessionHasErrors('plate_list');
         }
         $this->actingAs($this->userWithRole(User::ROLE_SECURITY))
-            ->post(route('permits.qr.batch-print'), ['nik_list' => '00123'])
+            ->post(route('permits.qr.batch-print'), ['plate_list' => '00123'])
             ->assertForbidden();
     }
 
